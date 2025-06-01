@@ -19,7 +19,7 @@ class MovieSeeder extends Seeder
      */
     public function run(): void
     {
-        $file = database_path('data/100_tmdb.csv');
+        $file = database_path('data/10k_tmdb.csv');
 
         if (!file_exists($file) || !is_readable($file)) {
             throw new Exception("File not found");
@@ -45,16 +45,19 @@ class MovieSeeder extends Seeder
 
 
         foreach ($data as $row) {
+            $row['slug'] = \Str::slug($row['title']);
+
+            if (Movie::firstWhere('slug', $row['slug'])) {
+                continue;
+            }
+
             $genres = $this->prepareRelations($row, Genre::class);
             $companies = $this->prepareRelations($row, ProductionCompany::class);
             $keywords = $this->prepareRelations($row, Keyword::class);
 
             unset($row['genres'], $row['production_companies'], $row['keywords']);
 
-            $row['slug'] = \Str::slug($row['title']);
-            $movie = Movie::firstOrCreate(
-                ['slug' => $row['slug']],
-            $row);
+            $movie = Movie::create($row);
             $movie->genres()->attach($genres->pluck('id')->toArray());
             $movie->companies()->attach($companies->pluck('id')->toArray());
             $movie->keywords()->attach($keywords->pluck('id')->toArray());
