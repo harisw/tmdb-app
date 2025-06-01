@@ -19,7 +19,7 @@ class Movie extends Model
         return $this->belongsToMany(Genre::class);
     }
 
-    public function productionCompanies(): BelongsToMany
+    public function companies(): BelongsToMany
     {
         return $this->belongsToMany(ProductionCompany::class);
     }

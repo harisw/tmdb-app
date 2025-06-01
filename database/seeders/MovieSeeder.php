@@ -7,6 +7,7 @@ use App\Models\Keyword;
 use App\Models\Language;
 use App\Models\Movie;
 use App\Models\ProductionCompany;
+use Exception;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Collection;
@@ -18,7 +19,7 @@ class MovieSeeder extends Seeder
      */
     public function run(): void
     {
-        $file = database_path('data/tmdb.csv');
+        $file = database_path('data/100_tmdb.csv');
 
         if (!file_exists($file) || !is_readable($file)) {
             throw new Exception("File not found");
@@ -28,10 +29,14 @@ class MovieSeeder extends Seeder
         $data = [];
 
         if (($handle = fopen($file, 'r')) !== false) {
-            while (($row = fgetcsv($handle, 1000, ',')) !== false) {
+            while (($row = fgetcsv(stream: $handle, separator: '|')) !== false) {
                 if (!$header) {
                     $header = $row;
                 } else {
+                    if (count($header) !== count($row)) {
+                        var_dump("Broken row: ".json_encode($row));
+                        continue;
+                    }
                     $data[] = array_combine($header, $row);
                 }
             }
@@ -47,7 +52,9 @@ class MovieSeeder extends Seeder
             unset($row['genres'], $row['production_companies'], $row['keywords']);
 
             $row['slug'] = \Str::slug($row['title']);
-            $movie = Movie::firstOrCreate($row);
+            $movie = Movie::firstOrCreate(
+                ['slug' => $row['slug']],
+            $row);
             $movie->genres()->attach($genres->pluck('id')->toArray());
             $movie->companies()->attach($companies->pluck('id')->toArray());
             $movie->keywords()->attach($keywords->pluck('id')->toArray());
@@ -57,12 +64,20 @@ class MovieSeeder extends Seeder
     private function prepareRelations(array &$row, $class): Collection
     {
         $result = collect();
-        foreach (explode(',', $row['genres']) as $genre) {
-            $cleanedGenre = trim($genre);
+        $values = match ($class) {
+            Genre::class => $row['genres'],
+            ProductionCompany::class => $row['production_companies'],
+            Keyword::class => $row['keywords']
+        };
+        foreach (explode(',', $values) as $val) {
+            $cleanedVal = trim($val);
+            $slug = \Str::slug($cleanedVal);
             $result->push(
-                $class::firstOrCreate([
-                    'slug' => \Str::slug($cleanedGenre),
-                    'name' => trim($cleanedGenre),
+                $class::firstOrCreate(
+                    ['slug' => $slug],
+                    [
+                    'slug' => $slug,
+                    'name' => trim($cleanedVal),
                 ])
             );
         }
