@@ -8,6 +8,55 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 
 
+/**
+ * 
+ *
+ * @property int $id
+ * @property string $title
+ * @property string $slug
+ * @property float $rating
+ * @property string $status
+ * @property string $release_date
+ * @property int $revenue
+ * @property int $runtime
+ * @property string|null $img_backdrop
+ * @property string|null $imdb_id
+ * @property string|null $overview
+ * @property float $popularity
+ * @property string|null $img_poster
+ * @property string|null $tagline
+ * @property int $language_id
+ * @property \Illuminate\Support\Carbon|null $created_at
+ * @property \Illuminate\Support\Carbon|null $updated_at
+ * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\ProductionCompany> $companies
+ * @property-read int|null $companies_count
+ * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\Genre> $genres
+ * @property-read int|null $genres_count
+ * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\Keyword> $keywords
+ * @property-read int|null $keywords_count
+ * @method static \Database\Factories\MovieFactory factory($count = null, $state = [])
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Movie newModelQuery()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Movie newQuery()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Movie query()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Movie whereCreatedAt($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Movie whereId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Movie whereImdbId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Movie whereImgBackdrop($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Movie whereImgPoster($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Movie whereLanguageId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Movie whereOverview($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Movie wherePopularity($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Movie whereRating($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Movie whereReleaseDate($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Movie whereRevenue($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Movie whereRuntime($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Movie whereSlug($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Movie whereStatus($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Movie whereTagline($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Movie whereTitle($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Movie whereUpdatedAt($value)
+ * @mixin \Eloquent
+ */
 class Movie extends Model
 {
     /** @use HasFactory<MovieFactory> */

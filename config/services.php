@@ -35,4 +35,7 @@ return [
         ],
     ],
 
+    'tmdb' => [
+        'image_url' => env('TMDB_IMAGE_URL')
+    ]
 ];
