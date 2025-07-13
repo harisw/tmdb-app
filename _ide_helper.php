@@ -5,7 +5,7 @@
 
 /**
  * A helper file for Laravel, to provide autocomplete information to your IDE
- * Generated for Laravel 12.15.0.
+ * Generated for Laravel 12.20.0.
  *
  * This file should not be included in your code, only analyzed by your IDE!
  *
@@ -4837,13 +4837,14 @@ namespace Illuminate\Support\Facades {
          * @param array{ 0: \DateTimeInterface|\DateInterval|int, 1: \DateTimeInterface|\DateInterval|int } $ttl
          * @param (callable(): TCacheValue) $callback
          * @param array{ seconds?: int, owner?: string }|null $lock
+         * @param bool $alwaysDefer
          * @return TCacheValue 
          * @static 
          */
-        public static function flexible($key, $ttl, $callback, $lock = null)
+        public static function flexible($key, $ttl, $callback, $lock = null, $alwaysDefer = false)
         {
             /** @var \Illuminate\Cache\Repository $instance */
-            return $instance->flexible($key, $ttl, $callback, $lock);
+            return $instance->flexible($key, $ttl, $callback, $lock, $alwaysDefer);
         }
 
         /**
@@ -5531,6 +5532,20 @@ namespace Illuminate\Support\Facades {
         }
 
         /**
+         * Get the specified array configuration value as a collection.
+         *
+         * @param string $key
+         * @param (\Closure():(array<array-key, mixed>|null))|array<array-key, mixed>|null $default
+         * @return Collection<array-key, mixed> 
+         * @static 
+         */
+        public static function collection($key, $default = null)
+        {
+            /** @var \Illuminate\Config\Repository $instance */
+            return $instance->collection($key, $default);
+        }
+
+        /**
          * Set a given configuration value.
          *
          * @param array|string $key
@@ -5905,6 +5920,34 @@ namespace Illuminate\Support\Facades {
         {
             /** @var \Illuminate\Log\Context\Repository $instance */
             return $instance->addHidden($key, $value);
+        }
+
+        /**
+         * Add a context value if it does not exist yet, and return the value.
+         *
+         * @param string $key
+         * @param mixed $value
+         * @return mixed 
+         * @static 
+         */
+        public static function remember($key, $value)
+        {
+            /** @var \Illuminate\Log\Context\Repository $instance */
+            return $instance->remember($key, $value);
+        }
+
+        /**
+         * Add a hidden context value if it does not exist yet, and return the value.
+         *
+         * @param string $key
+         * @param mixed $value
+         * @return mixed 
+         * @static 
+         */
+        public static function rememberHidden($key, $value)
+        {
+            /** @var \Illuminate\Log\Context\Repository $instance */
+            return $instance->rememberHidden($key, $value);
         }
 
         /**
@@ -10042,6 +10085,8 @@ namespace Illuminate\Support\Facades {
      * @method static \Illuminate\Http\Client\PendingRequest stub(callable $callback)
      * @method static \Illuminate\Http\Client\PendingRequest async(bool $async = true)
      * @method static \GuzzleHttp\Promise\PromiseInterface|null getPromise()
+     * @method static \Illuminate\Http\Client\PendingRequest truncateExceptionsAt(int $length)
+     * @method static \Illuminate\Http\Client\PendingRequest dontTruncateExceptions()
      * @method static \Illuminate\Http\Client\PendingRequest setClient(\GuzzleHttp\Client $client)
      * @method static \Illuminate\Http\Client\PendingRequest setHandler(callable $handler)
      * @method static array getOptions()
@@ -12530,6 +12575,19 @@ namespace Illuminate\Support\Facades {
         }
 
         /**
+         * Register an event listener for the daemon queue starting.
+         *
+         * @param mixed $callback
+         * @return void 
+         * @static 
+         */
+        public static function starting($callback)
+        {
+            /** @var \Illuminate\Queue\QueueManager $instance */
+            $instance->starting($callback);
+        }
+
+        /**
          * Register an event listener for the daemon queue stopping.
          *
          * @param mixed $callback
@@ -12860,6 +12918,58 @@ namespace Illuminate\Support\Facades {
         {
             /** @var \Illuminate\Support\Testing\Fakes\QueueFake $instance */
             return $instance->size($queue);
+        }
+
+        /**
+         * Get the number of pending jobs.
+         *
+         * @param string|null $queue
+         * @return int 
+         * @static 
+         */
+        public static function pendingSize($queue = null)
+        {
+            /** @var \Illuminate\Support\Testing\Fakes\QueueFake $instance */
+            return $instance->pendingSize($queue);
+        }
+
+        /**
+         * Get the number of delayed jobs.
+         *
+         * @param string|null $queue
+         * @return int 
+         * @static 
+         */
+        public static function delayedSize($queue = null)
+        {
+            /** @var \Illuminate\Support\Testing\Fakes\QueueFake $instance */
+            return $instance->delayedSize($queue);
+        }
+
+        /**
+         * Get the number of reserved jobs.
+         *
+         * @param string|null $queue
+         * @return int 
+         * @static 
+         */
+        public static function reservedSize($queue = null)
+        {
+            /** @var \Illuminate\Support\Testing\Fakes\QueueFake $instance */
+            return $instance->reservedSize($queue);
+        }
+
+        /**
+         * Get the creation timestamp of the oldest pending job, excluding delayed jobs.
+         *
+         * @param string|null $queue
+         * @return int|null 
+         * @static 
+         */
+        public static function creationTimeOfOldestPendingJob($queue = null)
+        {
+            /** @var \Illuminate\Support\Testing\Fakes\QueueFake $instance */
+            return $instance->creationTimeOfOldestPendingJob($queue);
         }
 
         /**
@@ -13696,6 +13806,9 @@ namespace Illuminate\Support\Facades {
      * @method static array validate(array $rules, ...$params)
      * @method static array validateWithBag(string $errorBag, array $rules, ...$params)
      * @method static bool hasValidSignature(bool $absolute = true)
+     * @method static bool hasValidRelativeSignature()
+     * @method static bool hasValidSignatureWhileIgnoring($ignoreQuery = [], $absolute = true)
+     * @method static bool hasValidRelativeSignatureWhileIgnoring($ignoreQuery = [])
      * @see \Illuminate\Http\Request
      */
     class Request {
@@ -16312,7 +16425,7 @@ namespace Illuminate\Support\Facades {
         /**
          * Create a new streamed response instance.
          *
-         * @param callable $callback
+         * @param callable|null $callback
          * @param int $status
          * @param array $headers
          * @return \Symfony\Component\HttpFoundation\StreamedResponse 
@@ -22838,6 +22951,18 @@ namespace Illuminate\Testing {
             return \Illuminate\Testing\TestResponse::inertiaPage();
         }
 
+        /**
+         * 
+         *
+         * @see \Inertia\Testing\TestResponseMacros::inertiaProps()
+         * @param string|null $propName
+         * @static 
+         */
+        public static function inertiaProps($propName = null)
+        {
+            return \Illuminate\Testing\TestResponse::inertiaProps($propName);
+        }
+
             }
     }
 
@@ -26631,6 +26756,19 @@ namespace  {
         }
 
         /**
+         * Add descending "reorder" clause to the query.
+         *
+         * @param \Closure|\Illuminate\Database\Query\Builder|\Illuminate\Contracts\Database\Query\Expression|string|null $column
+         * @return \Illuminate\Database\Eloquent\Builder<static> 
+         * @static 
+         */
+        public static function reorderDesc($column)
+        {
+            /** @var \Illuminate\Database\Query\Builder $instance */
+            return $instance->reorderDesc($column);
+        }
+
+        /**
          * Add a union statement to the query.
          *
          * @param \Closure|\Illuminate\Database\Query\Builder|\Illuminate\Database\Eloquent\Builder<*> $query
@@ -26758,7 +26896,7 @@ namespace  {
          * Get the count of the total records for the paginator.
          *
          * @param array<string|\Illuminate\Contracts\Database\Query\Expression> $columns
-         * @return int 
+         * @return int<0, max> 
          * @static 
          */
         public static function getCountForPagination($columns = [])
@@ -26833,7 +26971,7 @@ namespace  {
          * Retrieve the "count" result of the query.
          *
          * @param \Illuminate\Contracts\Database\Query\Expression|string $columns
-         * @return int 
+         * @return int<0, max> 
          * @static 
          */
         public static function count($columns = '*')
@@ -26950,7 +27088,7 @@ namespace  {
         /**
          * Insert new records into the database while ignoring errors.
          *
-         * @return int 
+         * @return int<0, max> 
          * @static 
          */
         public static function insertOrIgnore($values)
@@ -27027,7 +27165,7 @@ namespace  {
          *
          * @param array<string, float|int|numeric-string> $columns
          * @param array<string, mixed> $extra
-         * @return int 
+         * @return int<0, max> 
          * @throws \InvalidArgumentException
          * @static 
          */
@@ -27042,7 +27180,7 @@ namespace  {
          *
          * @param array<string, float|int|numeric-string> $columns
          * @param array<string, mixed> $extra
-         * @return int 
+         * @return int<0, max> 
          * @throws \InvalidArgumentException
          * @static 
          */

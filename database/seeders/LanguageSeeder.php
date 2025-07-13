@@ -4,7 +4,6 @@ namespace Database\Seeders;
 
 use App\Models\Language;
 use Exception;
-use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 
 class LanguageSeeder extends Seeder

@@ -4,13 +4,13 @@ namespace Database\Seeders;
 
 use App\Models\Genre;
 use App\Models\Keyword;
-use App\Models\Language;
 use App\Models\Movie;
 use App\Models\ProductionCompany;
 use Exception;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Str;
 
 class MovieSeeder extends Seeder
 {
@@ -44,7 +44,8 @@ class MovieSeeder extends Seeder
         }
 
 
-        foreach ($data as $row) {
+
+        foreach ($data as $i => $row) {
             $row['slug'] = \Str::slug($row['title']);
 
             if (Movie::firstWhere('slug', $row['slug'])) {
@@ -61,6 +62,10 @@ class MovieSeeder extends Seeder
             $movie->genres()->attach($genres->pluck('id')->toArray());
             $movie->companies()->attach($companies->pluck('id')->toArray());
             $movie->keywords()->attach($keywords->pluck('id')->toArray());
+
+            if ($i % 100 === 0) {
+                echo "Processed $i rows\r\n";
+            }
         }
     }
 
@@ -74,17 +79,16 @@ class MovieSeeder extends Seeder
         };
         foreach (explode(',', $values) as $val) {
             $cleanedVal = trim($val);
-            $slug = \Str::slug($cleanedVal);
+            $slug = Str::slug($cleanedVal);
             $result->push(
                 $class::firstOrCreate(
                     ['slug' => $slug],
                     [
-                    'slug' => $slug,
-                    'name' => trim($cleanedVal),
-                ])
+                        'slug' => $slug,
+                        'name' => trim($cleanedVal),
+                    ])
             );
         }
         return $result;
     }
-
 }
