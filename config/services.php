@@ -35,4 +35,8 @@ return [
         ],
     ],
 
+    'movie_db' => [
+        'img_url' => env('MOVIE_DB_IMG_URL'),
+    ]
+
 ];

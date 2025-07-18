@@ -7,7 +7,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 
 /**
- * 
+ *
  *
  * @property int $id
  * @property string $title
@@ -60,6 +60,9 @@ class Movie extends Model
     /** @use HasFactory<\Database\Factories\MovieFactory> */
     use HasFactory;
 
+    public const IMG_SMALL_URL = 'w300';
+    public const IMG_MEDIUM_URL = 'w780';
+    public const IMG_LARGE_URL = 'w1280';
     public function genres(): BelongsToMany
     {
         return $this->belongsToMany(Genre::class);
