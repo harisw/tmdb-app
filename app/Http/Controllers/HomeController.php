@@ -10,7 +10,8 @@ class HomeController extends Controller
 {
     public function index()
     {
-        $movies = Movie::latest()->take(100)->get();
+        $movies = Movie::with('genres')
+            ->latest()->take(100)->get();
 
         return Inertia::render('Home', [
 //            'genres' => Genre::take(5)->get(), // dropdown data
