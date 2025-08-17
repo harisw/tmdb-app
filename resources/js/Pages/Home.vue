@@ -5,7 +5,9 @@
             <h1 class="text-2xl font-bold mb-6 text-madder">Hottest Movies</h1>
             <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-6 auto-rows-[450px]">
                 <div v-for="item in items" :key="item.id" class="bg-white rounded shadow">
-                    <div class="group [perspective:500px] mx-auto h-full">
+                    <div class="group [perspective:500px] mx-auto h-full hover:cursor-pointer"
+                    @click="openModal(item)"
+                    >
                         <div class="bg-white rounded-xl shadow-xl transition-transform duration-500 transform group-hover:rotate-y-3
                         group-hover:-rotate-x-1 group-hover:scale-105 [transform-style:preserve-3d] overflow-hidden h-full">
 
@@ -29,14 +31,32 @@
             </div>
         </div>
     </AppLayout>
+    <MovieModal :show="showModal" :item="selectedItem" @close="closeModal" />
 </template>
 
 <script setup>
 import { Head } from "@inertiajs/vue3";
+import { ref } from "vue";
 import AppLayout from "../Layouts/AppLayout.vue";
+import MovieModal from "../Components/Movie-Modal.vue"
 
 defineProps({
     items: Array,
     poster_url: String
 })
+
+const selectedItem = ref(null);
+const showModal = ref(false);
+
+function openModal(item) {
+    selectedItem.value = item;
+    showModal.value = true;
+}
+
+function closeModal() {
+    selectedItem.value = null;
+    showModal.value = false;
+}
+
+
 </script>

@@ -53,7 +53,7 @@ onBeforeUnmount(() => {
                                     <li v-for="genre in genres" :key="genre.id">
                                         <a href="#" class="block px-4 py-2 hover:bg-gray-800">{{ genre.name }}</a>
                                     </li>
-                                    <li v-for="genre in genres" :key="genre.id">
+                                    <li>
                                         <a href="#" class="block px-4 py-2 hover:bg-gray-800">See more</a>
                                     </li>
                                 </ul>
