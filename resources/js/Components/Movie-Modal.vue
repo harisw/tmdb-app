@@ -1,9 +1,11 @@
 <script setup>
     import { onMounted, onUnmounted } from "vue";
+    import { X } from "lucide-vue-next";
 
     const props = defineProps({
         show: { type: Boolean, required: true},
-        item: { type: Object, default: null }
+        item: { type: Object, default: null },
+        backdrop_url: { type: String, default: null}
     });
 
     const emits = defineEmits(['close']);
@@ -25,20 +27,33 @@
         <transition name="fade">
             <div
                 v-if="show"
-                class="fixed inset-0 z-50 flex items-center justify-center bg-black/50"
+                class="fixed inset-0 z-50 flex items-start justify-center bg-black/80 overflow-y-auto mt-8"
                 @click.self="close"
             >
-                <div class="bg-white rounded-2xl shadow-xl max-w-lg w-full p-6 relative">
+                <div class="relative bg-zinc-900 text-white rounded-xl shadow-2xl max-w-3xl w-full my-10 overflow-hidden">
                     <button
-                        class="absolute top-3 right-3 text-gray-400 hover:text-gray-600"
+                        class="absolute top-2 right-2 hover:cursor-pointer rounded-full bg-gray-700 p-0.5"
                         @click="close"
                     >
-                        X
+                        <X color="#ffffff" :stroke-width="2.5" absoluteStrokeWidth />
                     </button>
 
 <!--                    Modal contents-->
                     <div v-if="item">
-                        <h2 class="text-xl font-bold mb-2">{{item.title}}</h2>
+                        <!-- Large image -->
+                        <div class="w-full h-72 md:h-96 bg-black">
+                            <img
+                                :src="backdrop_url + item.img_backdrop"
+                                alt="Poster"
+                                class="w-full h-full object-cover"
+                            />
+                        </div>
+                        <div class="p-6">
+                            <h2 class="text-2xl font-bold mb-4">{{item.title}}</h2>
+                            <p class="text-gray-300 leading-relaxed">
+                                {{item.overview}}
+                            </p>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -49,7 +64,7 @@
 <style scoped>
     .fade-enter-active,
     .fade-leave-active {
-        transition: opacity 0.3s;
+        transition: opacity 0.5s ease;
     }
     .fade-enter-from,
     .fade-leave-to {

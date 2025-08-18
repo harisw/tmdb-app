@@ -31,7 +31,7 @@
             </div>
         </div>
     </AppLayout>
-    <MovieModal :show="showModal" :item="selectedItem" @close="closeModal" />
+    <MovieModal :show="showModal" :item="selectedItem" @close="closeModal" :backdrop_url="backdrop_url" />
 </template>
 
 <script setup>
@@ -42,7 +42,8 @@ import MovieModal from "../Components/Movie-Modal.vue"
 
 defineProps({
     items: Array,
-    poster_url: String
+    poster_url: String,
+    backdrop_url: String,
 })
 
 const selectedItem = ref(null);

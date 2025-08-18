@@ -16,6 +16,7 @@ class HomeController extends Controller
         return Inertia::render('Home', [
 //            'genres' => Genre::take(5)->get(), // dropdown data
             'poster_url' => config('services.movie_db.img_url').Movie::IMG_SMALL_URL,
+            'backdrop_url' => config('services.movie_db.img_url').Movie::IMG_LARGE_URL,
             'items' => $movies
         ]);
     }
