@@ -2,6 +2,9 @@
 
 namespace App\Models;
 
+use App\Helpers\DateTimeHelper;
+use Carbon\Carbon;
+use Carbon\CarbonInterval;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
@@ -14,7 +17,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsToMany;
  * @property string $slug
  * @property float $rating
  * @property string $status
- * @property string $release_date
+ * @property Carbon $release_date
  * @property int $revenue
  * @property int $runtime
  * @property string|null $img_backdrop
@@ -63,6 +66,17 @@ class Movie extends Model
     public const IMG_SMALL_URL = 'w300';
     public const IMG_MEDIUM_URL = 'w780';
     public const IMG_LARGE_URL = 'w1280';
+
+    protected $casts = [
+        'runtime' => 'string',
+        'release_date' => 'datetime:Y'
+    ];
+
+    public function getRuntimeAttribute($value): string
+    {
+        return DateTimeHelper::minutesToHours($value);
+    }
+
     public function genres(): BelongsToMany
     {
         return $this->belongsToMany(Genre::class);

@@ -10,7 +10,7 @@ class HomeController extends Controller
 {
     public function index()
     {
-        $movies = Movie::with('genres')
+        $movies = Movie::with(['genres', 'keywords'])
             ->latest()->take(100)->get();
 
         return Inertia::render('Home', [

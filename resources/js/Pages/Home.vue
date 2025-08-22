@@ -15,7 +15,10 @@
                                  class="w-full h-90 object-cover rounded-t-xl" />
 
                             <div class="p-2">
+                                <div class="flex flex-row justify-between">
                                 <h2 class="text-lg font-bold text-gray-800">{{ item.title }}</h2>
+                                    <RatingBadge :rating="item.rating" :size="xs" />
+                                </div>
                                 <div class="flex flex-row gap-2 text-xs">
                                     <span v-for="genre in item.genres.slice(0, 3)" :key="genre.id" class="py-0.5 px-1
                                      font-semibold bg-tea-green rounded">
@@ -39,6 +42,7 @@ import { Head } from "@inertiajs/vue3";
 import { ref } from "vue";
 import AppLayout from "../Layouts/AppLayout.vue";
 import MovieModal from "../Components/Movie-Modal.vue"
+import RatingBadge from "../Components/RatingBadge.vue";
 
 defineProps({
     items: Array,
