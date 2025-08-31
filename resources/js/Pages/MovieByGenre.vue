@@ -2,7 +2,7 @@
     <Head title="Home" />
     <AppLayout>
         <div class="p-20">
-            <h1 class="text-2xl font-bold mb-6 text-madder">Hottest Movies</h1>
+            <h1 class="text-2xl font-bold mb-6 text-madder">{{ genre.name }} Movies</h1>
             <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-6 auto-rows-[450px]">
                 <div v-for="item in items" :key="item.id" class="bg-white rounded shadow">
                     <div class="group [perspective:500px] mx-auto h-full hover:cursor-pointer"
@@ -17,7 +17,7 @@
                             <div class="p-2">
                                 <div class="flex flex-row justify-between">
                                 <h2 class="text-lg font-bold text-gray-800">{{ item.title }}</h2>
-                                    <RatingBadge :rating="item.rating" size="xs" />
+                                    <RatingBadge :rating="item.rating" :size="xs" />
                                 </div>
                                 <div class="flex flex-row gap-2 text-xs">
                                     <span v-for="genre in item.genres.slice(0, 3)" :key="genre.id" class="py-0.5 px-1
@@ -45,6 +45,7 @@ import MovieModal from "../Components/Movie-Modal.vue"
 import RatingBadge from "../Components/RatingBadge.vue";
 
 defineProps({
+    genre: Array,
     items: Array,
     poster_url: String,
     backdrop_url: String,

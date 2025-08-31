@@ -1,6 +1,6 @@
 <script setup>
-import {ref, computed, onMounted, onBeforeMount, onBeforeUnmount} from 'vue';
-import { usePage } from '@inertiajs/vue3';
+import {ref, computed, onMounted, onBeforeMount, onBeforeUnmount, inject} from 'vue';
+import { usePage, Link } from '@inertiajs/vue3';
 
 const isGenresOpen = ref(false);
 
@@ -51,7 +51,9 @@ onBeforeUnmount(() => {
                                 <!-- Dropdown menu -->
                                 <ul v-if="isGenresOpen" class="absolute top-8 left-0 w-40 bg-black rounded shadow-lg text-sm z-50">
                                     <li v-for="genre in genres" :key="genre.id">
-                                        <a href="#" class="block px-4 py-2 hover:bg-gray-800">{{ genre.name }}</a>
+                                        <Link :href="genre.url" class="block px-4 py-2 hover:bg-gray-800">
+                                            {{ genre.name }}
+                                        </Link>
                                     </li>
                                     <li>
                                         <a href="#" class="block px-4 py-2 hover:bg-gray-800">See more</a>

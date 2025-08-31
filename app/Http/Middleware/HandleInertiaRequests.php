@@ -37,7 +37,10 @@ class HandleInertiaRequests extends Middleware
     public function share(Request $request): array
     {
         return array_merge(parent::share($request), [
-            'genres' => Genre::take(5)->get(), // dropdown data
+            'genres' => Genre::take(5)->get()->map(function (Genre $genre) {
+                $genre['url'] = route('movie-by-genre', $genre->slug);
+                return $genre;
+            }), // dropdown data
         ]);
     }
 }
