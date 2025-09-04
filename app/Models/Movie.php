@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Casts\RoundFloat;
 use App\Helpers\DateTimeHelper;
 use Carbon\Carbon;
 use Carbon\CarbonInterval;
@@ -69,7 +70,8 @@ class Movie extends Model
 
     protected $casts = [
         'runtime' => 'string',
-        'release_date' => 'datetime:Y'
+        'release_date' => 'datetime:Y',
+        'rating' => RoundFloat::class,
     ];
 
     public function getRuntimeAttribute($value): string

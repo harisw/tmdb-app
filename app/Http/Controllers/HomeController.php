@@ -14,35 +14,33 @@ class HomeController extends Controller
             ->latest()->take(100)->get();
 
         return Inertia::render('Home', [
-            'poster_url' => config('services.movie_db.img_url').Movie::IMG_SMALL_URL,
-            'backdrop_url' => config('services.movie_db.img_url').Movie::IMG_LARGE_URL,
+            'poster_url' => config('services.movie_db.img_url') . Movie::IMG_SMALL_URL,
+            'backdrop_url' => config('services.movie_db.img_url') . Movie::IMG_LARGE_URL,
             'items' => $movies
         ]);
     }
 
-    public function getAllGenres()
+    public function getAllGenres(): \Inertia\Response
     {
-        $genre = Genre::get();
-//        $movies = Movie::with(['genres', 'keywords'])
-//            ->latest()->take(100)->get();
+        $genres = Genre::with(['movies' => function ($query) {
+            $query->orderByDesc('created_at')->take(30);
+        }])->get();
 
-        return Inertia::render('MovieByGenre', [
-            'genre' => $genre,
-            'poster_url' => config('services.movie_db.img_url').Movie::IMG_SMALL_URL,
-            'backdrop_url' => config('services.movie_db.img_url').Movie::IMG_LARGE_URL,
+        return Inertia::render('AllGenres', [
+            'allGenres' => $genres,
+            'poster_url' => config('services.movie_db.img_url') . Movie::IMG_SMALL_URL,
+            'backdrop_url' => config('services.movie_db.img_url') . Movie::IMG_LARGE_URL,
         ]);
     }
 
-    public function getByGenre($slug = null)
+    public function getByGenre($slug = null): \Inertia\Response
     {
         $genre = Genre::whereSlug($slug)->first();
-//        $movies = Movie::with(['genres', 'keywords'])
-//            ->latest()->take(100)->get();
-//        dd($genre->movies()->with(['genres', 'keywords'])->latest()->take(100)->get());
+
         return Inertia::render('MovieByGenre', [
             'genre' => $genre,
-            'poster_url' => config('services.movie_db.img_url').Movie::IMG_SMALL_URL,
-            'backdrop_url' => config('services.movie_db.img_url').Movie::IMG_LARGE_URL,
+            'poster_url' => config('services.movie_db.img_url') . Movie::IMG_SMALL_URL,
+            'backdrop_url' => config('services.movie_db.img_url') . Movie::IMG_LARGE_URL,
             'items' => $genre->movies()->with(['genres', 'keywords'])->latest()->take(100)->get(),
         ]);
     }
