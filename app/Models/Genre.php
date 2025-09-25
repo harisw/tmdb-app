@@ -7,11 +7,12 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 
 /**
- * 
+ *
  *
  * @property int $id
  * @property string $slug
  * @property string $name
+ * @property int $count
  * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\Movie> $movies
  * @property-read int|null $movies_count
  * @method static \Database\Factories\GenreFactory factory($count = null, $state = [])

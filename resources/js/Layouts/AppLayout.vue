@@ -68,29 +68,28 @@ onBeforeUnmount(() => {
                                     </li>
                                 </ul>
                             </li>
-                            <li><a href="#" class="hover:text-gray-300">New & Popular</a></li>
-                            <li><a href="#" class="hover:text-gray-300">My List</a></li>
+                            <li><a href="#" class="hover:text-gray-300">Browse by Tags</a></li>
                             <li><a href="#" class="hover:text-gray-300">Browse by Languages</a></li>
                             <li><a href="#" class="hover:text-gray-300">Find more</a></li>
                         </ul>
                     </div>
 
                     <!-- Right: Profile Dropdown -->
-                    <div class="relative group">
-                        <div class="flex items-center gap-2 cursor-pointer">
-                            <img src="https://i.pravatar.cc/30" alt="Avatar" class="w-8 h-8 rounded"/>
-                            <svg class="w-4 h-4 fill-white group-hover:rotate-180 transition-transform"
-                                 viewBox="0 0 20 20">
-                                <path d="M5.25 7.5L10 12.25L14.75 7.5H5.25Z"/>
-                            </svg>
-                        </div>
-                        <div
-                            class="absolute right-0 mt-2 w-40 bg-black text-sm rounded shadow-lg hidden group-hover:block z-50">
-                            <a href="#" class="block px-4 py-2 hover:bg-gray-800">Account</a>
-                            <a href="#" class="block px-4 py-2 hover:bg-gray-800">Settings</a>
-                            <a href="#" class="block px-4 py-2 hover:bg-gray-800">Logout</a>
-                        </div>
-                    </div>
+                    <!--                    <div class="relative group">-->
+                    <!--                        <div class="flex items-center gap-2 cursor-pointer">-->
+                    <!--                            <img src="https://i.pravatar.cc/30" alt="Avatar" class="w-8 h-8 rounded"/>-->
+                    <!--                            <svg class="w-4 h-4 fill-white group-hover:rotate-180 transition-transform"-->
+                    <!--                                 viewBox="0 0 20 20">-->
+                    <!--                                <path d="M5.25 7.5L10 12.25L14.75 7.5H5.25Z"/>-->
+                    <!--                            </svg>-->
+                    <!--                        </div>-->
+                    <!--                        <div-->
+                    <!--                            class="absolute right-0 mt-2 w-40 bg-black text-sm rounded shadow-lg hidden group-hover:block z-50">-->
+                    <!--                            <a href="#" class="block px-4 py-2 hover:bg-gray-800">Account</a>-->
+                    <!--                            <a href="#" class="block px-4 py-2 hover:bg-gray-800">Settings</a>-->
+                    <!--                            <a href="#" class="block px-4 py-2 hover:bg-gray-800">Logout</a>-->
+                    <!--                        </div>-->
+                    <!--                    </div>-->
                 </nav>
             </header>
 
