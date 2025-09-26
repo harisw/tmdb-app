@@ -15,34 +15,22 @@
 
 <script setup>
 import {Head} from "@inertiajs/vue3";
-import {ref} from "vue";
 import AppLayout from "../Layouts/AppLayout.vue";
 import MovieModal from "../Components/MovieModal.vue"
 import MovieCard from "../Components/MovieCard.vue";
 import LoadingSpinner from "../Components/LoadingSpinner.vue";
 import useInfiniteScroll from "../Composables/useInfiniteScroll.js";
+import useModal from "../Composables/useModal.js";
 
 const props = defineProps({
-    genre: Array,
-    movies: Array,
+    genre: Object,
+    movies: Object,
     poster_url: String,
     backdrop_url: String,
-})
+});
 
-const {items, loading} = useInfiniteScroll({movies: props.movies})
-
-const selectedItem = ref(null);
-const showModal = ref(false);
-
-function openModal(item) {
-    selectedItem.value = item;
-    showModal.value = true;
-}
-
-function closeModal() {
-    selectedItem.value = null;
-    showModal.value = false;
-}
+const {items, loading} = useInfiniteScroll({movies: props.movies});
+const {openModal, closeModal, selectedItem, showModal} = useModal();
 
 
 </script>

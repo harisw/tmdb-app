@@ -16,12 +16,12 @@
 
 <script setup>
 import {Head, router} from "@inertiajs/vue3";
-import {onBeforeUnmount, onMounted, ref} from "vue";
 import AppLayout from "../Layouts/AppLayout.vue";
 import MovieModal from "../Components/MovieModal.vue"
 import MovieCard from "../Components/MovieCard.vue";
-import useInfiniteScroll from "../Composables/useInfiniteScroll.js";
 import LoadingSpinner from "../Components/LoadingSpinner.vue";
+import useInfiniteScroll from "../Composables/useInfiniteScroll.js";
+import useModal from "../Composables/useModal.js";
 
 const props = defineProps({
     movies: Object,
@@ -30,19 +30,5 @@ const props = defineProps({
 })
 
 const {items, loading} = useInfiniteScroll({movies: props.movies})
-
-const selectedItem = ref(null);
-const showModal = ref(false);
-
-function openModal(item) {
-    selectedItem.value = item;
-    showModal.value = true;
-}
-
-function closeModal() {
-    selectedItem.value = null;
-    showModal.value = false;
-}
-
-
+const {openModal, closeModal, selectedItem, showModal} = useModal();
 </script>

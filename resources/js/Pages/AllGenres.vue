@@ -1,31 +1,17 @@
 <script setup>
 import {Head} from "@inertiajs/vue3";
-import {ref} from "vue";
 import AppLayout from "../Layouts/AppLayout.vue";
 import MovieModal from "../Components/MovieModal.vue"
 import Carousel from "../Components/Carousel.vue";
 import MovieCard from "../Components/MovieCard.vue";
+import useModal from "../Composables/useModal.js";
 
 defineProps({
     allGenres: Array,
     poster_url: String,
     backdrop_url: String,
 })
-
-const selectedItem = ref(null);
-const showModal = ref(false);
-
-function openModal(item) {
-    selectedItem.value = item;
-    showModal.value = true;
-}
-
-function closeModal() {
-    selectedItem.value = null;
-    showModal.value = false;
-}
-
-
+const {openModal, closeModal, selectedItem, showModal} = useModal();
 </script>
 
 <template>
