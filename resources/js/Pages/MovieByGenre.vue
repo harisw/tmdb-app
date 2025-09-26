@@ -7,6 +7,7 @@
                 <MovieCard v-for="item in items" :key="item.id" :on-click="openModal" :item="item"
                            :poster-url="poster_url"/>
             </div>
+            <LoadingSpinner v-if="loading" text="Loading more" size="8" color="white"/>
         </div>
     </AppLayout>
     <MovieModal :show="showModal" :item="selectedItem" @close="closeModal" :backdrop_url="backdrop_url"/>
@@ -18,13 +19,17 @@ import {ref} from "vue";
 import AppLayout from "../Layouts/AppLayout.vue";
 import MovieModal from "../Components/MovieModal.vue"
 import MovieCard from "../Components/MovieCard.vue";
+import LoadingSpinner from "../Components/LoadingSpinner.vue";
+import useInfiniteScroll from "../Composables/useInfiniteScroll.js";
 
-defineProps({
+const props = defineProps({
     genre: Array,
-    items: Array,
+    movies: Array,
     poster_url: String,
     backdrop_url: String,
 })
+
+const {items, loading} = useInfiniteScroll({movies: props.movies})
 
 const selectedItem = ref(null);
 const showModal = ref(false);

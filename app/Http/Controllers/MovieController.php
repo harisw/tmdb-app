@@ -6,19 +6,17 @@ use App\Models\Genre;
 use App\Models\Movie;
 use Inertia\Inertia;
 
-class HomeController extends Controller
+class MovieController extends Controller
 {
-    private const PAGINATE_SIZE = 30;
-
     public function index()
     {
         $movies = Movie::with(['genres', 'keywords'])
-            ->latest()->paginate(self::PAGINATE_SIZE);
+            ->latest()->take(10)->get();
 
         return Inertia::render('Home', [
             'poster_url' => config('services.movie_db.img_url') . Movie::IMG_SMALL_URL,
             'backdrop_url' => config('services.movie_db.img_url') . Movie::IMG_LARGE_URL,
-            'movies' => $movies
+            'items' => $movies
         ]);
     }
 
@@ -43,7 +41,7 @@ class HomeController extends Controller
             'genre' => $genre,
             'poster_url' => config('services.movie_db.img_url') . Movie::IMG_SMALL_URL,
             'backdrop_url' => config('services.movie_db.img_url') . Movie::IMG_LARGE_URL,
-            'movies' => $genre->movies()->with(['genres', 'keywords'])->latest()->paginate(self::PAGINATE_SIZE),
+            'items' => $genre->movies()->with(['genres', 'keywords'])->latest()->take(100)->get(),
         ]);
     }
 }
