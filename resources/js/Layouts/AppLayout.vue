@@ -68,9 +68,16 @@ onBeforeUnmount(() => {
                                     </li>
                                 </ul>
                             </li>
-                            <li><a href="#" class="hover:text-gray-300">Browse by Tags</a></li>
-                            <li><a href="#" class="hover:text-gray-300">Browse by Languages</a></li>
-                            <li><a href="#" class="hover:text-gray-300">Find more</a></li>
+                            <li>
+                                <Link :href="baseUrl+'/tags'" class="hover:text-gray-300">Browse by Tags</Link>
+                            </li>
+                            <li>
+                                <Link :href="baseUrl+'/languages'" class="hover:text-gray-300">Browse by Languages
+                                </Link>
+                            </li>
+                            <li>
+                                <Link :href="baseUrl+'/tags'" class="hover:text-gray-300">Find more</Link>
+                            </li>
                         </ul>
                     </div>
 
