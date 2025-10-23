@@ -7,7 +7,13 @@
                 <MovieCard v-for="item in items" :key="item.id" :on-click="openModal" :item="item"
                            :poster-url="poster_url"/>
             </div>
-            <LoadingSpinner v-if="loading" text="Loading more" size="8" color="white"/>
+            <div
+                ref="sentinel"
+                class="flex justify-center items-center py-4 text-white"
+            >
+                <LoadingSpinner v-if="loading" text="Loading more" size="8" color="white"/>
+                <span v-else-if="!hasMore">No more results</span>
+            </div>
         </div>
     </AppLayout>
     <MovieModal :show="showModal" :item="selectedItem" @close="closeModal" :backdrop_url="backdrop_url"/>
@@ -29,7 +35,7 @@ const props = defineProps({
     backdrop_url: String,
 });
 
-const {items, loading} = useInfiniteScroll({movies: props.movies});
+const {items, loading, sentinel, _, hasMore} = useInfiniteScroll({movies: props.movies});
 const {openModal, closeModal, selectedItem, showModal} = useModal();
 
 
