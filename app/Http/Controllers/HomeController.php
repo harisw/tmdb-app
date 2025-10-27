@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Genre;
+use App\Models\Keyword;
 use App\Models\Language;
 use App\Models\Movie;
 use Inertia\Inertia;
@@ -57,6 +58,25 @@ class HomeController extends Controller
             'poster_url' => config('services.movie_db.img_url') . Movie::IMG_SMALL_URL,
             'backdrop_url' => config('services.movie_db.img_url') . Movie::IMG_LARGE_URL,
             'movies' => $language ? $language->movies()->with(['genres', 'keywords'])->latest()->paginate(self::PAGINATE_SIZE)
+                : null,
+        ]);
+    }
+
+    public function getByTag(): \Inertia\Response
+    {
+        $keyQuery = request()->query('tag');
+        $tagOffset = request()->query('tagOffset', 0);
+        $key = $keyQuery ? Keyword::whereSlug($keyQuery)->first() : null;
+
+        $tags = Keyword::orderByDesc('count')->offset($tagOffset)
+            ->take($tagOffset ? 35 : 50)
+            ->get();
+
+        return Inertia::render('MovieByKeyword', [
+            'tags' => $tags,
+            'poster_url' => config('services.movie_db.img_url') . Movie::IMG_SMALL_URL,
+            'backdrop_url' => config('services.movie_db.img_url') . Movie::IMG_LARGE_URL,
+            'movies' => $key ? $key->movies()->with(['genres', 'keywords'])->latest()->paginate(self::PAGINATE_SIZE)
                 : null,
         ]);
     }
