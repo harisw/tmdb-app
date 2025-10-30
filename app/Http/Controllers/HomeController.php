@@ -6,6 +6,8 @@ use App\Models\Genre;
 use App\Models\Keyword;
 use App\Models\Language;
 use App\Models\Movie;
+use App\Models\SearchableMovie;
+use Illuminate\Http\JsonResponse;
 use Inertia\Inertia;
 
 class HomeController extends Controller
@@ -79,5 +81,13 @@ class HomeController extends Controller
             'movies' => $key ? $key->movies()->with(['genres', 'keywords'])->latest()->paginate(self::PAGINATE_SIZE)
                 : null,
         ]);
+    }
+
+    public function search(): JsonResponse
+    {
+        $q = request()->query('q');
+        $results = SearchableMovie::whereRaw("document @@ plainto_tsquery(?)", [$q])
+            ->with('movie')->take(self::PAGINATE_SIZE)->get();
+        return response()->json($results);
     }
 }
