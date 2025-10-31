@@ -24,7 +24,7 @@ class RefreshSearchableMovie extends Command
     /**
      * Execute the console command.
      */
-    public function handle()
+    public function handle(): void
     {
         $this->info('Starting Refresh Searchable Movie');
         DB::statement('REFRESH MATERIALIZED VIEW CONCURRENTLY searchable_posts');

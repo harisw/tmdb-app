@@ -14,7 +14,7 @@ class HomeController extends Controller
 {
     private const PAGINATE_SIZE = 30;
 
-    public function index()
+    public function index(): \Inertia\Response
     {
         $movies = Movie::with(['genres', 'keywords'])
             ->latest()->paginate(self::PAGINATE_SIZE);
