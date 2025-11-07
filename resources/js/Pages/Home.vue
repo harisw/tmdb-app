@@ -14,6 +14,7 @@
                     :preserve-state="true"
                     :replace="false"
                     route="search"
+                    @result-on-click="openModal"
                 />
             </div>
 

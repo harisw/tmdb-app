@@ -36,15 +36,23 @@
         <!-- floating suggestion list -->
         <ul
             v-if="showResults && results.length"
-            class="absolute z-50 left-0 mt-1 w-full bg-white border border-gray-200 rounded-lg shadow-md max-h-48 overflow-y-auto"
+            class="absolute z-50 left-0 mt-1 w-full bg-white border border-gray-200 rounded-lg
+            shadow-md text-black"
         >
             <li
                 v-for="(item, i) in results"
                 :key="i"
-                @click="selectResult(item)"
+                @click="itemOnClick(item)"
                 class="px-3 py-2 cursor-pointer hover:bg-indigo-50"
             >
-                {{ item }}
+                {{ item.title }}
+            </li>
+            <li
+                v-if="hasMore"
+                @click="itemOnClick(item)"
+                class="px-3 py-2 cursor-pointer hover:bg-indigo-50 bg-indigo-400"
+            >
+                Find more
             </li>
         </ul>
         <!--        <LoadingSpinner v-if="loading" class="absolute right-10 top-1/2 -translate-y-1/2"/>-->
@@ -66,10 +74,13 @@ const props = defineProps({
     route: {type: String, default: ''}
 })
 
-const emit = defineEmits(['update:modelValue', 'search']);
+const emit = defineEmits(['update:modelValue', 'search', 'resultOnClick']);
 
 const query = ref(props.modelValue);
 const loading = ref(false);
+const showResults = ref(false);
+const results = ref([]);
+const hasMore = ref(false);
 let timer = null;
 
 async function doSearch(q) {
@@ -83,14 +94,18 @@ async function doSearch(q) {
     const params = {[props.paramName]: q};
 
     const url = props.route || window.location.pathname;
-
+    results.value = []
+    hasMore.value = false;
     try {
         const resp = await fetch(`${url}?q=${params.q}`);
         if (!resp.ok) {
             throw new Error(`HTTP error! status: ${response.status}`);
         }
         const data = await resp.json()
-        console.log("data: ", data)
+        // console.log("data: ", data)
+        showResults.value = true
+        hasMore.value = data.hasMore
+        results.value = data.results
     } catch (e) {
         console.log("Error: ", e.message);
     } finally {
@@ -98,6 +113,10 @@ async function doSearch(q) {
     }
 
     emit('search', q)
+}
+
+function itemOnClick(movie) {
+    emit('resultOnClick', movie)
 }
 
 function debounceSearch(q) {

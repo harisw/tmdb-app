@@ -13,6 +13,7 @@ use Inertia\Inertia;
 class HomeController extends Controller
 {
     private const PAGINATE_SIZE = 30;
+    private const SEARCH_LIMIT = 10;
 
     public function index(): \Inertia\Response
     {
@@ -90,7 +91,12 @@ class HomeController extends Controller
             ->whereRaw("search_vector @@ plainto_tsquery(?)", [$q])
             ->with('movie')
             ->orderByDesc('rank')
-            ->take(self::PAGINATE_SIZE)->get();
-        return response()->json($results);
+            ->take(30)->get()->pluck('movie');
+
+        $hasMore = $results->count() > self::SEARCH_LIMIT;
+        return response()->json([
+            'hasMore' => $hasMore,
+            'results' => $results->take(self::SEARCH_LIMIT)
+        ]);
     }
 }
