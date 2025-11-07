@@ -86,8 +86,11 @@ class HomeController extends Controller
     public function search(): JsonResponse
     {
         $q = request()->query('q');
-        $results = SearchableMovie::whereRaw("document @@ plainto_tsquery(?)", [$q])
-            ->with('movie')->take(self::PAGINATE_SIZE)->get();
+        $results = SearchableMovie::selectRaw("movie_id, ts_rank(search_vector, plainto_tsquery('english',(?))) as rank", [$q])
+            ->whereRaw("search_vector @@ plainto_tsquery(?)", [$q])
+            ->with('movie')
+            ->orderByDesc('rank')
+            ->take(self::PAGINATE_SIZE)->get();
         return response()->json($results);
     }
 }

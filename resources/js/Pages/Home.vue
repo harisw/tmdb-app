@@ -2,9 +2,19 @@
     <Head title="Home"/>
     <AppLayout>
         <div>
-            <div class="flex justify-center">
+            <div class="flex flex-col justify-center items-center gap-5 mt-20 mb-36">
                 <RotatingHeader :texts="headlines" :interval="3500" :duration="750" tag="h2"
-                                textClass="text-4xl font-bold text-madder"/>
+                                textClass="text-5xl font-bold text-madder"/>
+
+                <SearchInput
+                    v-model="q"
+                    :debounce="400"
+                    :min-length="2"
+                    placeholder="Search movies..."
+                    :preserve-state="true"
+                    :replace="false"
+                    route="search"
+                />
             </div>
 
             <h1 class="text-2xl font-bold mb-6 text-madder">Hottest Movies</h1>
@@ -27,11 +37,13 @@
 
 <script setup>
 import {Head} from "@inertiajs/vue3";
+import {ref} from 'vue';
 import AppLayout from "../Layouts/AppLayout.vue";
 import MovieModal from "../Components/MovieModal.vue"
 import MovieCard from "../Components/MovieCard.vue";
 import LoadingSpinner from "../Components/LoadingSpinner.vue";
 import RotatingHeader from "../Components/RotatingHeader.vue";
+import SearchInput from "../Components/SearchInput.vue";
 import useInfiniteScroll from "../Composables/useInfiniteScroll.js";
 import useModal from "../Composables/useModal.js";
 
@@ -49,5 +61,7 @@ const headlines = [
     'Search with title, genre, or even some keywords',
     'Something to spice your weekend?',
     "Don't waste your time, start watching now!"
-]
+];
+
+const q = ref('');
 </script>

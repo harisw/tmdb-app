@@ -13,15 +13,13 @@ return new class extends Migration {
         DB::statement(<<<SQL
             create materialized view searchable_movies AS
             select
-                m.id as movie_id,
-                to_tsvector(
-                    'simple',
-                    COALESCE(m.title) || ' '	||
-                    COALESCE(l.name) || ' '	||
-                    COALESCE(string_agg(distinct g."name", '| '), '') || ' '	||
-                    COALESCE(string_agg(distinct pc."name", '| '), '') || ' '	||
-                    COALESCE(string_agg(distinct k."name", '| '), '')
-                ) as document
+            m.id as movie_id,
+            setweight(to_tsvector('english', m.title), 'A') ||
+            setweight(to_tsvector('english', string_agg(distinct g."name", '| ')), 'B') ||
+            setweight(to_tsvector('english', coalesce(string_agg(distinct k.name, '| '), '')), 'B') ||
+            setweight(to_tsvector('english', string_agg(distinct pc.name, '| ')), 'C') ||
+            setweight(to_tsvector('english', l.name), 'D')
+            as search_vector
             from movies m
             left join languages l on l.id=m.language_id
             left join genre_movie gm on gm.movie_id =m.id left join genres g on g.id=gm.genre_id
@@ -31,9 +29,9 @@ return new class extends Migration {
             from keyword_movie)
                 km on km.movie_id=m.id and rn<6 left join keywords k on k.id=km.keyword_id
             group by m.id, l.name
-        SQL
+            SQL
         );
-        DB::statement('CREATE INDEX searchable_movies_doc_idx ON searchable_movies USING gin(document)');
+        DB::statement('CREATE INDEX searchable_movies_vec_idx ON searchable_movies USING gin(search_vector)');
     }
 
     /**
@@ -42,6 +40,6 @@ return new class extends Migration {
     public function down(): void
     {
         DB::statement('DROP materialized view if exists searchable_movies');
-        Schema::dropIfExists('searchable_movies_doc_idx');
+        Schema::dropIfExists('searchable_movies_vec_idx');
     }
 };
