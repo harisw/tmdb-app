@@ -50,7 +50,8 @@
             <li
                 v-if="hasMore"
                 @click="itemOnClick(item)"
-                class="px-3 py-2 cursor-pointer hover:bg-indigo-50 bg-indigo-400"
+                class="px-3 py-2 cursor-pointer hover:bg-indigo-50 bg-color-licorice rounded-lg
+                 hover:rounded-xl"
             >
                 Find more
             </li>

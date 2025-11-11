@@ -99,4 +99,24 @@ class HomeController extends Controller
             'results' => $results->take(self::SEARCH_LIMIT)
         ]);
     }
+
+    public function searchAll(): \Inertia\Response
+    {
+        $q = request()->query('q');
+
+        $results = $q ? SearchableMovie::selectRaw("movie_id, ts_rank(search_vector, plainto_tsquery('english',(?))) as rank", [$q])
+            ->whereRaw("search_vector @@ plainto_tsquery(?)", [$q])
+            ->with('movie')
+            ->orderByDesc('rank')
+            ->take(30)->get()->pluck('movie') : collect();
+
+        return Inertia::render('MovieSearchAll', [
+            'genres' => Genre::orderByDesc('count')->get(),
+            'languages' => Language::orderByDesc('count')->get(),
+            'tags' => Keyword::orderByDesc('count')->get(),
+            'poster_url' => config('services.movie_db.img_url') . Movie::IMG_SMALL_URL,
+            'backdrop_url' => config('services.movie_db.img_url') . Movie::IMG_LARGE_URL,
+            'movies' => $results,
+        ]);
+    }
 }
