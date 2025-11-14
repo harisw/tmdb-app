@@ -113,7 +113,7 @@ class HomeController extends Controller
         return Inertia::render('MovieSearchAll', [
             'genres' => Genre::orderByDesc('count')->get(),
             'languages' => Language::orderByDesc('count')->get(),
-            'tags' => Keyword::orderByDesc('count')->get(),
+            'tags' => Keyword::where('count', '>', 100)->orderByDesc('count')->get(),
             'poster_url' => config('services.movie_db.img_url') . Movie::IMG_SMALL_URL,
             'backdrop_url' => config('services.movie_db.img_url') . Movie::IMG_LARGE_URL,
             'movies' => $results,

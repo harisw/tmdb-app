@@ -49,11 +49,12 @@
             </li>
             <li
                 v-if="hasMore"
-                @click="itemOnClick(item)"
                 class="px-3 py-2 cursor-pointer hover:bg-indigo-50 bg-color-licorice rounded-lg
                  hover:rounded-xl"
             >
-                Find more
+                <Link :href="baseUrl+'/search-all'">
+                    Find more
+                </Link>
             </li>
         </ul>
         <!--        <LoadingSpinner v-if="loading" class="absolute right-10 top-1/2 -translate-y-1/2"/>-->
@@ -63,6 +64,8 @@
 <script setup>
 
 import {ref, watch} from 'vue';
+import {Link} from '@inertiajs/vue3';
+import useBaseUrl from "../Composables/useBaseUrl.js";
 
 const props = defineProps({
     modelValue: {type: String, default: ''},
@@ -77,6 +80,7 @@ const props = defineProps({
 
 const emit = defineEmits(['update:modelValue', 'search', 'resultOnClick']);
 
+const baseUrl = useBaseUrl();
 const query = ref(props.modelValue);
 const loading = ref(false);
 const showResults = ref(false);

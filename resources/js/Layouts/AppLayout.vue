@@ -76,7 +76,7 @@ onBeforeUnmount(() => {
                                 </Link>
                             </li>
                             <li>
-                                <Link :href="baseUrl+'/tags'" class="hover:text-gray-300">Find more</Link>
+                                <Link :href="baseUrl+'/search-all'" class="hover:text-gray-300">Find more</Link>
                             </li>
                         </ul>
                     </div>

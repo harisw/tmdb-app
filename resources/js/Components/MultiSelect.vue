@@ -1,6 +1,6 @@
 <template>
     <div class="w-full">
-        <label v-if="label" :for="inputId" class="block mb-2 text-sm font-medium text-gray-700">
+        <label v-if="label" :for="inputId" class="block mb-2 text-sm font-medium text-white font-semibold">
             {{ label }}
             <span v-if="required" class="text-red-500">*</span>
         </label>
@@ -56,7 +56,8 @@
                     :class="{ 'rotate-180': isOpen }"
                 >
                     <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-                        <path d="M3.5 5.25L7 8.75L10.5 5.25" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                        <path d="M3.5 5.25L7 8.75L10.5 5.25" stroke="currentColor" stroke-width="1.5"
+                              stroke-linecap="round" stroke-linejoin="round"/>
                     </svg>
                 </div>
             </div>
@@ -108,7 +109,7 @@
 </template>
 
 <script setup>
-import { ref, computed, watch, onMounted, onBeforeUnmount } from 'vue';
+import {ref, computed, watch, onMounted, onBeforeUnmount} from 'vue';
 
 const props = defineProps({
     modelValue: {
