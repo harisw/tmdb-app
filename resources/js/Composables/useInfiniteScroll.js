@@ -21,7 +21,7 @@ export default function useInfiniteScroll(initialData, options = {}) {
 
         observer.value = new IntersectionObserver((entries) => {
             const entry = entries[0];
-            if (entry.isIntersecting && hasMore.value && !loading.value) {
+            if (entry.isIntersecting && items.value.length > 0 && hasMore.value && !loading.value) {
                 loadMore();
             }
         })
@@ -49,8 +49,9 @@ export default function useInfiniteScroll(initialData, options = {}) {
                 preserveState: true,
                 replace: !reset, // keep history cleaner
                 onSuccess: (page) => {
+
                     const data = page.props.movies.data
-                    if (!page.props.movies) return;
+                    if (!page.props.movies || !data) return;
                     if (reset) items.value = data
                     else items.value.push(...data)
                     hasMore.value = !!page.props.movies.next_page_url

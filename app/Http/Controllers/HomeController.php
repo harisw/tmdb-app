@@ -102,13 +102,20 @@ class HomeController extends Controller
 
     public function searchAll(): \Inertia\Response
     {
-        $q = request()->query('q');
+        $hasParams = request()->hasAny(['q', 'lang', 'gen', 'tag']);
 
-        $results = $q ? SearchableMovie::selectRaw("movie_id, ts_rank(search_vector, plainto_tsquery('english',(?))) as rank", [$q])
-            ->whereRaw("search_vector @@ plainto_tsquery(?)", [$q])
-            ->with('movie')
-            ->orderByDesc('rank')
-            ->take(30)->get()->pluck('movie') : collect();
+        $results = collect([]);
+        if ($hasParams) {
+            $q = request()->query('q');
+
+            $results = $q ? SearchableMovie::selectRaw("movie_id, ts_rank(search_vector, plainto_tsquery('english',(?))) as rank", [$q])
+                ->whereRaw("search_vector @@ plainto_tsquery(?)", [$q])
+                ->with('movie')
+                ->orderByDesc('rank')
+                ->take(100)->pluck('movie_id') : collect();
+
+            $results = $this->applyFilters($results)->paginate(self::PAGINATE_SIZE);
+        }
 
         return Inertia::render('MovieSearchAll', [
             'genres' => Genre::orderByDesc('count')->get(),
@@ -118,5 +125,39 @@ class HomeController extends Controller
             'backdrop_url' => config('services.movie_db.img_url') . Movie::IMG_LARGE_URL,
             'movies' => $results,
         ]);
+    }
+
+    private function applyFilters(\Illuminate\Support\Collection $movieIds)
+    {
+        $query = Movie::query()->with(['genres', 'keywords']);
+        $languageIds = request()->query('lang') ? Language::whereCode(request()->query('lang'))
+            ->pluck('id') : [];
+
+        if ($languageIds) {
+            $query->whereIn('language_id', $languageIds);
+        }
+
+        $genreIds = request()->query('gen') ? Genre::whereSlug(request()->query('gen'))
+            ->pluck('id') : [];
+        if ($genreIds) {
+            $query->whereHas('genres', function ($q) use ($genreIds) {
+                $q->whereIn('genres.id', $genreIds);
+            });
+        }
+
+        $keywordIds = request()->query('tag') ? Keyword::whereSlug(request()->query('tag'))
+            ->pluck('id') : [];
+
+        if ($keywordIds) {
+            $query->whereHas('keywords', function ($q) use ($keywordIds) {
+                $q->whereIn('keywords.id', $keywordIds);
+            });
+        }
+
+        if ($movieIds->isNotEmpty()) {
+            $query->whereIn('id', $movieIds);
+        }
+
+        return $query;
     }
 }
