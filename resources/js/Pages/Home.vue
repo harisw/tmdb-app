@@ -3,9 +3,10 @@
     <AppLayout>
         <div>
             <div class="flex flex-col justify-center items-center gap-5 mt-20 mb-36">
-                <RotatingHeader :texts="headlines" :interval="3500" :duration="750" tag="h2"
-                                textClass="text-5xl font-bold text-madder"/>
-
+                <div class="min-h-36">
+                    <RotatingHeader :texts="headlines" :interval="3500" :duration="750" tag="h2"
+                                    textClass="text-5xl font-bold text-madder"/>
+                </div>
                 <SearchInput
                     v-model="q"
                     :debounce="400"
