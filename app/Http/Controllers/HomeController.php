@@ -57,7 +57,7 @@ class HomeController extends Controller
         $lang = request()->query('lang');
         $language = $lang ? Language::whereCode($lang)->first() : null;
         return Inertia::render('MovieByLanguage', [
-            'languages' => Language::get(),
+            'languages' => Language::orderByDesc('count')->get(),
             'poster_url' => config('services.movie_db.img_url') . Movie::IMG_SMALL_URL,
             'backdrop_url' => config('services.movie_db.img_url') . Movie::IMG_LARGE_URL,
             'movies' => $language ? $language->movies()->with(['genres', 'keywords'])->latest()->paginate(self::PAGINATE_SIZE)
