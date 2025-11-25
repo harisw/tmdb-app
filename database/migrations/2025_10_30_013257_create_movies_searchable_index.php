@@ -1,7 +1,6 @@
 <?php
 
 use Illuminate\Database\Migrations\Migration;
-use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration {
@@ -10,12 +9,12 @@ return new class extends Migration {
      */
     public function up(): void
     {
-        DB::statement(<<<SQL
+        DB::statement(<<<'SQL'
             create materialized view searchable_movies AS
             select
             m.id as movie_id,
             setweight(to_tsvector('english', m.title), 'A') ||
-            setweight(to_tsvector('english', string_agg(distinct g."name", '| ')), 'B') ||
+            setweight(to_tsvector('english', string_agg(distinct g.name, '| ')), 'B') ||
             setweight(to_tsvector('english', coalesce(string_agg(distinct k.name, '| '), '')), 'B') ||
             setweight(to_tsvector('english', string_agg(distinct pc.name, '| ')), 'C') ||
             setweight(to_tsvector('english', l.name), 'D')
