@@ -41,6 +41,17 @@ class HandleInertiaRequests extends Middleware
                 $genre['url'] = route('movie-by-genre', $genre->slug);
                 return $genre;
             }), // dropdown data
+            'auth' => [
+                'user' => $request->user() ? [
+                    'id' => $request->user()->id,
+                    'name' => $request->user()->name,
+                    'email' => $request->user()->email,
+                ] : null,
+            ],
+            'flash' => [
+                'message' => fn() => $request->session()->get('message'),
+                'error' => fn() => $request->session()->get('error'),
+            ],
         ]);
     }
 }

@@ -1,23 +1,34 @@
 <script setup>
-import {ref, computed, onMounted, onBeforeMount, onBeforeUnmount, inject} from 'vue';
+import {ref, computed, onMounted, onBeforeUnmount} from 'vue';
 import {usePage, Link} from '@inertiajs/vue3';
 import useBaseUrl from "../Composables/useBaseUrl.js";
 
 const isGenresOpen = ref(false);
+const isSettingOpen = ref(false);
 const baseUrl = useBaseUrl();
 
 function toggleGenres() {
     isGenresOpen.value = !isGenresOpen.value;
 }
 
+function toggleSetting() {
+    isSettingOpen.value = !isSettingOpen.value;
+}
+
 const page = usePage()
 const genres = computed(() => page.props.genres);
-
+const user = computed(() => page.props.auth.user);
+const isAuthenticated = computed(() => !!user.value);
 const menuRef = ref(null);
+const settingRef = ref(null);
 
 function handleClickOutside(ev) {
     if (menuRef.value && !menuRef.value.contains(ev.target)) {
         isGenresOpen.value = false;
+    }
+
+    if (settingRef.value && !settingRef.value.contains(ev.target)) {
+        isSettingOpen.value = false;
     }
 }
 
@@ -82,21 +93,22 @@ onBeforeUnmount(() => {
                     </div>
 
                     <!-- Right: Profile Dropdown -->
-                    <!--                    <div class="relative group">-->
-                    <!--                        <div class="flex items-center gap-2 cursor-pointer">-->
-                    <!--                            <img src="https://i.pravatar.cc/30" alt="Avatar" class="w-8 h-8 rounded"/>-->
-                    <!--                            <svg class="w-4 h-4 fill-white group-hover:rotate-180 transition-transform"-->
-                    <!--                                 viewBox="0 0 20 20">-->
-                    <!--                                <path d="M5.25 7.5L10 12.25L14.75 7.5H5.25Z"/>-->
-                    <!--                            </svg>-->
-                    <!--                        </div>-->
-                    <!--                        <div-->
-                    <!--                            class="absolute right-0 mt-2 w-40 bg-black text-sm rounded shadow-lg hidden group-hover:block z-50">-->
-                    <!--                            <a href="#" class="block px-4 py-2 hover:bg-gray-800">Account</a>-->
-                    <!--                            <a href="#" class="block px-4 py-2 hover:bg-gray-800">Settings</a>-->
-                    <!--                            <a href="#" class="block px-4 py-2 hover:bg-gray-800">Logout</a>-->
-                    <!--                        </div>-->
-                    <!--                    </div>-->
+                    <div v-if="isAuthenticated" class="relative group" ref="settingRef" @click="toggleSetting">
+                        <div class="flex items-center gap-2 cursor-pointer">
+                            {{ user.name }}
+                            <svg class="w-4 h-4 fill-white transition-transform"
+                                 :class="{ 'rotate-180': isSettingOpen }"
+                                 viewBox="0 0 20 20">
+                                <path d="M5.25 7.5L10 12.25L14.75 7.5H5.25Z"/>
+                            </svg>
+                        </div>
+                        <div
+                            class="absolute right-0 mt-2 w-40 bg-black text-sm rounded shadow-lg z-50"
+                            v-if="isSettingOpen">
+                            <a href="#" class="block px-4 py-2 hover:bg-gray-800">Settings</a>
+                            <a href="#" class="block px-4 py-2 hover:bg-gray-800">Logout</a>
+                        </div>
+                    </div>
                 </nav>
             </header>
 
