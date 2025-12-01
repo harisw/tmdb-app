@@ -2,9 +2,11 @@
 import {ref, computed, onMounted, onBeforeUnmount} from 'vue';
 import {usePage, Link} from '@inertiajs/vue3';
 import useBaseUrl from "../Composables/useBaseUrl.js";
+import CsvUploadModal from "../Components/CsvUploadModal.vue";
 
 const isGenresOpen = ref(false);
 const isSettingOpen = ref(false);
+const isUploadModalOpen = ref(false);
 const baseUrl = useBaseUrl();
 
 function toggleGenres() {
@@ -13,6 +15,10 @@ function toggleGenres() {
 
 function toggleSetting() {
     isSettingOpen.value = !isSettingOpen.value;
+}
+
+function toggleUploadModal() {
+    isUploadModalOpen.value = true;
 }
 
 const page = usePage()
@@ -105,7 +111,8 @@ onBeforeUnmount(() => {
                         <div
                             class="absolute right-0 mt-2 w-40 bg-black text-sm rounded shadow-lg z-50"
                             v-if="isSettingOpen">
-                            <a href="#" class="block px-4 py-2 hover:bg-gray-800">Settings</a>
+                            <span @click="toggleUploadModal"
+                                  class="block px-4 py-2 hover:bg-gray-800 cursor-pointer">Upload Data</span>
                             <a href="#" class="block px-4 py-2 hover:bg-gray-800">Logout</a>
                         </div>
                     </div>
@@ -121,4 +128,5 @@ onBeforeUnmount(() => {
         <!--            My App Footer-->
         <!--        </footer>-->
     </div>
+    <CsvUploadModal :is-open="isUploadModalOpen"/>
 </template>
