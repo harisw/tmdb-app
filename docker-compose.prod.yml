@@ -1,0 +1,23 @@
+services:
+  app:
+    image: ${ECR_URI}/tmdb-app:latest
+    env_file:
+      - /opt/tmdb/.env
+    restart: unless-stopped
+    networks:
+      - laravel-network
+
+  nginx:
+    image: ${ECR_URI}/tmdb-nginx:latest
+    ports:
+      - "80:80"
+      - "443:443"
+    restart: unless-stopped
+    depends_on:
+      - app
+    networks:
+      - laravel-network
+
+networks:
+  laravel-network:
+    driver: bridge
