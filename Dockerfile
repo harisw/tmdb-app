@@ -1,7 +1,7 @@
 # ========================
 # 1. Node build stage
 # ========================
-FROM node:20-alpine AS frontend
+FROM node:25-alpine AS frontend
 
 WORKDIR /app
 
@@ -18,7 +18,7 @@ RUN npm run build
 # ========================
 # 2. PHP-FPM stage
 # ========================
-FROM php:8.3-fpm-alpine AS app
+FROM php:8.4-fpm-alpine AS app
 
 WORKDIR /var/www
 
