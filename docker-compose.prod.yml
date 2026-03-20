@@ -1,3 +1,5 @@
+name: tmdb
+
 services:
   app:
     image: ${ECR_URI}/tmdb-app:latest
