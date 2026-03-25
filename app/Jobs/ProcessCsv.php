@@ -14,7 +14,9 @@ class ProcessCsv implements ShouldQueue
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
     public string $uploadId;
+
     public array $headers;
+
     public array $rows;
 
     /**

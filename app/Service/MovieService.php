@@ -13,16 +13,13 @@ use Illuminate\Support\Str;
 class MovieService
 {
     private int $insertedRowCount = 0;
-    private string $uploadId;
 
-    /**
-     * @param string $uploadId
-     */
-    public function __construct(string $uploadId)
+    private ?string $uploadId;
+
+    public function __construct(?string $uploadId = null)
     {
         $this->uploadId = $uploadId;
     }
-
 
     public static function insertBulk($data, $headers, ?string $uploadId = null): int
     {
@@ -30,35 +27,41 @@ class MovieService
         foreach ($data as $row) {
             $row = array_combine($headers, $row);
 
-            $row['slug'] = \Str::slug($row['title']);
+            $static->insertRow($row);
+        }
 
-            if (Movie::firstWhere('slug', $row['slug'])) {
-                continue;
+        return $static->insertedRowCount;
+    }
+
+    public function insertRow(array $row): void
+    {
+        $row['slug'] = \Str::slug($row['title']);
+
+        if (Movie::firstWhere('slug', $row['slug'])) {
+            return;
+        }
+
+        try {
+            $genres = $this->prepareRelations($row, Genre::class);
+            $companies = $this->prepareRelations($row, ProductionCompany::class);
+            $keywords = $this->prepareRelations($row, Keyword::class);
+
+            unset($row['genres'], $row['production_companies'], $row['keywords']);
+
+            $movie = Movie::create($row);
+            $movie->genres()->attach($genres->pluck('id')->toArray());
+            $movie->companies()->attach($companies->pluck('id')->toArray());
+            $movie->keywords()->attach($keywords->pluck('id')->toArray());
+
+            $this->insertedRowCount++;
+            if ($this->uploadId) {
+                $this->updateProgress();
             }
-
-            try {
-                $genres = $static->prepareRelations($row, Genre::class);
-                $companies = $static->prepareRelations($row, ProductionCompany::class);
-                $keywords = $static->prepareRelations($row, Keyword::class);
-
-                unset($row['genres'], $row['production_companies'], $row['keywords']);
-
-                $movie = Movie::create($row);
-                $movie->genres()->attach($genres->pluck('id')->toArray());
-                $movie->companies()->attach($companies->pluck('id')->toArray());
-                $movie->keywords()->attach($keywords->pluck('id')->toArray());
-
-                $static->insertedRowCount++;
-                if ($uploadId) {
-                    $static->updateProgress(false);
-                }
-            } catch (\Exception $e) {
-                if ($uploadId) {
-                    $static->updateProgress(true, $e->getMessage());
-                }
+        } catch (\Exception $e) {
+            if ($this->uploadId) {
+                $this->updateProgress(true, $e->getMessage());
             }
         }
-        return $static->insertedRowCount;
     }
 
     private function prepareRelations(array &$row, $class): Collection
@@ -81,6 +84,7 @@ class MovieService
                     ])
             );
         }
+
         return $result;
     }
 

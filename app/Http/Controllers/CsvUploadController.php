@@ -7,17 +7,16 @@ use Cache;
 
 class CsvUploadController extends Controller
 {
-
     public function upload(\Request $request)
     {
         $validator = \Validator::make($request->all(), [
-            'file' => 'required|file|mimes:csv,txt'
+            'file' => 'required|file|mimes:csv,txt',
         ]);
 
         if ($validator->fails()) {
             return response()->json([
                 'message' => 'Invalid file',
-                'errors' => $validator->errors()
+                'errors' => $validator->errors(),
             ], 422);
         }
 
@@ -32,9 +31,9 @@ class CsvUploadController extends Controller
     {
         $progress = Cache::get("csv_upload_{$uploadId}");
 
-        if (!$progress) {
+        if (! $progress) {
             return response()->json([
-                'message' => 'Upload not found'
+                'message' => 'Upload not found',
             ], 404);
         }
 

@@ -2,15 +2,10 @@
 
 namespace Database\Seeders;
 
-use App\Models\Genre;
-use App\Models\Keyword;
-use App\Models\Movie;
-use App\Models\ProductionCompany;
+use App\Service\MovieService;
 use Exception;
-use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
-use Illuminate\Support\Collection;
-use Illuminate\Support\Str;
+use Illuminate\Support\Facades\Storage;
 
 class MovieSeeder extends Seeder
 {
@@ -19,76 +14,41 @@ class MovieSeeder extends Seeder
      */
     public function run(): void
     {
-        $file = database_path('data/10k_tmdb.csv');
+        $s3Key = env('SEED_CSV_S3_KEY');
+        $handle = Storage::disk('s3')->readStream($s3Key);
 
-        if (!file_exists($file) || !is_readable($file)) {
-            throw new Exception("File not found");
+        if (!$handle) {
+            throw new Exception("Could not open seed CSV from S3: {$s3Key}");
         }
 
         $header = null;
         $data = [];
 
-        if (($handle = fopen($file, 'r')) !== false) {
+        try {
             while (($row = fgetcsv(stream: $handle, separator: '|')) !== false) {
                 if (!$header) {
                     $header = $row;
                 } else {
                     if (count($header) !== count($row)) {
-                        var_dump("Broken row: ".json_encode($row));
+                        var_dump('Broken row: ' . json_encode($row));
+
                         continue;
                     }
                     $data[] = array_combine($header, $row);
                 }
             }
+        } finally {
             fclose($handle);
         }
 
-
-
+        $movieService = new MovieService;
         foreach ($data as $i => $row) {
-            $row['slug'] = \Str::slug($row['title']);
 
-            if (Movie::firstWhere('slug', $row['slug'])) {
-                continue;
-            }
-
-            $genres = $this->prepareRelations($row, Genre::class);
-            $companies = $this->prepareRelations($row, ProductionCompany::class);
-            $keywords = $this->prepareRelations($row, Keyword::class);
-
-            unset($row['genres'], $row['production_companies'], $row['keywords']);
-
-            $movie = Movie::create($row);
-            $movie->genres()->attach($genres->pluck('id')->toArray());
-            $movie->companies()->attach($companies->pluck('id')->toArray());
-            $movie->keywords()->attach($keywords->pluck('id')->toArray());
+            $movieService->insertRow($row);
 
             if ($i % 100 === 0) {
                 echo "Processed $i rows\r\n";
             }
         }
-    }
-
-    private function prepareRelations(array &$row, $class): Collection
-    {
-        $result = collect();
-        $values = match ($class) {
-            Genre::class => $row['genres'],
-            ProductionCompany::class => $row['production_companies'],
-            Keyword::class => $row['keywords']
-        };
-        foreach (explode(',', $values) as $val) {
-            $cleanedVal = trim($val);
-            $slug = Str::slug($cleanedVal);
-            $result->push(
-                $class::firstOrCreate(
-                    ['slug' => $slug],
-                    [
-                        'slug' => $slug,
-                        'name' => trim($cleanedVal),
-                    ])
-            );
-        }
-        return $result;
     }
 }

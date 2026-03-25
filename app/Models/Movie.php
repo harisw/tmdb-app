@@ -5,14 +5,11 @@ namespace App\Models;
 use App\Casts\RoundFloat;
 use App\Helpers\DateTimeHelper;
 use Carbon\Carbon;
-use Carbon\CarbonInterval;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 
 /**
- *
- *
  * @property int $id
  * @property string $title
  * @property string $slug
@@ -36,6 +33,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsToMany;
  * @property-read int|null $genres_count
  * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\Keyword> $keywords
  * @property-read int|null $keywords_count
+ *
  * @method static \Database\Factories\MovieFactory factory($count = null, $state = [])
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Movie newModelQuery()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Movie newQuery()
@@ -57,6 +55,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsToMany;
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Movie whereTagline($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Movie whereTitle($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Movie whereUpdatedAt($value)
+ *
  * @mixin \Eloquent
  */
 class Movie extends Model
@@ -65,7 +64,9 @@ class Movie extends Model
     use HasFactory;
 
     public const IMG_SMALL_URL = 'w300';
+
     public const IMG_MEDIUM_URL = 'w780';
+
     public const IMG_LARGE_URL = 'w1280';
 
     protected $casts = [
