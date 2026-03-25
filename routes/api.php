@@ -1,6 +1,5 @@
 <?php
 
-
 use App\Http\Controllers\CsvUploadController;
 
 Route::post('/csv-upload', [CsvUploadController::class, 'upload']);

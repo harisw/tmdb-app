@@ -39,6 +39,7 @@ class HandleInertiaRequests extends Middleware
         return array_merge(parent::share($request), [
             'genres' => Genre::take(5)->get()->map(function (Genre $genre) {
                 $genre['url'] = route('movie-by-genre', $genre->slug);
+
                 return $genre;
             }), // dropdown data
             'auth' => [
@@ -49,8 +50,8 @@ class HandleInertiaRequests extends Middleware
                 ] : null,
             ],
             'flash' => [
-                'message' => fn() => $request->session()->get('message'),
-                'error' => fn() => $request->session()->get('error'),
+                'message' => fn () => $request->session()->get('message'),
+                'error' => fn () => $request->session()->get('error'),
             ],
         ]);
     }

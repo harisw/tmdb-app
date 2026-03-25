@@ -6,7 +6,6 @@ use App\Models\Genre;
 use App\Models\Keyword;
 use App\Models\Language;
 use App\Models\ProductionCompany;
-use Exception;
 use Illuminate\Database\Seeder;
 
 class CountsSeeder extends Seeder

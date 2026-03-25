@@ -13,6 +13,7 @@ use Inertia\Inertia;
 class HomeController extends Controller
 {
     private const PAGINATE_SIZE = 30;
+
     private const SEARCH_LIMIT = 10;
 
     public function index(): \Inertia\Response
@@ -21,9 +22,9 @@ class HomeController extends Controller
             ->latest()->paginate(self::PAGINATE_SIZE);
 
         return Inertia::render('Home', [
-            'poster_url' => config('services.movie_db.img_url') . Movie::IMG_SMALL_URL,
-            'backdrop_url' => config('services.movie_db.img_url') . Movie::IMG_LARGE_URL,
-            'movies' => $movies
+            'poster_url' => config('services.movie_db.img_url').Movie::IMG_SMALL_URL,
+            'backdrop_url' => config('services.movie_db.img_url').Movie::IMG_LARGE_URL,
+            'movies' => $movies,
         ]);
     }
 
@@ -35,8 +36,8 @@ class HomeController extends Controller
 
         return Inertia::render('AllGenres', [
             'allGenres' => $genres,
-            'poster_url' => config('services.movie_db.img_url') . Movie::IMG_SMALL_URL,
-            'backdrop_url' => config('services.movie_db.img_url') . Movie::IMG_LARGE_URL,
+            'poster_url' => config('services.movie_db.img_url').Movie::IMG_SMALL_URL,
+            'backdrop_url' => config('services.movie_db.img_url').Movie::IMG_LARGE_URL,
         ]);
     }
 
@@ -46,8 +47,8 @@ class HomeController extends Controller
 
         return Inertia::render('MovieByGenre', [
             'genre' => $genre,
-            'poster_url' => config('services.movie_db.img_url') . Movie::IMG_SMALL_URL,
-            'backdrop_url' => config('services.movie_db.img_url') . Movie::IMG_LARGE_URL,
+            'poster_url' => config('services.movie_db.img_url').Movie::IMG_SMALL_URL,
+            'backdrop_url' => config('services.movie_db.img_url').Movie::IMG_LARGE_URL,
             'movies' => $genre->movies()->with(['genres', 'keywords'])->latest()->paginate(self::PAGINATE_SIZE),
         ]);
     }
@@ -56,10 +57,11 @@ class HomeController extends Controller
     {
         $lang = request()->query('lang');
         $language = $lang ? Language::whereCode($lang)->first() : null;
+
         return Inertia::render('MovieByLanguage', [
             'languages' => Language::orderByDesc('count')->get(),
-            'poster_url' => config('services.movie_db.img_url') . Movie::IMG_SMALL_URL,
-            'backdrop_url' => config('services.movie_db.img_url') . Movie::IMG_LARGE_URL,
+            'poster_url' => config('services.movie_db.img_url').Movie::IMG_SMALL_URL,
+            'backdrop_url' => config('services.movie_db.img_url').Movie::IMG_LARGE_URL,
             'movies' => $language ? $language->movies()->with(['genres', 'keywords'])->latest()->paginate(self::PAGINATE_SIZE)
                 : null,
         ]);
@@ -77,8 +79,8 @@ class HomeController extends Controller
 
         return Inertia::render('MovieByKeyword', [
             'tags' => $tags,
-            'poster_url' => config('services.movie_db.img_url') . Movie::IMG_SMALL_URL,
-            'backdrop_url' => config('services.movie_db.img_url') . Movie::IMG_LARGE_URL,
+            'poster_url' => config('services.movie_db.img_url').Movie::IMG_SMALL_URL,
+            'backdrop_url' => config('services.movie_db.img_url').Movie::IMG_LARGE_URL,
             'movies' => $key ? $key->movies()->with(['genres', 'keywords'])->latest()->paginate(self::PAGINATE_SIZE)
                 : null,
         ]);
@@ -88,15 +90,16 @@ class HomeController extends Controller
     {
         $q = request()->query('q');
         $results = SearchableMovie::selectRaw("movie_id, ts_rank(search_vector, plainto_tsquery('english',(?))) as rank", [$q])
-            ->whereRaw("search_vector @@ plainto_tsquery(?)", [$q])
+            ->whereRaw('search_vector @@ plainto_tsquery(?)', [$q])
             ->with('movie')
             ->orderByDesc('rank')
             ->take(30)->get()->pluck('movie');
 
         $hasMore = $results->count() > self::SEARCH_LIMIT;
+
         return response()->json([
             'hasMore' => $hasMore,
-            'results' => $results->take(self::SEARCH_LIMIT)
+            'results' => $results->take(self::SEARCH_LIMIT),
         ]);
     }
 
@@ -109,7 +112,7 @@ class HomeController extends Controller
             $q = request()->query('q');
 
             $results = $q ? SearchableMovie::selectRaw("movie_id, ts_rank(search_vector, plainto_tsquery('english',(?))) as rank", [$q])
-                ->whereRaw("search_vector @@ plainto_tsquery(?)", [$q])
+                ->whereRaw('search_vector @@ plainto_tsquery(?)', [$q])
                 ->with('movie')
                 ->orderByDesc('rank')
                 ->take(100)->pluck('movie_id') : collect();
@@ -121,8 +124,8 @@ class HomeController extends Controller
             'genres' => Genre::orderByDesc('count')->get(),
             'languages' => Language::orderByDesc('count')->get(),
             'tags' => Keyword::where('count', '>', 100)->orderByDesc('count')->get(),
-            'poster_url' => config('services.movie_db.img_url') . Movie::IMG_SMALL_URL,
-            'backdrop_url' => config('services.movie_db.img_url') . Movie::IMG_LARGE_URL,
+            'poster_url' => config('services.movie_db.img_url').Movie::IMG_SMALL_URL,
+            'backdrop_url' => config('services.movie_db.img_url').Movie::IMG_LARGE_URL,
             'movies' => $results,
         ]);
     }
