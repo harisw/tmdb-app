@@ -17,24 +17,24 @@ class MovieSeeder extends Seeder
         $s3Key = env('SEED_CSV_S3_KEY');
         $handle = Storage::disk('s3')->readStream($s3Key);
 
-        if (!$handle) {
+        if (! $handle) {
             throw new Exception("Could not open seed CSV from S3: {$s3Key}");
         }
 
         $header = null;
 
-        $movieService = new MovieService();
+        $movieService = new MovieService;
         $c = 0;
         try {
             while (($row = fgetcsv(stream: $handle, separator: '|')) !== false) {
-                if (!$header) {
+                if (! $header) {
                     $header = $row;
                 } else {
                     if (count($header) !== count($row)) {
-                        var_dump('Broken row: ' . json_encode($row));
+                        var_dump('Broken row: '.json_encode($row));
+
                         continue;
                     }
-
 
                     $movieService->insertRow(array_combine($header, $row));
                 }

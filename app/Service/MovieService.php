@@ -16,7 +16,9 @@ class MovieService
     private int $insertedRowCount = 0;
 
     private ?string $uploadId;
+
     private Collection $movieDict;
+
     private array $relationCache = [];
 
     public function __construct(?string $uploadId = null)
