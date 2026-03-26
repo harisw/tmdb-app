@@ -2,11 +2,8 @@
 
 namespace Database\Seeders;
 
-use App\Models\Genre;
-use App\Models\Keyword;
-use App\Models\Language;
-use App\Models\ProductionCompany;
 use Illuminate\Database\Seeder;
+use Illuminate\Support\Facades\DB;
 
 class CountsSeeder extends Seeder
 {
@@ -16,25 +13,15 @@ class CountsSeeder extends Seeder
     public function run(): void
     {
         echo "Adding Genre count \r\n";
-        foreach (Genre::with('movies')->get() as $genre) {
-            $genre->count = $genre->movies->count();
-            $genre->save();
-        }
+        DB::statement('UPDATE genres SET count = (SELECT COUNT(*) FROM genre_movie WHERE genre_id = genres.id)');
 
         echo "Adding Language count \r\n";
-        foreach (Language::with('movies')->get() as $lang) {
-            $lang->count = $lang->movies->count();
-            $lang->save();
-        }
+        DB::statement('UPDATE languages SET count = (SELECT COUNT(*) FROM movies WHERE language_id = languages.id)');
+
         echo "Adding Keyword count \r\n";
-        foreach (Keyword::with('movies')->get() as $kw) {
-            $kw->count = $kw->movies->count();
-            $kw->save();
-        }
+        DB::statement('UPDATE keywords SET count = (SELECT COUNT(*) FROM keyword_movie WHERE keyword_id = keywords.id)');
+
         echo "Adding ProductionCompany count \r\n";
-        foreach (ProductionCompany::with('movies')->get() as $pc) {
-            $pc->count = $pc->movies->count();
-            $pc->save();
-        }
+        DB::statement('UPDATE production_companies SET count = (SELECT COUNT(*) FROM movie_production_company WHERE production_company_id = production_companies.id)');
     }
 }
