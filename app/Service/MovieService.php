@@ -7,6 +7,7 @@ use App\Models\Keyword;
 use App\Models\Movie;
 use App\Models\ProductionCompany;
 use Cache;
+use DB;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Str;
 
@@ -15,10 +16,13 @@ class MovieService
     private int $insertedRowCount = 0;
 
     private ?string $uploadId;
+    private Collection $movieDict;
+    private array $relationCache = [];
 
     public function __construct(?string $uploadId = null)
     {
         $this->uploadId = $uploadId;
+        $this->loadCaches();
     }
 
     public static function insertBulk($data, $headers, ?string $uploadId = null): int
@@ -37,7 +41,7 @@ class MovieService
     {
         $row['slug'] = \Str::slug($row['title']);
 
-        if (Movie::firstWhere('slug', $row['slug'])) {
+        if ($this->movieDict->has($row['slug'])) {
             return;
         }
 
@@ -52,6 +56,7 @@ class MovieService
             $movie->genres()->attach($genres->pluck('id')->toArray());
             $movie->companies()->attach($companies->pluck('id')->toArray());
             $movie->keywords()->attach($keywords->pluck('id')->toArray());
+            $this->movieDict->put($movie->slug, $movie->id);
 
             $this->insertedRowCount++;
             if ($this->uploadId) {
@@ -75,14 +80,15 @@ class MovieService
         foreach (explode(',', $values) as $val) {
             $cleanedVal = trim($val);
             $slug = Str::slug($cleanedVal);
-            $result->push(
-                $class::firstOrCreate(
-                    ['slug' => $slug],
-                    [
-                        'slug' => $slug,
-                        'name' => trim($cleanedVal),
-                    ])
-            );
+
+            $relation = $this->relationCache[$class]->get($slug) ?? $class::create(
+                [
+                    'slug' => $slug,
+                    'name' => trim($cleanedVal),
+                ]);
+
+            $result->push($relation);
+            $this->relationCache[$class]->put($slug, $relation);
         }
 
         return $result;
@@ -107,6 +113,14 @@ class MovieService
             }
 
             Cache::put($cacheKey, $progress, now()->addHours(1));
+        }
+    }
+
+    private function loadCaches(): void
+    {
+        $this->movieDict = DB::table('movies')->pluck('id', 'slug');
+        foreach ([Genre::class, ProductionCompany::class, Keyword::class] as $class) {
+            $this->relationCache[$class] = $class::all()->keyBy('slug');
         }
     }
 }

@@ -22,8 +22,9 @@ class MovieSeeder extends Seeder
         }
 
         $header = null;
-        $data = [];
 
+        $movieService = new MovieService();
+        $c = 0;
         try {
             while (($row = fgetcsv(stream: $handle, separator: '|')) !== false) {
                 if (!$header) {
@@ -31,24 +32,20 @@ class MovieSeeder extends Seeder
                 } else {
                     if (count($header) !== count($row)) {
                         var_dump('Broken row: ' . json_encode($row));
-
                         continue;
                     }
-                    $data[] = array_combine($header, $row);
+
+
+                    $movieService->insertRow(array_combine($header, $row));
                 }
+                if ($c % 500 === 0) {
+                    echo "Processed $c rows\r\n";
+                }
+                $c++;
             }
         } finally {
             fclose($handle);
         }
 
-        $movieService = new MovieService;
-        foreach ($data as $i => $row) {
-
-            $movieService->insertRow($row);
-
-            if ($i % 100 === 0) {
-                echo "Processed $i rows\r\n";
-            }
-        }
     }
 }
