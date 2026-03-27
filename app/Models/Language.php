@@ -11,12 +11,15 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * @property string $code
  * @property string $name
  * @property int $count
+ * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\Movie> $movies
+ * @property-read int|null $movies_count
  *
  * @method static \Database\Factories\LanguageFactory factory($count = null, $state = [])
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Language newModelQuery()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Language newQuery()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Language query()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Language whereCode($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Language whereCount($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Language whereId($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Language whereName($value)
  *
