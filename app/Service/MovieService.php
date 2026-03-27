@@ -51,8 +51,8 @@ class MovieService
             $genres = $this->prepareRelations($row, Genre::class);
             $companies = $this->prepareRelations($row, ProductionCompany::class);
             $keywords = $this->prepareRelations($row, Keyword::class);
-
-            unset($row['genres'], $row['production_companies'], $row['keywords']);
+            $row['tmdb_id'] = $row['id'];
+            unset($row['genres'], $row['production_companies'], $row['keywords'], $row['id']);
 
             $movie = Movie::create($row);
             $movie->genres()->attach($genres->pluck('id')->toArray());

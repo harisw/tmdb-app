@@ -18,6 +18,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsToMany;
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Keyword newModelQuery()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Keyword newQuery()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Keyword query()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Keyword whereCount($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Keyword whereId($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Keyword whereName($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Keyword whereSlug($value)

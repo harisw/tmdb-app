@@ -4,7 +4,6 @@ namespace App\Models;
 
 use App\Casts\RoundFloat;
 use App\Helpers\DateTimeHelper;
-use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
@@ -13,11 +12,11 @@ use Illuminate\Database\Eloquent\Relations\BelongsToMany;
  * @property int $id
  * @property string $title
  * @property string $slug
- * @property float $rating
+ * @property mixed $rating
  * @property string $status
- * @property Carbon $release_date
+ * @property \Illuminate\Support\Carbon $release_date
  * @property int $revenue
- * @property int $runtime
+ * @property string $runtime
  * @property string|null $img_backdrop
  * @property string|null $imdb_id
  * @property string|null $overview
@@ -27,6 +26,8 @@ use Illuminate\Database\Eloquent\Relations\BelongsToMany;
  * @property int $language_id
  * @property \Illuminate\Support\Carbon|null $created_at
  * @property \Illuminate\Support\Carbon|null $updated_at
+ * @property int|null $tmdb_id
+ * @property string|null $homepage
  * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\ProductionCompany> $companies
  * @property-read int|null $companies_count
  * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\Genre> $genres
@@ -39,6 +40,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsToMany;
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Movie newQuery()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Movie query()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Movie whereCreatedAt($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Movie whereHomepage($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Movie whereId($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Movie whereImdbId($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Movie whereImgBackdrop($value)
@@ -54,6 +56,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsToMany;
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Movie whereStatus($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Movie whereTagline($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Movie whereTitle($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Movie whereTmdbId($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Movie whereUpdatedAt($value)
  *
  * @mixin \Eloquent

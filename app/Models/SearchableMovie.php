@@ -6,7 +6,15 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 /**
- * @property int $id
+ * @property int|null $movie_id
+ * @property string|null $search_vector
+ * @property-read \App\Models\Movie|null $movie
+ *
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|SearchableMovie newModelQuery()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|SearchableMovie newQuery()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|SearchableMovie query()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|SearchableMovie whereMovieId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|SearchableMovie whereSearchVector($value)
  *
  * @mixin \Eloquent
  */
