@@ -1,9 +1,11 @@
 import argparse
+import csv
 import pandas as pd
 
 parser = argparse.ArgumentParser()
 parser.add_argument('input', help='Input CSV file path')
 parser.add_argument('output', help='Output CSV file path')
+parser.add_argument('--limit', type=int, default=50000, help='Enter limit for output rows')
 args = parser.parse_args()
 
 df = pd.read_csv(args.input)
@@ -43,4 +45,4 @@ df['language_id'] = df['lang_code_clean'].apply(lambda x: lang_id_map.get(x, lan
 
 df.drop(columns=['lang_code_clean', 'language'], inplace=True)
 
-df.to_csv(args.output, index=False, sep='|')
+df.head(args.limit).to_csv(args.output, index=False, sep='|', quoting=csv.QUOTE_NONNUMERIC)
