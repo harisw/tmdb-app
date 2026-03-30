@@ -287,3 +287,24 @@ Docker compose uses the folder name as the project name by default. When the rep
 
 ### APP_KEY not set
 Symptom: Laravel errors or blank page on first run. Generate the key once locally with `php artisan key:generate --show` and add it to `/opt/tmdb/.env`. Never regenerate it — doing so invalidates all active sessions.
+
+### Seeder asks for confirmation in production (`APPLICATION IN PRODUCTION. Command cancelled.`)
+Laravel prompts for confirmation when running seeders in production. Bypass it with `--force`:
+```bash
+docker exec tmdb-app-1 php artisan db:seed --class=MovieSeeder --force
+```
+
+### CountsSeeder memory exhausted
+The original seeder used `with('movies')` which loaded every movie record for every keyword/language/company into PHP memory. Replaced with raw SQL `UPDATE ... SET count = (SELECT COUNT(*) ...)` queries — runs entirely on the database with no PHP memory overhead.
+
+### SSM Session Manager stopped working after EC2 restart (prompted for username/password)
+The SSM agent was not running. Ubuntu 24.04 on EC2 does not always persist snap services across reboots. Fix:
+```bash
+sudo snap install amazon-ssm-agent --classic
+sudo systemctl enable snap.amazon-ssm-agent.amazon-ssm-agent
+sudo systemctl start snap.amazon-ssm-agent.amazon-ssm-agent
+```
+The `enable` command ensures it starts automatically on every future boot. Once running, SSM Session Manager in the AWS console and `ssm send-command` in GitHub Actions will work again.
+
+### Browser shows old/cached page after EC2 restart
+Not an actual outage — the browser cached the previous response. `curl http://<elastic-ip>` bypasses the cache and confirms whether the app is actually up. Once curl returns HTML, the browser will work again after its cache TTL expires or on a hard refresh.
