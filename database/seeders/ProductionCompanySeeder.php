@@ -3,6 +3,7 @@
 namespace Database\Seeders;
 
 use App\Models\Genre;
+use App\Models\ProductionCompany;
 use Illuminate\Database\Seeder;
 
 class ProductionCompanySeeder extends Seeder
@@ -1079,7 +1080,7 @@ class ProductionCompanySeeder extends Seeder
         ];
 
         foreach (array_chunk($data, 1000) as $chunkedData) {
-            Genre::upsert($chunkedData, ['slug']);
+            ProductionCompany::upsert($chunkedData, ['slug']);
         }
     }
 }
