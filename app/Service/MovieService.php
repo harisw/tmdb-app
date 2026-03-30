@@ -80,13 +80,13 @@ class MovieService
             Keyword::class => $row['keywords']
         };
         foreach (explode(',', $values) as $val) {
-            $cleanedVal = trim($val);
+            $cleanedVal = ucwords(trim($val));
             $slug = Str::slug($cleanedVal);
 
             $relation = $this->relationCache[$class]->get($slug) ?? $class::create(
                 [
                     'slug' => $slug,
-                    'name' => trim($cleanedVal),
+                    'name' => $cleanedVal,
                 ]);
 
             $result->push($relation);

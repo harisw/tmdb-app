@@ -3,6 +3,7 @@
 namespace App\Http\Middleware;
 
 use App\Models\Genre;
+use Cache;
 use Illuminate\Http\Request;
 use Inertia\Middleware;
 
@@ -37,10 +38,12 @@ class HandleInertiaRequests extends Middleware
     public function share(Request $request): array
     {
         return array_merge(parent::share($request), [
-            'genres' => Genre::take(5)->get()->map(function (Genre $genre) {
-                $genre['url'] = route('movie-by-genre', $genre->slug);
+            'genres' => Cache::remember('top-genres', 7200, static function () {
+                return Genre::orderByDesc('count')->take(7)->get()->map(function (Genre $genre) {
+                    $genre['url'] = route('movie-by-genre', $genre->slug);
 
-                return $genre;
+                    return $genre;
+                });
             }), // dropdown data
             'auth' => [
                 'user' => $request->user() ? [
