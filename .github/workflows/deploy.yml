@@ -29,17 +29,6 @@ jobs:
           docker build -t $ECR_URI/tmdb-app:latest .
           docker push $ECR_URI/tmdb-app:latest
 
-      - name: Build and push nginx image
-        env:
-          ECR_URI: ${{ steps.login-ecr.outputs.registry }}
-        run: |
-          docker build \
-            --build-arg APP_IMAGE=$ECR_URI/tmdb-app:latest \
-            -f docker/nginx/Dockerfile \
-            -t $ECR_URI/tmdb-nginx:latest \
-            .
-          docker push $ECR_URI/tmdb-nginx:latest
-
       - name: Deploy to EC2
         run: |
           aws ssm send-command \
