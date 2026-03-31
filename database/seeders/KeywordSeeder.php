@@ -2,7 +2,6 @@
 
 namespace Database\Seeders;
 
-use App\Models\Genre;
 use App\Models\Keyword;
 use Illuminate\Database\Seeder;
 
