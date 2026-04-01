@@ -56,7 +56,7 @@ onBeforeUnmount(() => {
                     class="fixed top-0 z-100 w-full bg-black text-white px-6 py-4 flex items-center justify-between shadow-md">
                     <!-- Left: Logo + Links -->
                     <div class="flex items-center gap-6">
-                        <Link :href="baseUrl" class="text-3xl font-bold text-madder">TMDB</Link>
+                        <Link :href="baseUrl" class="text-3xl font-bold text-madder">Chill</Link>
 
                         <ul class="hidden md:flex gap-4 text-sm" ref="menuRef">
 
