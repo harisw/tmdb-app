@@ -4,7 +4,10 @@
     "type": "module",
     "scripts": {
         "build": "vite build",
-        "dev": "vite"
+        "dev": "vite",
+        "lint": "eslint resources/js/**/*.vue resources/js/**/*.js",
+        "format": "prettier --write resources/js/**/*.vue resources/js/**/*.js",
+        "format:check": "prettier --check resources/js/**/*.vue resources/js/**/*.js"
     },
     "devDependencies": {
         "@tailwindcss/vite": "^4.1.11",
@@ -12,8 +15,12 @@
         "autoprefixer": "^10.4.21",
         "axios": "^1.8.2",
         "concurrently": "^9.0.1",
+        "eslint": "^10.1.0",
+        "eslint-config-prettier": "^10.1.8",
+        "eslint-plugin-vue": "^10.8.0",
         "laravel-vite-plugin": "^1.2.0",
         "postcss": "^8.5.6",
+        "prettier": "^3.8.1",
         "tailwindcss": "^4.1.11",
         "vite": "^6.2.4"
     },
