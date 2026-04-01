@@ -21,7 +21,7 @@ jobs:
           coverage: none
       
       - name: Install dependencies
-        run: composer install --no-dev --optimize-autoloader --no-interaction
+        run: composer install --optimize-autoloader --no-interaction
       
       - name: Copy env
         run: cp .env.example .env
