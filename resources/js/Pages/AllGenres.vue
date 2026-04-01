@@ -1,33 +1,40 @@
 <script setup>
-import {Head} from "@inertiajs/vue3";
-import AppLayout from "../Layouts/AppLayout.vue";
-import MovieModal from "../Components/MovieModal.vue"
-import Carousel from "../Components/Carousel.vue";
-import MovieCard from "../Components/MovieCard.vue";
-import useModal from "../Composables/useModal.js";
+import { Head } from '@inertiajs/vue3'
+import AppLayout from '../Layouts/AppLayout.vue'
+import MovieModal from '../Components/MovieModal.vue'
+import Carousel from '../Components/Carousel.vue'
+import MovieCard from '../Components/MovieCard.vue'
+import useModal from '../Composables/useModal.js'
 
 defineProps({
     allGenres: Array,
     poster_url: String,
     backdrop_url: String,
 })
-const {openModal, closeModal, selectedItem, showModal} = useModal();
+const { openModal, closeModal, selectedItem, showModal } = useModal()
 </script>
 
 <template>
-    <Head title="Home"/>
+    <Head title="Find all Genres" />
     <AppLayout>
         <div class="w-full">
             <div v-for="genre in allGenres" :key="genre.id" class="mb-15">
-                <h1 class="text-2xl font-bold mb-6 text-madder">{{ genre.name }}</h1>
+                <h1 class="text-2xl 2xl:text-4xl font-bold mb-6 text-madder">{{ genre.name }}</h1>
                 <Carousel>
-                    <MovieCard v-for="item in genre.movies" :key="item.id" :on-click="openModal" :item="item"
-                               :poster-url="poster_url" :show-genres="false" size="w-3xs"/>
+                    <MovieCard
+                        v-for="item in genre.movies"
+                        :key="item.id"
+                        :on-click="openModal"
+                        :item="item"
+                        :poster-url="poster_url"
+                        :show-genres="false"
+                        size="w-3xs"
+                    />
                 </Carousel>
             </div>
         </div>
     </AppLayout>
-    <MovieModal :show="showModal" :item="selectedItem" @close="closeModal" :backdrop_url="backdrop_url"/>
+    <MovieModal :show="showModal" :item="selectedItem" :backdrop_url="backdrop_url" @close="closeModal" />
 </template>
 
 <style>

@@ -1,28 +1,28 @@
-import {ref, onMounted, onUnmounted, watch} from "vue";
-import {router} from "@inertiajs/vue3";
+import { ref, onMounted, onUnmounted, watch } from 'vue'
+import { router } from '@inertiajs/vue3'
 
 export default function useInfiniteScroll(initialData, options = {}) {
     // Detect the key dynamically (products, users, posts, etc.)
-    const propKey = options.key || Object.keys(initialData)[0] || "data";
-    const resource = initialData[propKey] || initialData;
+    const propKey = options.key || Object.keys(initialData)[0] || 'data'
+    const resource = initialData[propKey] || initialData
 
-    const observer = ref(null);
-    const sentinel = ref(null);
+    const observer = ref(null)
+    const sentinel = ref(null)
 
-    const items = ref(resource.data || []);
+    const items = ref(resource.data || [])
     const page = ref(1)
     const hasMore = ref(true)
     const query = ref({})
     // const nextPageUrl = ref(resource.next_page_url);
-    const loading = ref(false);
+    const loading = ref(false)
 
     const setupObserver = () => {
         if (observer.value) observer.value.disconnect()
 
         observer.value = new IntersectionObserver((entries) => {
-            const entry = entries[0];
+            const entry = entries[0]
             if (entry.isIntersecting && items.value.length > 0 && hasMore.value && !loading.value) {
-                loadMore();
+                loadMore()
             }
         })
     }
@@ -32,38 +32,33 @@ export default function useInfiniteScroll(initialData, options = {}) {
         loading.value = true
 
         if (reset) {
-            page.value = 1;
+            page.value = 1
         }
 
-        let params = {page: page.value};
+        let params = { page: page.value }
 
         if (query.value) {
-            params = {...params, ...query.value};
+            params = { ...params, ...query.value }
         }
 
-        router.get(
-            window.location.pathname,
-            params,
-            {
-                preserveScroll: true,
-                preserveState: true,
-                replace: !reset, // keep history cleaner
-                onSuccess: (page) => {
-
-                    const data = page.props.movies.data
-                    if (!page.props.movies || !data) return;
-                    if (reset) items.value = data
-                    else items.value.push(...data)
-                    hasMore.value = !!page.props.movies.next_page_url
-                },
-                onFinish: () => (loading.value = false),
-            }
-        )
+        router.get(window.location.pathname, params, {
+            preserveScroll: true,
+            preserveState: true,
+            replace: !reset, // keep history cleaner
+            onSuccess: (page) => {
+                const data = page.props.movies.data
+                if (!page.props.movies || !data) return
+                if (reset) items.value = data
+                else items.value.push(...data)
+                hasMore.value = !!page.props.movies.next_page_url
+            },
+            onFinish: () => (loading.value = false),
+        })
     }
 
     async function loadMore() {
-        page.value++;
-        await fetchItems();
+        page.value++
+        await fetchItems()
     }
 
     // const loadMore = () => {
@@ -114,7 +109,7 @@ export default function useInfiniteScroll(initialData, options = {}) {
 
     watch(sentinel, (newVal) => {
         if (newVal && observer.value) observer.value.observe(newVal)
-    });
+    })
 
     return {
         items,
@@ -122,6 +117,6 @@ export default function useInfiniteScroll(initialData, options = {}) {
         sentinel,
         fetchItems,
         hasMore,
-        query
-    };
+        query,
+    }
 }

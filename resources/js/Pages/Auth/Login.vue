@@ -23,7 +23,7 @@ const submit = () => {
                 </h2>
             </div>
 
-            <form @submit.prevent="submit" class="mt-8 space-y-6">
+            <form class="mt-8 space-y-6" @submit.prevent="submit">
                 <div class="rounded-md shadow-sm space-y-4">
                     <div>
                         <label for="email" class="block text-sm font-medium text-gray-700">Email</label>
