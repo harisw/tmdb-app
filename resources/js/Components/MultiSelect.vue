@@ -9,33 +9,33 @@
             <div
                 class="flex items-center min-h-[42px] px-2 pr-10 bg-white border rounded-md cursor-pointer transition-all"
                 :class="{
-          'border-gray-300 hover:border-gray-400': !isOpen && !error,
-          'border-blue-500 ring-4 ring-blue-100': isOpen && !error,
-          'border-red-500': error,
-          'cursor-not-allowed bg-gray-50': disabled
-        }"
-                @click="toggleDropdown"
+                    'border-gray-300 hover:border-gray-400': !isOpen && !error,
+                    'border-blue-500 ring-4 ring-blue-100': isOpen && !error,
+                    'border-red-500': error,
+                    'cursor-not-allowed bg-gray-50': disabled,
+                }"
                 :tabindex="disabled ? -1 : 0"
+                @click="toggleDropdown"
                 @keydown.enter.prevent="toggleDropdown"
                 @keydown.space.prevent="toggleDropdown"
                 @keydown.escape="closeDropdown"
             >
                 <div class="flex flex-wrap items-center flex-1 gap-1">
-          <span
-              v-for="item in selectedItems"
-              :key="getItemValue(item)"
-              class="inline-flex items-center gap-1 px-2 py-1 text-sm text-white bg-blue-500 rounded"
-          >
-            {{ getItemLabel(item) }}
-            <button
-                type="button"
-                @click.stop="removeItem(item)"
-                class="flex items-center justify-center w-4 h-4 text-white transition-colors rounded hover:bg-black/20"
-                :disabled="disabled"
-            >
-              ×
-            </button>
-          </span>
+                    <span
+                        v-for="item in selectedItems"
+                        :key="getItemValue(item)"
+                        class="inline-flex items-center gap-1 px-2 py-1 text-sm text-white bg-blue-500 rounded"
+                    >
+                        {{ getItemLabel(item) }}
+                        <button
+                            type="button"
+                            class="flex items-center justify-center w-4 h-4 text-white transition-colors rounded hover:bg-black/20"
+                            :disabled="disabled"
+                            @click.stop="removeItem(item)"
+                        >
+                            ×
+                        </button>
+                    </span>
                     <input
                         :id="inputId"
                         ref="searchInput"
@@ -43,12 +43,12 @@
                         type="text"
                         :placeholder="selectedItems.length === 0 ? placeholder : ''"
                         class="flex-1 min-w-[120px] px-1 py-1 text-sm bg-transparent border-none outline-none placeholder:text-gray-400"
+                        :disabled="disabled"
                         @focus="openDropdown"
                         @keydown.down.prevent="navigateDown"
                         @keydown.up.prevent="navigateUp"
                         @keydown.enter.prevent="selectHighlighted"
                         @keydown.backspace="handleBackspace"
-                        :disabled="disabled"
                     />
                 </div>
                 <div
@@ -56,8 +56,13 @@
                     :class="{ 'rotate-180': isOpen }"
                 >
                     <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-                        <path d="M3.5 5.25L7 8.75L10.5 5.25" stroke="currentColor" stroke-width="1.5"
-                              stroke-linecap="round" stroke-linejoin="round"/>
+                        <path
+                            d="M3.5 5.25L7 8.75L10.5 5.25"
+                            stroke="currentColor"
+                            stroke-width="1.5"
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                        />
                     </svg>
                 </div>
             </div>
@@ -82,11 +87,11 @@
                         :key="getItemValue(option)"
                         class="flex items-center gap-2 px-3 py-2.5 cursor-pointer transition-colors"
                         :class="{
-              'bg-blue-50': isSelected(option),
-              'hover:bg-blue-100': isSelected(option),
-              'bg-gray-100': !isSelected(option) && index === highlightedIndex,
-              'hover:bg-gray-100': !isSelected(option)
-            }"
+                            'bg-blue-50': isSelected(option),
+                            'hover:bg-blue-100': isSelected(option),
+                            'bg-gray-100': !isSelected(option) && index === highlightedIndex,
+                            'hover:bg-gray-100': !isSelected(option),
+                        }"
                         @click="toggleOption(option)"
                         @mouseenter="highlightedIndex = index"
                     >
@@ -109,179 +114,180 @@
 </template>
 
 <script setup>
-import {ref, computed, watch, onMounted, onBeforeUnmount} from 'vue';
+import { ref, computed, watch, onMounted, onBeforeUnmount } from 'vue'
 
 const props = defineProps({
     modelValue: {
         type: Array,
-        default: () => []
+        default: () => [],
     },
     options: {
         type: Array,
-        required: true
+        required: true,
     },
     label: {
         type: String,
-        default: ''
+        default: '',
     },
     placeholder: {
         type: String,
-        default: 'Select options...'
+        default: 'Select options...',
     },
     emptyText: {
         type: String,
-        default: 'No options found'
+        default: 'No options found',
     },
     trackBy: {
         type: String,
-        default: null
+        default: null,
     },
     displayBy: {
         type: String,
-        default: null
+        default: null,
     },
     disabled: {
         type: Boolean,
-        default: false
+        default: false,
     },
     required: {
         type: Boolean,
-        default: false
+        default: false,
     },
     error: {
         type: String,
-        default: ''
+        default: '',
     },
     searchable: {
         type: Boolean,
-        default: true
-    }
-});
+        default: true,
+    },
+})
 
-const emit = defineEmits(['update:modelValue', 'change']);
+const emit = defineEmits(['update:modelValue', 'change'])
 
-const isOpen = ref(false);
-const searchQuery = ref('');
-const searchInput = ref(null);
-const highlightedIndex = ref(0);
-const inputId = `multiselect-${Math.random().toString(36).substr(2, 9)}`;
+const isOpen = ref(false)
+const searchQuery = ref('')
+const searchInput = ref(null)
+const highlightedIndex = ref(0)
+const inputId = `multiselect-${Math.random().toString(36).substr(2, 9)}`
 
 const selectedItems = computed(() => {
     if (!props.trackBy) {
-        return props.options.filter(opt => props.modelValue.includes(opt));
+        return props.options.filter((opt) => props.modelValue.includes(opt))
     }
-    return props.options.filter(opt =>
-        props.modelValue.includes(opt[props.trackBy])
-    );
-});
+    return props.options.filter((opt) => props.modelValue.includes(opt[props.trackBy]))
+})
 
 const filteredOptions = computed(() => {
     if (!props.searchable || !searchQuery.value) {
-        return props.options;
+        return props.options
     }
 
-    const query = searchQuery.value.toLowerCase();
-    return props.options.filter(option => {
-        const label = getItemLabel(option).toLowerCase();
-        return label.includes(query);
-    });
-});
+    const query = searchQuery.value.toLowerCase()
+    return props.options.filter((option) => {
+        const label = getItemLabel(option).toLowerCase()
+        return label.includes(query)
+    })
+})
 
 const getItemValue = (item) => {
-    if (!item) return null;
-    return props.trackBy ? item[props.trackBy] : item;
-};
+    if (!item) return null
+    return props.trackBy ? item[props.trackBy] : item
+}
 
 const getItemLabel = (item) => {
-    if (!item) return '';
-    if (props.displayBy) return item[props.displayBy];
-    if (typeof item === 'object') return item.name || item.label || item.title || '';
-    return String(item);
-};
+    if (!item) return ''
+    if (props.displayBy) return item[props.displayBy]
+    if (typeof item === 'object') return item.name || item.label || item.title || ''
+    return String(item)
+}
 
 const isSelected = (option) => {
-    const value = getItemValue(option);
-    return props.modelValue.includes(value);
-};
+    const value = getItemValue(option)
+    return props.modelValue.includes(value)
+}
 
 const toggleOption = (option) => {
-    if (props.disabled) return;
+    if (props.disabled) return
 
-    const value = getItemValue(option);
-    let newValue;
+    const value = getItemValue(option)
+    let newValue
 
     if (isSelected(option)) {
-        newValue = props.modelValue.filter(v => v !== value);
+        newValue = props.modelValue.filter((v) => v !== value)
     } else {
-        newValue = [...props.modelValue, value];
+        newValue = [...props.modelValue, value]
     }
 
-    emit('update:modelValue', newValue);
-    emit('change', newValue);
-    searchQuery.value = '';
-    searchInput.value?.focus();
-};
+    emit('update:modelValue', newValue)
+    emit('change', newValue)
+    searchQuery.value = ''
+    searchInput.value?.focus()
+}
 
 const removeItem = (item) => {
-    if (props.disabled) return;
-    toggleOption(item);
-};
+    if (props.disabled) return
+    toggleOption(item)
+}
 
 const toggleDropdown = () => {
-    if (props.disabled) return;
-    isOpen.value ? closeDropdown() : openDropdown();
-};
+    if (props.disabled) return
+    isOpen.value ? closeDropdown() : openDropdown()
+}
 
 const openDropdown = () => {
-    if (props.disabled) return;
-    isOpen.value = true;
-    highlightedIndex.value = 0;
-};
+    if (props.disabled) return
+    isOpen.value = true
+    highlightedIndex.value = 0
+}
 
 const closeDropdown = () => {
-    isOpen.value = false;
-    searchQuery.value = '';
-};
+    isOpen.value = false
+    searchQuery.value = ''
+}
 
 const navigateDown = () => {
     if (highlightedIndex.value < filteredOptions.value.length - 1) {
-        highlightedIndex.value++;
+        highlightedIndex.value++
     }
-};
+}
 
 const navigateUp = () => {
     if (highlightedIndex.value > 0) {
-        highlightedIndex.value--;
+        highlightedIndex.value--
     }
-};
+}
 
 const selectHighlighted = () => {
     if (filteredOptions.value[highlightedIndex.value]) {
-        toggleOption(filteredOptions.value[highlightedIndex.value]);
+        toggleOption(filteredOptions.value[highlightedIndex.value])
     }
-};
+}
 
 const handleBackspace = (e) => {
     if (searchQuery.value === '' && selectedItems.value.length > 0) {
-        removeItem(selectedItems.value[selectedItems.value.length - 1]);
+        removeItem(selectedItems.value[selectedItems.value.length - 1])
     }
-};
+}
 
 const handleClickOutside = (e) => {
     if (!e.target.closest('.relative')) {
-        closeDropdown();
+        closeDropdown()
     }
-};
+}
 
-watch(() => filteredOptions.value, () => {
-    highlightedIndex.value = 0;
-});
+watch(
+    () => filteredOptions.value,
+    () => {
+        highlightedIndex.value = 0
+    }
+)
 
 onMounted(() => {
-    document.addEventListener('click', handleClickOutside);
-});
+    document.addEventListener('click', handleClickOutside)
+})
 
 onBeforeUnmount(() => {
-    document.removeEventListener('click', handleClickOutside);
-});
+    document.removeEventListener('click', handleClickOutside)
+})
 </script>
