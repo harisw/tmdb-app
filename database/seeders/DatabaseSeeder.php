@@ -17,7 +17,7 @@ class DatabaseSeeder extends Seeder
             ProductionCompanySeeder::class,
             KeywordSeeder::class,
             MovieSeeder::class,
-            CountsSeeder::class,
+            //            CountsSeeder::class,
         ]);
     }
 }

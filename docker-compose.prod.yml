@@ -5,18 +5,11 @@ services:
     image: ${ECR_URI}/tmdb-app:latest
     env_file:
       - /opt/tmdb/.env
-    restart: unless-stopped
-    networks:
-      - laravel-network
-
-  nginx:
-    image: ${ECR_URI}/tmdb-nginx:latest
     ports:
-      - "80:80"
-      - "443:443"
+      - "127.0.0.1:9000:9000"
+    volumes:
+      - /opt/tmdb/public:/var/www/public
     restart: unless-stopped
-    depends_on:
-      - app
     networks:
       - laravel-network
 

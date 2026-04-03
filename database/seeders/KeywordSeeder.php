@@ -2,7 +2,7 @@
 
 namespace Database\Seeders;
 
-use App\Models\Genre;
+use App\Models\Keyword;
 use Illuminate\Database\Seeder;
 
 class KeywordSeeder extends Seeder
@@ -5302,7 +5302,7 @@ class KeywordSeeder extends Seeder
         ];
 
         foreach (array_chunk($data, 1000) as $chunkedData) {
-            Genre::upsert($chunkedData, ['slug']);
+            Keyword::upsert($chunkedData, ['slug']);
         }
     }
 }
