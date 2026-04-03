@@ -2,6 +2,8 @@
 
 namespace App\Models;
 
+use Database\Factories\LanguageFactory;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -11,7 +13,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * @property string $code
  * @property string $name
  * @property int $count
- * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\Movie> $movies
+ * @property-read Collection<int, Movie> $movies
  * @property-read int|null $movies_count
  *
  * @method static \Database\Factories\LanguageFactory factory($count = null, $state = [])
@@ -27,7 +29,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  */
 class Language extends Model
 {
-    /** @use HasFactory<\Database\Factories\LanguageFactory> */
+    /** @use HasFactory<LanguageFactory> */
     use HasFactory;
 
     protected $fillable = [

@@ -2,6 +2,8 @@
 
 namespace App\Models;
 
+use Database\Factories\GenreFactory;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
@@ -11,7 +13,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsToMany;
  * @property string $slug
  * @property string $name
  * @property int $count
- * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\Movie> $movies
+ * @property-read Collection<int, Movie> $movies
  * @property-read int|null $movies_count
  *
  * @method static \Database\Factories\GenreFactory factory($count = null, $state = [])
@@ -27,7 +29,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsToMany;
  */
 class Genre extends Model
 {
-    /** @use HasFactory<\Database\Factories\GenreFactory> */
+    /** @use HasFactory<GenreFactory> */
     use HasFactory;
 
     public $timestamps = false;
@@ -35,5 +37,10 @@ class Genre extends Model
     public function movies(): BelongsToMany
     {
         return $this->belongsToMany(Movie::class);
+    }
+
+    public function getRouteKeyName(): string
+    {
+        return 'slug';
     }
 }

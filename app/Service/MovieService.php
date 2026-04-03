@@ -6,6 +6,7 @@ use App\Models\Genre;
 use App\Models\Keyword;
 use App\Models\Movie;
 use App\Models\ProductionCompany;
+use Artisan;
 use Cache;
 use DB;
 use Illuminate\Support\Collection;
@@ -35,6 +36,7 @@ class MovieService
 
             $static->insertRow($row);
         }
+        Artisan::call('movies:refresh-searchable');
 
         return $static->insertedRowCount;
     }

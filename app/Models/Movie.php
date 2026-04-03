@@ -4,9 +4,12 @@ namespace App\Models;
 
 use App\Casts\RoundFloat;
 use App\Helpers\DateTimeHelper;
+use Database\Factories\MovieFactory;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Support\Carbon;
 
 /**
  * @property int $id
@@ -14,7 +17,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsToMany;
  * @property string $slug
  * @property mixed $rating
  * @property string $status
- * @property \Illuminate\Support\Carbon $release_date
+ * @property Carbon $release_date
  * @property int $revenue
  * @property string $runtime
  * @property string|null $img_backdrop
@@ -24,15 +27,15 @@ use Illuminate\Database\Eloquent\Relations\BelongsToMany;
  * @property string|null $img_poster
  * @property string|null $tagline
  * @property int $language_id
- * @property \Illuminate\Support\Carbon|null $created_at
- * @property \Illuminate\Support\Carbon|null $updated_at
+ * @property Carbon|null $created_at
+ * @property Carbon|null $updated_at
  * @property int|null $tmdb_id
  * @property string|null $homepage
- * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\ProductionCompany> $companies
+ * @property-read Collection<int, ProductionCompany> $companies
  * @property-read int|null $companies_count
- * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\Genre> $genres
+ * @property-read Collection<int, Genre> $genres
  * @property-read int|null $genres_count
- * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\Keyword> $keywords
+ * @property-read Collection<int, Keyword> $keywords
  * @property-read int|null $keywords_count
  *
  * @method static \Database\Factories\MovieFactory factory($count = null, $state = [])
@@ -63,7 +66,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsToMany;
  */
 class Movie extends Model
 {
-    /** @use HasFactory<\Database\Factories\MovieFactory> */
+    /** @use HasFactory<MovieFactory> */
     use HasFactory;
 
     public const IMG_SMALL_URL = 'w300';

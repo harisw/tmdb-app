@@ -8,7 +8,9 @@ use App\Models\Language;
 use App\Models\Movie;
 use App\Models\SearchableMovie;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Support\Collection;
 use Inertia\Inertia;
+use Inertia\Response;
 
 class HomeController extends Controller
 {
@@ -16,7 +18,7 @@ class HomeController extends Controller
 
     private const SEARCH_LIMIT = 10;
 
-    public function index(): \Inertia\Response
+    public function index(): Response
     {
         $movies = Movie::with(['genres', 'keywords'])
             ->latest()->paginate(self::PAGINATE_SIZE);
@@ -28,7 +30,7 @@ class HomeController extends Controller
         ]);
     }
 
-    public function getAllGenres(): \Inertia\Response
+    public function getAllGenres(): Response
     {
         $genres = Genre::with(['movies' => function ($query) {
             $query->orderByDesc('created_at')->take(30);
@@ -41,10 +43,8 @@ class HomeController extends Controller
         ]);
     }
 
-    public function getByGenre($slug = null): \Inertia\Response
+    public function getByGenre(Genre $genre): Response
     {
-        $genre = Genre::whereSlug($slug)->first();
-
         return Inertia::render('MovieByGenre', [
             'genre' => $genre,
             'poster_url' => config('services.movie_db.img_url').Movie::IMG_SMALL_URL,
@@ -53,7 +53,7 @@ class HomeController extends Controller
         ]);
     }
 
-    public function getByLanguage(): \Inertia\Response
+    public function getByLanguage(): Response
     {
         $lang = request()->query('lang');
         $language = $lang ? Language::whereCode($lang)->first() : null;
@@ -67,7 +67,7 @@ class HomeController extends Controller
         ]);
     }
 
-    public function getByTag(): \Inertia\Response
+    public function getByTag(): Response
     {
         $keyQuery = request()->query('tag');
         $tagOffset = request()->query('tagOffset', 0);
@@ -103,7 +103,7 @@ class HomeController extends Controller
         ]);
     }
 
-    public function searchAll(): \Inertia\Response
+    public function searchAll(): Response
     {
         $hasParams = request()->hasAny(['q', 'lang', 'gen', 'tag']);
 
@@ -130,7 +130,7 @@ class HomeController extends Controller
         ]);
     }
 
-    private function applyFilters(\Illuminate\Support\Collection $movieIds)
+    private function applyFilters(Collection $movieIds)
     {
         $query = Movie::query()->with(['genres', 'keywords']);
         $languageIds = request()->query('lang') ? Language::whereCode(request()->query('lang'))

@@ -10,7 +10,10 @@ Route::get('/genre/all', [HomeController::class, 'getAllGenres'])->name('movie-a
 Route::get('/genre/{slug}', [HomeController::class, 'getByGenre'])->name('movie-by-genre');
 Route::get('/languages', [HomeController::class, 'getByLanguage'])->name('movie-by-language');
 Route::get('/tags', [HomeController::class, 'getByTag'])->name('movie-by-tag');
-Route::get('/search', [HomeController::class, 'search'])->name('search-movie');
+Route::middleware('throttle:40,1')->group(function () {
+    Route::get('/search', [HomeController::class, 'search'])->name('search-movie');
+});
+
 Route::get('/search-all', [HomeController::class, 'searchAll'])->name('search-all-movie');
 
 if (config('auth.allow_register')) {

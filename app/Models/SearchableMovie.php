@@ -8,7 +8,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 /**
  * @property int|null $movie_id
  * @property string|null $search_vector
- * @property-read \App\Models\Movie|null $movie
+ * @property-read Movie|null $movie
  *
  * @method static \Illuminate\Database\Eloquent\Builder<static>|SearchableMovie newModelQuery()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|SearchableMovie newQuery()
