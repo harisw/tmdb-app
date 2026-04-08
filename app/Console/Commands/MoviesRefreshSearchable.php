@@ -5,14 +5,14 @@ namespace App\Console\Commands;
 use DB;
 use Illuminate\Console\Command;
 
-class MovieRefreshSearchable extends Command
+class MoviesRefreshSearchable extends Command
 {
     /**
      * The name and signature of the console command.
      *
      * @var string
      */
-    protected $signature = 'movie:refresh-searchable';
+    protected $signature = 'movies:refresh-searchable';
 
     /**
      * The console command description.

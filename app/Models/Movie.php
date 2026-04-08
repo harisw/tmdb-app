@@ -75,6 +75,8 @@ class Movie extends Model
 
     public const IMG_LARGE_URL = 'w1280';
 
+    protected $guarded = [];
+
     protected $casts = [
         'runtime' => 'string',
         'release_date' => 'datetime:Y',

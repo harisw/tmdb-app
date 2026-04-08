@@ -2,6 +2,7 @@
 
 namespace App\Service;
 
+use App\DTOs\MovieDTO;
 use App\Models\Genre;
 use App\Models\Keyword;
 use App\Models\Movie;
@@ -32,31 +33,25 @@ class MovieService
     {
         $static = new self($uploadId);
         foreach ($data as $row) {
-            $row = array_combine($headers, $row);
-
-            $static->insertRow($row);
+            $static->insertRow(MovieDTO::from(array_combine($headers, $row)));
         }
         Artisan::call('movies:refresh-searchable');
 
         return $static->insertedRowCount;
     }
 
-    public function insertRow(array $row): void
+    public function insertRow(MovieDTO $row): void
     {
-        $row['slug'] = \Str::slug($row['title']);
-
-        if ($this->movieDict->has($row['slug'])) {
+        if ($this->movieDict->has($row->slug)) {
             return;
         }
 
         try {
-            $genres = $this->prepareRelations($row, Genre::class);
-            $companies = $this->prepareRelations($row, ProductionCompany::class);
-            $keywords = $this->prepareRelations($row, Keyword::class);
-            $row['tmdb_id'] = $row['id'];
-            unset($row['genres'], $row['production_companies'], $row['keywords'], $row['id']);
+            $genres = $this->prepareRelations($row->genres, Genre::class);
+            $companies = $this->prepareRelations($row->production_companies, ProductionCompany::class);
+            $keywords = $this->prepareRelations($row->keywords, Keyword::class);
 
-            $movie = Movie::create($row);
+            $movie = Movie::create($row->except('genres', 'production_companies', 'keywords')->toArray());
             $movie->genres()->attach($genres->pluck('id')->toArray());
             $movie->companies()->attach($companies->pluck('id')->toArray());
             $movie->keywords()->attach($keywords->pluck('id')->toArray());
@@ -67,29 +62,26 @@ class MovieService
                 $this->updateProgress();
             }
         } catch (\Exception $e) {
+            report($e);
+
+            if (app()->environment('testing')) {
+                throw $e;
+            }
+
             if ($this->uploadId) {
                 $this->updateProgress(true, $e->getMessage());
             }
         }
     }
 
-    private function prepareRelations(array &$row, $class): Collection
+    private function prepareRelations(string $values, $class): Collection
     {
         $result = collect();
-        $values = match ($class) {
-            Genre::class => $row['genres'],
-            ProductionCompany::class => $row['production_companies'],
-            Keyword::class => $row['keywords']
-        };
         foreach (explode(',', $values) as $val) {
             $cleanedVal = ucwords(trim($val));
             $slug = Str::slug($cleanedVal);
-
-            $relation = $this->relationCache[$class]->get($slug) ?? $class::create(
-                [
-                    'slug' => $slug,
-                    'name' => $cleanedVal,
-                ]);
+            $relation = $this->relationCache[$class]->get($slug)
+                ?? $class::create(['slug' => $slug, 'name' => $cleanedVal]);
 
             $result->push($relation);
             $this->relationCache[$class]->put($slug, $relation);

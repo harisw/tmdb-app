@@ -34,6 +34,8 @@ class Genre extends Model
 
     public $timestamps = false;
 
+    protected $guarded = [];
+
     public function movies(): BelongsToMany
     {
         return $this->belongsToMany(Movie::class);

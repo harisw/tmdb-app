@@ -10,9 +10,6 @@ return new class extends Migration
      */
     public function up(): void
     {
-        if (app()->environment('testing')) {
-            return;
-        }
         DB::statement(<<<'SQL'
             create materialized view searchable_movies AS
             select
