@@ -28,6 +28,7 @@ return new class extends Migration
             $table->text('tagline')->nullable();
 
             $table->foreignId('language_id')->constrained();
+            $table->index('language_id');
             $table->timestamps();
         });
     }
