@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Service\CsvUploadService;
 use Cache;
+use Illuminate\Http\JsonResponse;
 
 class CsvUploadController extends Controller
 {
@@ -27,7 +28,7 @@ class CsvUploadController extends Controller
         );
     }
 
-    public function progress($uploadId): \Illuminate\Http\JsonResponse
+    public function progress($uploadId): JsonResponse
     {
         $progress = Cache::get("csv_upload_{$uploadId}");
 

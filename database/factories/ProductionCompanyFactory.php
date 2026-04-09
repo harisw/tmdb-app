@@ -2,10 +2,11 @@
 
 namespace Database\Factories;
 
+use App\Models\ProductionCompany;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
- * @extends \Illuminate\Database\Eloquent\Factories\Factory<\App\Models\ProductionCompany>
+ * @extends Factory<ProductionCompany>
  */
 class ProductionCompanyFactory extends Factory
 {
@@ -17,7 +18,9 @@ class ProductionCompanyFactory extends Factory
     public function definition(): array
     {
         return [
-            //
+            'name' => fake()->unique()->company(),
+            'slug' => fake()->unique()->slug(2),
+            'count' => 0,
         ];
     }
 }

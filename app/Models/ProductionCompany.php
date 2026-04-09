@@ -2,6 +2,8 @@
 
 namespace App\Models;
 
+use Database\Factories\ProductionCompanyFactory;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
@@ -11,7 +13,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsToMany;
  * @property string $slug
  * @property string $name
  * @property int $count
- * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\Movie> $movies
+ * @property-read Collection<int, Movie> $movies
  * @property-read int|null $movies_count
  *
  * @method static \Database\Factories\ProductionCompanyFactory factory($count = null, $state = [])
@@ -27,10 +29,12 @@ use Illuminate\Database\Eloquent\Relations\BelongsToMany;
  */
 class ProductionCompany extends Model
 {
-    /** @use HasFactory<\Database\Factories\ProductionCompanyFactory> */
+    /** @use HasFactory<ProductionCompanyFactory> */
     use HasFactory;
 
     public $timestamps = false;
+
+    protected $guarded = [];
 
     public function movies(): BelongsToMany
     {

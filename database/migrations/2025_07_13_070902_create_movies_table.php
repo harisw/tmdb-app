@@ -27,7 +27,8 @@ return new class extends Migration
             $table->string('img_poster')->nullable();
             $table->text('tagline')->nullable();
 
-            $table->foreignIdFor(\App\Models\Language::class);
+            $table->foreignId('language_id')->constrained();
+            $table->index('language_id');
             $table->timestamps();
         });
     }

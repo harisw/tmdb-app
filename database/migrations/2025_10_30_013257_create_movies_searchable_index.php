@@ -10,27 +10,23 @@ return new class extends Migration
      */
     public function up(): void
     {
-        if (app()->environment('testing')) {
-            return;
-        }
         DB::statement(<<<'SQL'
             create materialized view searchable_movies AS
             select
             m.id as movie_id,
             setweight(to_tsvector('english', m.title), 'A') ||
-            setweight(to_tsvector('english', string_agg(distinct g.name, '| ')), 'B') ||
+            setweight(to_tsvector('english', coalesce(string_agg(distinct g.name, '| '), '')), 'B') ||
             setweight(to_tsvector('english', coalesce(string_agg(distinct k.name, '| '), '')), 'B') ||
-            setweight(to_tsvector('english', string_agg(distinct pc.name, '| ')), 'C') ||
+            setweight(to_tsvector('english', coalesce(string_agg(distinct pc.name, '| '), '')), 'C') ||
             setweight(to_tsvector('english', l.name), 'D')
             as search_vector
             from movies m
             left join languages l on l.id=m.language_id
             left join genre_movie gm on gm.movie_id =m.id left join genres g on g.id=gm.genre_id
             left join movie_production_company mpc on mpc.movie_id =m.id left join production_companies pc on pc.id=mpc.production_company_id
-            left join (select movie_id, keyword_id,
-            row_number() over (partition by movie_id order by id) as rn
-            from keyword_movie)
-                km on km.movie_id=m.id and rn<6 left join keywords k on k.id=km.keyword_id
+            left join lateral (
+                select keyword_id from keyword_movie where movie_id=m.id limit 5
+            ) km on true left join keywords k on k.id=km.keyword_id
             group by m.id, l.name
             SQL
         );
