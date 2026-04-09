@@ -18,7 +18,9 @@ class ProductionCompanyFactory extends Factory
     public function definition(): array
     {
         return [
-            //
+            'name' => fake()->unique()->company(),
+            'slug' => fake()->unique()->slug(2),
+            'count' => 0,
         ];
     }
 }

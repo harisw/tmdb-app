@@ -47,26 +47,26 @@ class MovieService
         }
 
         try {
-            $genres = $this->prepareRelations($row->genres, Genre::class);
-            $companies = $this->prepareRelations($row->production_companies, ProductionCompany::class);
-            $keywords = $this->prepareRelations($row->keywords, Keyword::class);
+            DB::transaction(function () use ($row) {
+                $genres = $this->prepareRelations($row->genres, Genre::class);
+                $companies = $this->prepareRelations($row->production_companies, ProductionCompany::class);
+                $keywords = $this->prepareRelations($row->keywords, Keyword::class);
 
-            $movie = Movie::create($row->except('genres', 'production_companies', 'keywords')->toArray());
-            $movie->genres()->attach($genres->pluck('id')->toArray());
-            $movie->companies()->attach($companies->pluck('id')->toArray());
-            $movie->keywords()->attach($keywords->pluck('id')->toArray());
-            $this->movieDict->put($movie->slug, $movie->id);
+                $movie = Movie::create($row->except('genres', 'production_companies', 'keywords')->toArray());
+                $movie->genres()->attach($genres->pluck('id')->toArray());
+                $movie->companies()->attach($companies->pluck('id')->toArray());
+                $movie->keywords()->attach($keywords->pluck('id')->toArray());
+                $this->movieDict->put($movie->slug, $movie->id);
 
-            $this->insertedRowCount++;
+                $this->insertedRowCount++;
+            });
+
             if ($this->uploadId) {
                 $this->updateProgress();
             }
         } catch (\Exception $e) {
             report($e);
-
-            if (app()->environment('testing')) {
-                throw $e;
-            }
+            $this->reloadRelationCache();
 
             if ($this->uploadId) {
                 $this->updateProgress(true, $e->getMessage());
@@ -115,6 +115,11 @@ class MovieService
     private function loadCaches(): void
     {
         $this->movieDict = DB::table('movies')->pluck('id', 'slug');
+        $this->reloadRelationCache();
+    }
+
+    private function reloadRelationCache(): void
+    {
         foreach ([Genre::class, ProductionCompany::class, Keyword::class] as $class) {
             $this->relationCache[$class] = $class::all()->keyBy('slug');
         }

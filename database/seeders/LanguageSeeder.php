@@ -164,7 +164,7 @@ class LanguageSeeder extends Seeder
             ['code' => 'kg', 'name' => 'Kongo'],
             ['code' => 'lg', 'name' => 'Ganda'],
             ['code' => 'ch', 'name' => 'Chamorro'],
-            ['code' => 'Unknown', 'name' => 'Unknown'],
+            ['code' => 'other', 'name' => 'Other'],
         ];
 
         foreach (array_chunk($data, 1000) as $chunkedData) {

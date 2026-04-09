@@ -15,9 +15,9 @@ return new class extends Migration
             select
             m.id as movie_id,
             setweight(to_tsvector('english', m.title), 'A') ||
-            setweight(to_tsvector('english', string_agg(distinct g.name, '| ')), 'B') ||
+            setweight(to_tsvector('english', coalesce(string_agg(distinct g.name, '| '), '')), 'B') ||
             setweight(to_tsvector('english', coalesce(string_agg(distinct k.name, '| '), '')), 'B') ||
-            setweight(to_tsvector('english', string_agg(distinct pc.name, '| ')), 'C') ||
+            setweight(to_tsvector('english', coalesce(string_agg(distinct pc.name, '| '), '')), 'C') ||
             setweight(to_tsvector('english', l.name), 'D')
             as search_vector
             from movies m

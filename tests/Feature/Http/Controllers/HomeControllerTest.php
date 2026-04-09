@@ -6,7 +6,9 @@ use App\Models\Genre;
 use App\Models\Keyword;
 use App\Models\Language;
 use App\Models\Movie;
+use App\Models\ProductionCompany;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Artisan;
 use Tests\TestCase;
 
 class HomeControllerTest extends TestCase
@@ -181,11 +183,34 @@ class HomeControllerTest extends TestCase
             );
     }
 
-    public function test_search_requires_postgresql(): void
+    public function test_search_returns_matching_results(): void
     {
-        $this->markTestSkipped(
-            'search() uses PostgreSQL tsvector (plainto_tsquery). Run against a real PostgreSQL instance.'
-        );
+        $this->createSearchableMovie(['title' => 'Inception Dreams']);
+        $this->createSearchableMovie(['title' => 'Unrelated Film']);
+        $this->refreshSearchIndex();
+
+        $this->get('/search?q=inception')
+            ->assertOk()
+            ->assertJsonPath('hasMore', false)
+            ->assertJsonCount(1, 'results');
+    }
+
+    public function test_search_sets_has_more_when_results_exceed_limit(): void
+    {
+        $genre = Genre::factory()->create(['name' => 'Space Adventure']);
+        $company = ProductionCompany::factory()->create();
+
+        Movie::factory(11)->create()->each(function ($movie) use ($genre, $company) {
+            $movie->genres()->attach($genre);
+            $movie->companies()->attach($company);
+        });
+
+        $this->refreshSearchIndex();
+
+        $this->get('/search?q=space')
+            ->assertOk()
+            ->assertJsonPath('hasMore', true)
+            ->assertJsonCount(10, 'results');
     }
 
     public function test_search_all_renders_page_without_params(): void
@@ -250,10 +275,34 @@ class HomeControllerTest extends TestCase
             );
     }
 
-    public function test_search_all_with_text_query_requires_postgresql(): void
+    public function test_search_all_with_text_query_returns_matching_movies(): void
     {
-        $this->markTestSkipped(
-            'searchAll() with ?q= uses PostgreSQL tsvector. Run against a real PostgreSQL instance.'
-        );
+        $match = $this->createSearchableMovie(['title' => 'Galaxy Quest']);
+        $this->createSearchableMovie(['title' => 'Earth Bound']);
+        $this->refreshSearchIndex();
+
+        $this->get('/search-all?q=galaxy')
+            ->assertOk()
+            ->assertInertia(fn ($page) => $page
+                ->component('MovieSearchAll')
+                ->has('movies.data', 1)
+                ->where('movies.data.0.id', $match->id)
+            );
+    }
+
+    // Helpers
+
+    private function createSearchableMovie(array $overrides = []): Movie
+    {
+        $movie = Movie::factory()->create($overrides);
+        $movie->genres()->attach(Genre::factory()->create());
+        $movie->companies()->attach(ProductionCompany::factory()->create());
+
+        return $movie;
+    }
+
+    private function refreshSearchIndex(): void
+    {
+        Artisan::call('movies:refresh-searchable');
     }
 }
