@@ -44,4 +44,9 @@ class Language extends Model
     {
         return $this->hasMany(Movie::class);
     }
+
+    public function findOther(): self
+    {
+        return self::firstWhere('code', 'other');
+    }
 }

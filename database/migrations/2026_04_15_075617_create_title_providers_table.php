@@ -11,9 +11,9 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::table('movies', function (Blueprint $table) {
-            $table->unsignedBigInteger('tmdb_id')->nullable();
-            $table->string('homepage')->nullable();
+        Schema::create('title_providers', function (Blueprint $table) {
+            $table->id();
+            $table->timestamps();
         });
     }
 
@@ -22,9 +22,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::table('movies', function (Blueprint $table) {
-            $table->dropColumn('tmdb_id');
-            $table->dropColumn('homepage');
-        });
+        Schema::dropIfExists('title_providers');
     }
 };

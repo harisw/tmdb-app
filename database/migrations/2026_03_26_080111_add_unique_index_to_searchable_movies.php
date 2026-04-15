@@ -9,7 +9,7 @@ return new class extends Migration
      */
     public function up(): void
     {
-        DB::statement('CREATE UNIQUE INDEX searchable_movies_id_idx ON searchable_movies (movie_id)');
+        DB::statement('CREATE UNIQUE INDEX searchable_titles_id_idx ON searchable_movies (movie_id)');
     }
 
     /**
@@ -17,6 +17,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        DB::statement('DROP INDEX IF EXISTS searchable_movies_id_idx');
+        DB::statement('DROP INDEX IF EXISTS searchable_titles_id_idx');
     }
 };
