@@ -10,5 +10,5 @@ Artisan::command('inspire', function () {
 Schedule::command('db:seed --class=CountsSeeder --force')
     ->daily();
 
-Schedule::command('movies:refresh-searchable --force')
+Schedule::command('titles:refresh-searchable --force')
     ->everySixHours();

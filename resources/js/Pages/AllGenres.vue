@@ -1,9 +1,9 @@
 <script setup>
 import { Head } from '@inertiajs/vue3'
 import AppLayout from '../Layouts/AppLayout.vue'
-import MovieModal from '../Components/MovieModal.vue'
+import MovieModal from '../Components/TitleModal.vue'
 import Carousel from '../Components/Carousel.vue'
-import MovieCard from '../Components/MovieCard.vue'
+import MovieCard from '../Components/TitleCard.vue'
 import useModal from '../Composables/useModal.js'
 
 defineProps({
@@ -22,7 +22,7 @@ const { openModal, closeModal, selectedItem, showModal } = useModal()
                 <h1 class="text-2xl 2xl:text-4xl font-bold mb-6 text-madder">{{ genre.name }}</h1>
                 <Carousel>
                     <MovieCard
-                        v-for="item in genre.movies"
+                        v-for="item in genre.titles"
                         :key="item.id"
                         :on-click="openModal"
                         :item="item"

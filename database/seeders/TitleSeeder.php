@@ -2,12 +2,12 @@
 
 namespace Database\Seeders;
 
-use App\Service\MovieService;
+use App\Service\TitleService;
 use Exception;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Storage;
 
-class MovieSeeder extends Seeder
+class TitleSeeder extends Seeder
 {
     /**
      * Run the database seeds.
@@ -23,7 +23,7 @@ class MovieSeeder extends Seeder
 
         $header = null;
 
-        $movieService = new MovieService;
+        $titleService = new TitleService;
         $c = 0;
         try {
             while (($row = fgetcsv(stream: $handle, separator: '|')) !== false) {
@@ -36,7 +36,7 @@ class MovieSeeder extends Seeder
                         continue;
                     }
 
-                    $movieService->insertRow(array_combine($header, $row));
+                    $titleService->insertRow(array_combine($header, $row));
                 }
                 if ($c % 500 === 0) {
                     echo "Processed $c rows\r\n";

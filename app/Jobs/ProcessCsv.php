@@ -2,7 +2,7 @@
 
 namespace App\Jobs;
 
-use App\Service\MovieService;
+use App\Service\TitleService;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
@@ -34,6 +34,6 @@ class ProcessCsv implements ShouldQueue
      */
     public function handle(): void
     {
-        MovieService::insertBulk($this->rows, $this->headers, $this->uploadId);
+        TitleService::insertBulk($this->rows, $this->headers, $this->uploadId);
     }
 }

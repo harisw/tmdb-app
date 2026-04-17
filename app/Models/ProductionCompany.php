@@ -13,8 +13,8 @@ use Illuminate\Database\Eloquent\Relations\BelongsToMany;
  * @property string $slug
  * @property string $name
  * @property int $count
- * @property-read Collection<int, Movie> $movies
- * @property-read int|null $movies_count
+ * @property-read Collection<int, Title> $titles
+ * @property-read int|null $titles_count
  *
  * @method static \Database\Factories\ProductionCompanyFactory factory($count = null, $state = [])
  * @method static \Illuminate\Database\Eloquent\Builder<static>|ProductionCompany newModelQuery()
@@ -36,8 +36,8 @@ class ProductionCompany extends Model
 
     protected $guarded = [];
 
-    public function movies(): BelongsToMany
+    public function titles(): BelongsToMany
     {
-        return $this->belongsToMany(Movie::class);
+        return $this->belongsToMany(Title::class);
     }
 }

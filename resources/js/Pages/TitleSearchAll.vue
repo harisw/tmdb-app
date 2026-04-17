@@ -71,7 +71,7 @@
                         class="mt-8 w-full text-center rounded-xl text-red-100 py-4 px-6 animate-[fadeIn_0.9s_ease-out,scaleIn_0.4s_ease-out]"
                     >
                         <span v-if="!items" class="text-lg font-semibold tracking-wide">
-                            😢 Looks like this movie hasn't been made yet.
+                            😢 Looks like this title hasn't been made yet.
                         </span>
                         <span v-else class="text-lg font-semibold tracking-wide">
                             😢 Not what you’re looking for? Try refining your search.
@@ -88,8 +88,8 @@
 import { ref, watch } from 'vue'
 import { Head, router } from '@inertiajs/vue3'
 import AppLayout from '../Layouts/AppLayout.vue'
-import MovieModal from '../Components/MovieModal.vue'
-import MovieCard from '../Components/MovieCard.vue'
+import MovieModal from '../Components/TitleModal.vue'
+import MovieCard from '../Components/TitleCard.vue'
 import LoadingSpinner from '../Components/LoadingSpinner.vue'
 import MultiSelect from '../Components/MultiSelect.vue'
 import useInfiniteScroll from '../Composables/useInfiniteScroll.js'
@@ -99,11 +99,11 @@ const props = defineProps({
     genres: Object,
     languages: Object,
     tags: Object,
-    movies: Object,
+    titles: Object,
     poster_url: String,
     backdrop_url: String,
 })
-const { items, loading, sentinel, fetchItems, hasMore, query } = useInfiniteScroll({ movies: props.movies })
+const { items, loading, sentinel, fetchItems, hasMore, query } = useInfiniteScroll({ titles: props.titles })
 const { openModal, closeModal, selectedItem, showModal } = useModal()
 
 const selectedLanguages = ref([])

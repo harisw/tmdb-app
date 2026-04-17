@@ -117,7 +117,7 @@ When called inside an existing transaction, Laravel automatically uses a Postgre
 ```php
 try {
     DB::transaction(function () use ($row) {
-        // ... create movie, attach relations
+        // ... create title, attach relations
     });
 } catch (\Exception $e) {
     // outer transaction is still alive — safe to continue
@@ -135,9 +135,9 @@ PostgreSQL does not allow `REFRESH MATERIALIZED VIEW CONCURRENTLY` inside a tran
 **Fix: detect the transaction level and choose the appropriate refresh:**
 ```php
 if (DB::transactionLevel() > 0) {
-    DB::statement('REFRESH MATERIALIZED VIEW searchable_movies');
+    DB::statement('REFRESH MATERIALIZED VIEW searchable_titles');
 } else {
-    DB::statement('REFRESH MATERIALIZED VIEW CONCURRENTLY searchable_movies');
+    DB::statement('REFRESH MATERIALIZED VIEW CONCURRENTLY searchable_titles');
 }
 ```
 
@@ -166,14 +166,14 @@ This is a general principle: **in-memory caches must be treated as invalid after
 
 ### 6. The Materialized View Requires COALESCE on All Aggregates
 
-The `searchable_movies` materialized view builds a `tsvector` by concatenating weighted vectors. If any `string_agg()` returns `null` (because a movie has no genres or no production companies), the entire concatenation becomes `null` and the movie is excluded from search results.
+The `searchable_titles` materialized view builds a `tsvector` by concatenating weighted vectors. If any `string_agg()` returns `null` (because a title has no genres or no production companies), the entire concatenation becomes `null` and the title is excluded from search results.
 
 All `string_agg` calls must use `COALESCE`:
 ```sql
 setweight(to_tsvector('english', coalesce(string_agg(distinct g.name, '| '), '')), 'B')
 ```
 
-In tests, any test that exercises full-text search must call `Artisan::call('movies:refresh-searchable')` after creating movies to populate the view.
+In tests, any test that exercises full-text search must call `Artisan::call('titles:refresh-searchable')` after creating titles to populate the view.
 
 ---
 
@@ -187,7 +187,7 @@ Route::get('/genre/{slug}', [HomeController::class, 'getByGenre']);
 public function getByGenre(Genre $genre) // $genre ≠ {slug}
 ```
 
-When names don't match, Laravel cannot bind the model. The controller receives an empty model instance — `$genre->movies()` returns no results.
+When names don't match, Laravel cannot bind the model. The controller receives an empty model instance — `$genre->titles()` returns no results.
 
 **Fix:** match the route parameter name to the controller variable name:
 ```php

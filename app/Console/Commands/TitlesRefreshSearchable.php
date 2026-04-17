@@ -5,14 +5,14 @@ namespace App\Console\Commands;
 use DB;
 use Illuminate\Console\Command;
 
-class MoviesRefreshSearchable extends Command
+class TitlesRefreshSearchable extends Command
 {
     /**
      * The name and signature of the console command.
      *
      * @var string
      */
-    protected $signature = 'movies:refresh-searchable';
+    protected $signature = 'titles:refresh-searchable';
 
     /**
      * The console command description.
@@ -26,12 +26,12 @@ class MoviesRefreshSearchable extends Command
      */
     public function handle(): void
     {
-        $this->info('Starting Refresh Searchable Movie');
+        $this->info('Starting Refresh Searchable Title');
 
         if (DB::transactionLevel() > 0) {
-            DB::statement('REFRESH MATERIALIZED VIEW searchable_movies');
+            DB::statement('REFRESH MATERIALIZED VIEW searchable_titles');
         } else {
-            DB::statement('REFRESH MATERIALIZED VIEW CONCURRENTLY searchable_movies');
+            DB::statement('REFRESH MATERIALIZED VIEW CONCURRENTLY searchable_titles');
         }
 
         $this->info('*** DONE ***');

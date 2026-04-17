@@ -40,7 +40,7 @@ class HandleInertiaRequests extends Middleware
         return array_merge(parent::share($request), [
             'genres' => Cache::remember('top-genres', 7200, static function () {
                 return Genre::orderByDesc('count')->take(7)->get()->map(function (Genre $genre) {
-                    $genre['url'] = route('movie-by-genre', $genre->slug);
+                    $genre['url'] = route('title-by-genre', $genre->slug);
 
                     return $genre;
                 });

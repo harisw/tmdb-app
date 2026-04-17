@@ -291,11 +291,11 @@ Symptom: Laravel errors or blank page on first run. Generate the key once locall
 ### Seeder asks for confirmation in production (`APPLICATION IN PRODUCTION. Command cancelled.`)
 Laravel prompts for confirmation when running seeders in production. Bypass it with `--force`:
 ```bash
-docker exec tmdb-app-1 php artisan db:seed --class=MovieSeeder --force
+docker exec tmdb-app-1 php artisan db:seed --class=TitleSeeder --force
 ```
 
 ### CountsSeeder memory exhausted
-The original seeder used `with('movies')` which loaded every movie record for every keyword/language/company into PHP memory. Replaced with raw SQL `UPDATE ... SET count = (SELECT COUNT(*) ...)` queries — runs entirely on the database with no PHP memory overhead.
+The original seeder used `with('titles')` which loaded every title record for every keyword/language/company into PHP memory. Replaced with raw SQL `UPDATE ... SET count = (SELECT COUNT(*) ...)` queries — runs entirely on the database with no PHP memory overhead.
 
 ### SSM Session Manager stopped working after EC2 restart (prompted for username/password)
 The SSM agent was not running. Ubuntu 24.04 on EC2 does not always persist snap services across reboots. Fix:

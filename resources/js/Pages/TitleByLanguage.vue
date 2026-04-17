@@ -40,15 +40,15 @@
 import { ref, watch } from 'vue'
 import { Head } from '@inertiajs/vue3'
 import AppLayout from '../Layouts/AppLayout.vue'
-import MovieModal from '../Components/MovieModal.vue'
-import MovieCard from '../Components/MovieCard.vue'
+import MovieModal from '../Components/TitleModal.vue'
+import MovieCard from '../Components/TitleCard.vue'
 import LoadingSpinner from '../Components/LoadingSpinner.vue'
 import useInfiniteScroll from '../Composables/useInfiniteScroll.js'
 import useModal from '../Composables/useModal.js'
 
 const props = defineProps({
     languages: Object,
-    movies: Object,
+    titles: Object,
     poster_url: String,
     backdrop_url: String,
 })
@@ -62,7 +62,7 @@ function itemOnClick(item) {
     selectedLang.value = item
 }
 
-const { items, loading, sentinel, fetchItems, hasMore, query } = useInfiniteScroll({ movies: props.movies })
+const { items, loading, sentinel, fetchItems, hasMore, query } = useInfiniteScroll({ titles: props.titles })
 const { openModal, closeModal, selectedItem, showModal } = useModal()
 
 watch(query, (newVal) => {

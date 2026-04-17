@@ -2,24 +2,24 @@
 
 namespace App\Service;
 
-use App\DTOs\MovieDTO;
+use App\DTOs\TitleDTO;
 use App\Models\Genre;
 use App\Models\Keyword;
-use App\Models\Movie;
 use App\Models\ProductionCompany;
+use App\Models\Title;
 use Artisan;
 use Cache;
 use DB;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Str;
 
-class MovieService
+class TitleService
 {
     private int $insertedRowCount = 0;
 
     private ?string $uploadId;
 
-    private Collection $movieDict;
+    private Collection $titleDict;
 
     private array $relationCache = [];
 
@@ -33,16 +33,16 @@ class MovieService
     {
         $static = new self($uploadId);
         foreach ($data as $row) {
-            $static->insertRow(MovieDTO::from(array_combine($headers, $row)));
+            $static->insertRow(TitleDTO::from(array_combine($headers, $row)));
         }
-        Artisan::call('movies:refresh-searchable');
+        Artisan::call('titles:refresh-searchable');
 
         return $static->insertedRowCount;
     }
 
-    public function insertRow(MovieDTO $row): void
+    public function insertRow(TitleDTO $row): void
     {
-        if ($this->movieDict->has($row->slug)) {
+        if ($this->titleDict->has($row->slug)) {
             return;
         }
 
@@ -52,11 +52,11 @@ class MovieService
                 $companies = $this->prepareRelations($row->production_companies, ProductionCompany::class);
                 $keywords = $this->prepareRelations($row->keywords, Keyword::class);
 
-                $movie = Movie::create($row->except('genres', 'production_companies', 'keywords')->toArray());
-                $movie->genres()->attach($genres->pluck('id')->toArray());
-                $movie->companies()->attach($companies->pluck('id')->toArray());
-                $movie->keywords()->attach($keywords->pluck('id')->toArray());
-                $this->movieDict->put($movie->slug, $movie->id);
+                $title = Title::create($row->except('genres', 'production_companies', 'keywords')->toArray());
+                $title->genres()->attach($genres->pluck('id')->toArray());
+                $title->companies()->attach($companies->pluck('id')->toArray());
+                $title->keywords()->attach($keywords->pluck('id')->toArray());
+                $this->titleDict->put($title->slug, $title->id);
 
                 $this->insertedRowCount++;
             });
@@ -114,7 +114,7 @@ class MovieService
 
     private function loadCaches(): void
     {
-        $this->movieDict = DB::table('movies')->pluck('id', 'slug');
+        $this->titleDict = DB::table('titles')->pluck('id', 'slug');
         $this->reloadRelationCache();
     }
 

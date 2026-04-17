@@ -6,7 +6,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 - **Backend:** Laravel 12 + PHP 8.3
 - **Frontend:** Vue 3 + Inertia.js + Tailwind CSS v4 + Vite
-- **Database:** PostgreSQL 15 (with full-text search via `movies_searchable_index`)
+- **Database:** PostgreSQL 15 (with full-text search via `titles_searchable_index`)
 - **Infrastructure:** Docker + Nginx
 
 ## Development Commands
@@ -40,9 +40,9 @@ This is a Laravel + Vue 3 SPA using **Inertia.js** as the bridge — there are n
 - `app/Service/` — MovieService (query logic), CsvUploadService (CSV import)
 - `app/Jobs/ProcessCsv` — queued job for bulk CSV imports
 
-**Movie relationships:** Movies belong to many genres, keywords, and production companies (pivot tables). Languages are a direct foreign key on movies.
+**Movie relationships:** Movies belong to many genres, keywords, and production companies (pivot tables). Languages are a direct foreign key on titles.
 
-**Search:** Uses a dedicated `movies_searchable_index` table with PostgreSQL tsvector for full-text search, populated during CSV import.
+**Search:** Uses a dedicated `titles_searchable_index` table with PostgreSQL tsvector for full-text search, populated during CSV import.
 
 ### Frontend Structure
 

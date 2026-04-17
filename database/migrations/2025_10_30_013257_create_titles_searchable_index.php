@@ -11,26 +11,26 @@ return new class extends Migration
     public function up(): void
     {
         DB::statement(<<<'SQL'
-            create materialized view searchable_movies AS
+            create materialized view searchable_titles AS
             select
-            m.id as movie_id,
-            setweight(to_tsvector('english', m.title), 'A') ||
+            m.id as title_id,
+            setweight(to_tsvector('english', m.name), 'A') ||
             setweight(to_tsvector('english', coalesce(string_agg(distinct g.name, '| '), '')), 'B') ||
             setweight(to_tsvector('english', coalesce(string_agg(distinct k.name, '| '), '')), 'B') ||
             setweight(to_tsvector('english', coalesce(string_agg(distinct pc.name, '| '), '')), 'C') ||
             setweight(to_tsvector('english', l.name), 'D')
             as search_vector
-            from movies m
+            from titles m
             left join languages l on l.id=m.language_id
-            left join genre_movie gm on gm.movie_id =m.id left join genres g on g.id=gm.genre_id
-            left join movie_production_company mpc on mpc.movie_id =m.id left join production_companies pc on pc.id=mpc.production_company_id
+            left join genre_title gm on gm.title_id =m.id left join genres g on g.id=gm.genre_id
+            left join title_production_company mpc on mpc.title_id =m.id left join production_companies pc on pc.id=mpc.production_company_id
             left join lateral (
-                select keyword_id from keyword_movie where movie_id=m.id limit 5
+                select keyword_id from keyword_title where title_id=m.id limit 5
             ) km on true left join keywords k on k.id=km.keyword_id
             group by m.id, l.name
             SQL
         );
-        DB::statement('CREATE INDEX searchable_movies_vec_idx ON searchable_movies USING gin(search_vector)');
+        DB::statement('CREATE INDEX searchable_titles_vec_idx ON searchable_titles USING gin(search_vector)');
     }
 
     /**
@@ -38,7 +38,7 @@ return new class extends Migration
      */
     public function down(): void
     {
-        DB::statement('DROP materialized view if exists searchable_movies');
-        Schema::dropIfExists('searchable_movies_vec_idx');
+        DB::statement('DROP materialized view if exists searchable_titles');
+        Schema::dropIfExists('searchable_titles_vec_idx');
     }
 };

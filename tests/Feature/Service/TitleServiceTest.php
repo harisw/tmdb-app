@@ -4,13 +4,13 @@ namespace Tests\Feature\Service;
 
 use App\Models\Genre;
 use App\Models\Language;
-use App\Models\Movie;
-use App\Service\MovieService;
+use App\Models\Title;
+use App\Service\TitleService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Cache;
 use Tests\TestCase;
 
-class MovieServiceTest extends TestCase
+class TitleServiceTest extends TestCase
 {
     use RefreshDatabase;
 
@@ -25,7 +25,7 @@ class MovieServiceTest extends TestCase
         $this->language = Language::factory()->create();
 
         $this->headers = [
-            'id', 'title', 'rating', 'status', 'release_date', 'revenue',
+            'id', 'name', 'rating', 'status', 'release_date', 'revenue',
             'runtime', 'img_backdrop', 'imdb_id', 'overview', 'popularity',
             'img_poster', 'tagline', 'language_id', 'homepage',
             'genres', 'keywords', 'production_companies',
@@ -36,7 +36,7 @@ class MovieServiceTest extends TestCase
     {
         return array_merge([
             'id' => '12345',
-            'title' => 'The Matrix',
+            'name' => 'The Matrix',
             'rating' => '8.7',
             'status' => 'Released',
             'release_date' => '1999-03-31',
@@ -56,112 +56,112 @@ class MovieServiceTest extends TestCase
         ], $overrides);
     }
 
-    public function test_insert_bulk_creates_movie_in_database(): void
+    public function test_insert_bulk_creates_title_in_database(): void
     {
         $rows = [$this->makeRow()];
         $data = array_map(fn ($r) => array_values($r), $rows);
 
-        $count = MovieService::insertBulk($data, $this->headers);
+        $count = TitleService::insertBulk($data, $this->headers);
 
         $this->assertSame(1, $count);
-        $this->assertDatabaseHas('movies', [
-            'title' => 'The Matrix',
+        $this->assertDatabaseHas('titles', [
+            'name' => 'The Matrix',
             'slug' => 'the-matrix',
             'tmdb_id' => 12345,
         ]);
     }
 
-    public function test_insert_bulk_attaches_genres_to_movie(): void
+    public function test_insert_bulk_attaches_genres_to_title(): void
     {
         $data = [array_values($this->makeRow(['genres' => 'Action, Science Fiction']))];
 
-        MovieService::insertBulk($data, $this->headers);
+        TitleService::insertBulk($data, $this->headers);
 
-        $movie = Movie::where('slug', 'the-matrix')->first();
-        $this->assertCount(2, $movie->genres);
+        $title = Title::where('slug', 'the-matrix')->first();
+        $this->assertCount(2, $title->genres);
         $this->assertDatabaseHas('genres', ['slug' => 'action', 'name' => 'Action']);
         $this->assertDatabaseHas('genres', ['slug' => 'science-fiction', 'name' => 'Science Fiction']);
     }
 
-    public function test_insert_bulk_attaches_keywords_to_movie(): void
+    public function test_insert_bulk_attaches_keywords_to_title(): void
     {
         $data = [array_values($this->makeRow(['keywords' => 'hacker, virtual reality']))];
 
-        MovieService::insertBulk($data, $this->headers);
+        TitleService::insertBulk($data, $this->headers);
 
-        $movie = Movie::where('slug', 'the-matrix')->first();
-        $this->assertCount(2, $movie->keywords);
+        $title = Title::where('slug', 'the-matrix')->first();
+        $this->assertCount(2, $title->keywords);
         $this->assertDatabaseHas('keywords', ['slug' => 'hacker']);
         $this->assertDatabaseHas('keywords', ['slug' => 'virtual-reality']);
     }
 
-    public function test_insert_bulk_attaches_production_companies_to_movie(): void
+    public function test_insert_bulk_attaches_production_companies_to_title(): void
     {
         $data = [array_values($this->makeRow(['production_companies' => 'Warner Bros']))];
 
-        MovieService::insertBulk($data, $this->headers);
+        TitleService::insertBulk($data, $this->headers);
 
-        $movie = Movie::where('slug', 'the-matrix')->first();
-        $this->assertCount(1, $movie->companies);
+        $title = Title::where('slug', 'the-matrix')->first();
+        $this->assertCount(1, $title->companies);
         $this->assertDatabaseHas('production_companies', ['slug' => 'warner-bros']);
     }
 
     public function test_insert_bulk_skips_duplicate_slug(): void
     {
         $rows = [
-            $this->makeRow(['id' => '1', 'title' => 'The Matrix']),
-            $this->makeRow(['id' => '2', 'title' => 'The Matrix']), // same slug
+            $this->makeRow(['id' => '1', 'name' => 'The Matrix']),
+            $this->makeRow(['id' => '2', 'name' => 'The Matrix']), // same slug
         ];
         $data = array_map(fn ($r) => array_values($r), $rows);
 
-        $count = MovieService::insertBulk($data, $this->headers);
+        $count = TitleService::insertBulk($data, $this->headers);
 
         $this->assertSame(1, $count);
-        $this->assertSame(1, Movie::where('slug', 'the-matrix')->count());
+        $this->assertSame(1, Title::where('slug', 'the-matrix')->count());
     }
 
-    public function test_insert_bulk_skips_movie_that_already_exists_in_database(): void
+    public function test_insert_bulk_skips_title_that_already_exists_in_database(): void
     {
-        Movie::factory()->create(['slug' => 'the-matrix', 'language_id' => $this->language->id]);
+        Title::factory()->create(['slug' => 'the-matrix', 'language_id' => $this->language->id]);
 
         $data = [array_values($this->makeRow())];
 
-        $count = MovieService::insertBulk($data, $this->headers);
+        $count = TitleService::insertBulk($data, $this->headers);
 
         $this->assertSame(0, $count);
-        $this->assertSame(1, Movie::where('slug', 'the-matrix')->count());
+        $this->assertSame(1, Title::where('slug', 'the-matrix')->count());
     }
 
     public function test_insert_bulk_reuses_existing_genre_across_rows(): void
     {
         $rows = [
-            $this->makeRow(['id' => '1', 'title' => 'Movie One', 'genres' => 'Action']),
-            $this->makeRow(['id' => '2', 'title' => 'Movie Two', 'genres' => 'Action']),
+            $this->makeRow(['id' => '1', 'name' => 'Title One', 'genres' => 'Action']),
+            $this->makeRow(['id' => '2', 'name' => 'Title Two', 'genres' => 'Action']),
         ];
         $data = array_map(fn ($r) => array_values($r), $rows);
 
-        MovieService::insertBulk($data, $this->headers);
+        TitleService::insertBulk($data, $this->headers);
 
         $this->assertSame(1, Genre::where('slug', 'action')->count());
 
         $genre = Genre::where('slug', 'action')->first();
-        $this->assertSame(2, $genre->movies()->count());
+        $this->assertSame(2, $genre->titles()->count());
     }
 
     public function test_insert_bulk_continues_after_a_failed_row(): void
     {
         $rows = [
-            $this->makeRow(['id' => '1', 'title' => 'Good Movie', 'language_id' => '99999']), // bad FK
-            $this->makeRow(['id' => '2', 'title' => 'Another Good Movie']),
+            $this->makeRow(['id' => '1', 'name' => 'Good Title', 'language_id' => '99999']), // bad FK
+            $this->makeRow(['id' => '2', 'name' => 'Another Good Title']),
         ];
 
         $data = array_map(fn ($r) => array_values($r), $rows);
 
-        $count = MovieService::insertBulk($data, $this->headers);
+        $count = TitleService::insertBulk($data, $this->headers);
 
         //        $this->assertSame(1, $count);
-        $this->assertDatabaseHas('movies', ['slug' => 'another-good-movie']);
-        $this->assertDatabaseMissing('movies', ['slug' => 'good-movie']);
+        $this->assertDatabaseHas('titles', ['slug' => 'another-good-title']);
+        $this->assertDatabaseMissing('titles', ['slug' => 'good-title']);
     }
 
     public function test_insert_bulk_tracks_progress_in_cache(): void
@@ -175,7 +175,7 @@ class MovieServiceTest extends TestCase
 
         $data = [array_values($this->makeRow())];
 
-        MovieService::insertBulk($data, $this->headers, $uploadId);
+        TitleService::insertBulk($data, $this->headers, $uploadId);
 
         $progress = Cache::get("csv_upload_{$uploadId}");
         $this->assertSame('completed', $progress['status']);
@@ -194,7 +194,7 @@ class MovieServiceTest extends TestCase
         $rows = [$this->makeRow(['language_id' => '99999'])]; // invalid FK
         $data = array_map(fn ($r) => array_values($r), $rows);
 
-        MovieService::insertBulk($data, $this->headers, $uploadId);
+        TitleService::insertBulk($data, $this->headers, $uploadId);
 
         $progress = Cache::get("csv_upload_{$uploadId}");
         $this->assertSame('failed', $progress['status']);
@@ -203,27 +203,27 @@ class MovieServiceTest extends TestCase
 
     public function test_insert_bulk_returns_zero_when_all_rows_are_duplicates(): void
     {
-        Movie::factory()->create(['slug' => 'the-matrix', 'language_id' => $this->language->id]);
+        Title::factory()->create(['slug' => 'the-matrix', 'language_id' => $this->language->id]);
 
         $data = [array_values($this->makeRow())];
 
-        $count = MovieService::insertBulk($data, $this->headers);
+        $count = TitleService::insertBulk($data, $this->headers);
 
         $this->assertSame(0, $count);
     }
 
-    public function test_insert_bulk_handles_multiple_movies(): void
+    public function test_insert_bulk_handles_multiple_titles(): void
     {
         $rows = [
-            $this->makeRow(['id' => '1', 'title' => 'Film Alpha']),
-            $this->makeRow(['id' => '2', 'title' => 'Film Beta']),
-            $this->makeRow(['id' => '3', 'title' => 'Film Gamma']),
+            $this->makeRow(['id' => '1', 'name' => 'Film Alpha']),
+            $this->makeRow(['id' => '2', 'name' => 'Film Beta']),
+            $this->makeRow(['id' => '3', 'name' => 'Film Gamma']),
         ];
         $data = array_map(fn ($r) => array_values($r), $rows);
 
-        $count = MovieService::insertBulk($data, $this->headers);
+        $count = TitleService::insertBulk($data, $this->headers);
 
         $this->assertSame(3, $count);
-        $this->assertSame(3, Movie::count());
+        $this->assertSame(3, Title::count());
     }
 }

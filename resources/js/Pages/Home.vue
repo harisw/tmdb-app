@@ -16,7 +16,7 @@
                     v-model="q"
                     :debounce="400"
                     :min-length="2"
-                    placeholder="Search movies..."
+                    placeholder="Search titles..."
                     :preserve-state="true"
                     :replace="false"
                     route="search"
@@ -49,8 +49,8 @@
 import { Head } from '@inertiajs/vue3'
 import { ref } from 'vue'
 import AppLayout from '../Layouts/AppLayout.vue'
-import MovieModal from '../Components/MovieModal.vue'
-import MovieCard from '../Components/MovieCard.vue'
+import MovieModal from '../Components/TitleModal.vue'
+import MovieCard from '../Components/TitleCard.vue'
 import LoadingSpinner from '../Components/LoadingSpinner.vue'
 import RotatingHeader from '../Components/RotatingHeader.vue'
 import SearchInput from '../Components/SearchInput.vue'
@@ -58,12 +58,12 @@ import useInfiniteScroll from '../Composables/useInfiniteScroll.js'
 import useModal from '../Composables/useModal.js'
 
 const props = defineProps({
-    movies: Object,
+    titles: Object,
     poster_url: String,
     backdrop_url: String,
 })
 
-const { items, loading, sentinel, _, hasMore } = useInfiniteScroll({ movies: props.movies })
+const { items, loading, sentinel, _, hasMore } = useInfiniteScroll({ titles: props.titles })
 const { openModal, closeModal, selectedItem, showModal } = useModal()
 
 const headlines = [
