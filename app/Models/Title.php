@@ -95,7 +95,7 @@ class Title extends Model
 
     public function companies(): BelongsToMany
     {
-        return $this->belongsToMany(ProductionCompany::class);
+        return $this->belongsToMany(ProductionCompany::class, 'title_production_company');
     }
 
     public function keywords(): BelongsToMany

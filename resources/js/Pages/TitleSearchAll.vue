@@ -56,7 +56,7 @@
                 <div
                     class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-7 gap-6 auto-rows-[450px] 2xl:auto-rows-[520px]"
                 >
-                    <MovieCard
+                    <TitleCard
                         v-for="item in items"
                         :key="item.id"
                         :on-click="openModal"
@@ -81,15 +81,15 @@
             </div>
         </div>
     </AppLayout>
-    <MovieModal :show="showModal" :item="selectedItem" :backdrop_url="backdrop_url" @close="closeModal" />
+    <TitleModal :show="showModal" :item="selectedItem" :backdrop_url="backdrop_url" @close="closeModal" />
 </template>
 
 <script setup>
 import { ref, watch } from 'vue'
 import { Head, router } from '@inertiajs/vue3'
 import AppLayout from '../Layouts/AppLayout.vue'
-import MovieModal from '../Components/TitleModal.vue'
-import MovieCard from '../Components/TitleCard.vue'
+import TitleModal from '../Components/TitleModal.vue'
+import TitleCard from '../Components/TitleCard.vue'
 import LoadingSpinner from '../Components/LoadingSpinner.vue'
 import MultiSelect from '../Components/MultiSelect.vue'
 import useInfiniteScroll from '../Composables/useInfiniteScroll.js'

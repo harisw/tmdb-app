@@ -1,9 +1,9 @@
 <script setup>
 import { Head } from '@inertiajs/vue3'
 import AppLayout from '../Layouts/AppLayout.vue'
-import MovieModal from '../Components/TitleModal.vue'
+import TitleModal from '../Components/TitleModal.vue'
 import Carousel from '../Components/Carousel.vue'
-import MovieCard from '../Components/TitleCard.vue'
+import TitleCard from '../Components/TitleCard.vue'
 import useModal from '../Composables/useModal.js'
 
 defineProps({
@@ -21,7 +21,7 @@ const { openModal, closeModal, selectedItem, showModal } = useModal()
             <div v-for="genre in allGenres" :key="genre.id" class="mb-15">
                 <h1 class="text-2xl 2xl:text-4xl font-bold mb-6 text-madder">{{ genre.name }}</h1>
                 <Carousel>
-                    <MovieCard
+                    <TitleCard
                         v-for="item in genre.titles"
                         :key="item.id"
                         :on-click="openModal"
@@ -34,7 +34,7 @@ const { openModal, closeModal, selectedItem, showModal } = useModal()
             </div>
         </div>
     </AppLayout>
-    <MovieModal :show="showModal" :item="selectedItem" :backdrop_url="backdrop_url" @close="closeModal" />
+    <TitleModal :show="showModal" :item="selectedItem" :backdrop_url="backdrop_url" @close="closeModal" />
 </template>
 
 <style>

@@ -24,11 +24,11 @@
                 />
             </div>
 
-            <h2 class="text-2xl 2xl:text-4xl font-bold mb-6 text-madder">Hottest Movies</h2>
+            <h2 class="text-2xl 2xl:text-4xl font-bold mb-6 text-madder">Hottest Titles</h2>
             <div
                 class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-7 gap-6 auto-rows-[450px] 2xl:auto-rows-[520px]"
             >
-                <MovieCard
+                <TitleCard
                     v-for="item in items"
                     :key="item.id"
                     :on-click="openModal"
@@ -42,15 +42,15 @@
             </div>
         </div>
     </AppLayout>
-    <MovieModal :show="showModal" :item="selectedItem" :backdrop_url="backdrop_url" @close="closeModal" />
+    <TitleModal :show="showModal" :item="selectedItem" :backdrop_url="backdrop_url" @close="closeModal" />
 </template>
 
 <script setup>
 import { Head } from '@inertiajs/vue3'
 import { ref } from 'vue'
 import AppLayout from '../Layouts/AppLayout.vue'
-import MovieModal from '../Components/TitleModal.vue'
-import MovieCard from '../Components/TitleCard.vue'
+import TitleModal from '../Components/TitleModal.vue'
+import TitleCard from '../Components/TitleCard.vue'
 import LoadingSpinner from '../Components/LoadingSpinner.vue'
 import RotatingHeader from '../Components/RotatingHeader.vue'
 import SearchInput from '../Components/SearchInput.vue'

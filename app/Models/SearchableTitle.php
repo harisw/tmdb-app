@@ -13,7 +13,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @method static \Illuminate\Database\Eloquent\Builder<static>|SearchableTitle newModelQuery()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|SearchableTitle newQuery()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|SearchableTitle query()
- * @method static \Illuminate\Database\Eloquent\Builder<static>|SearchableTitle whereMovieId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|SearchableTitle whereTitleId($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|SearchableTitle whereSearchVector($value)
  *
  * @mixin \Eloquent
