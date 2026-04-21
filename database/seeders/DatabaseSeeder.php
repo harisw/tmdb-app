@@ -16,7 +16,8 @@ class DatabaseSeeder extends Seeder
             GenreSeeder::class,
             ProductionCompanySeeder::class,
             KeywordSeeder::class,
-            TitleSeeder::class,
+            CountrySeeder::class,
+            //            TitleSeeder::class,
             //            CountsSeeder::class,
         ]);
     }

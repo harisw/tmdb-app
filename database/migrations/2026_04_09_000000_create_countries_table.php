@@ -13,7 +13,7 @@ return new class extends Migration
             $table->id();
             $table->string('name');
             $table->char('iso2', 2)->unique();
-            $table->char('iso3', 3)->unique();
+            $table->char('iso3', 3)->nullable()->unique();
             $table->foreignIdFor(Language::class)->nullable()->constrained()
                 ->nullOnDelete();
             $table->timestamps();
