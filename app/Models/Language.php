@@ -26,6 +26,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Language whereName($value)
  *
  * @mixin \Eloquent
+ * @mixin IdeHelperLanguage
  */
 class Language extends Model
 {

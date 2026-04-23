@@ -17,6 +17,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @method static \Illuminate\Database\Eloquent\Builder<static>|SearchableTitle whereSearchVector($value)
  *
  * @mixin \Eloquent
+ * @mixin IdeHelperSearchableTitle
  */
 class SearchableTitle extends Model
 {

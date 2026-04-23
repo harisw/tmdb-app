@@ -26,6 +26,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsToMany;
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Genre whereSlug($value)
  *
  * @mixin \Eloquent
+ * @mixin IdeHelperGenre
  */
 class Genre extends Model
 {

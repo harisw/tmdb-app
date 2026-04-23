@@ -2,51 +2,18 @@
 
 namespace Database\Seeders;
 
-use App\Models\Country;
-use App\Models\Language;
+use App\Service\CountryProviderService;
 use Illuminate\Database\Seeder;
-use Illuminate\Support\Collection;
-use Illuminate\Support\Str;
-use Io238\ISOCountries\Models\Country as ISOCountry;
 
 class CountryProviderSeeder extends Seeder
 {
-    private Collection $languageMapping;
-
     /**
      * Run the database seeds.
      */
     public function run(): void
     {
-        $this->languageMapping = Language::pluck('id', 'code');
-        $data = json_decode(file_get_contents(__DIR__.'/data/providers.json'), true)['results'];
+        $data = json_decode(file_get_contents(__DIR__.'/data/providers.json'), true);
 
-        $result = array_map(function ($item) {
-            $mapping = $this->getProperties($item['iso2']);
-
-            return [
-                'name' => $item['provider_name'],
-                'slug' => Str::slug($item['provider_name']),
-                'iso2' => $item['iso2'],
-                'iso3' => $mapping['iso3'],
-                'language_id' => $mapping['language_id'],
-            ];
-        }, $data);
-
-        foreach (array_chunk($result, 1000) as $chunkedData) {
-            Country::upsert($chunkedData, ['iso2']);
-        }
-    }
-
-    private function getProperties(string $iso2): array
-    {
-        $isoCountry = ISOCountry::find($iso2);
-        $langCode = $isoCountry?->languages?->first()?->id;
-        $languageId = $this->languageMapping->get($langCode) ?? Language::findOther()->id;
-
-        return [
-            'iso3' => $isoCountry?->alpha3,
-            'language_id' => $languageId,
-        ];
+        CountryProviderService::upsertBulk($data['results']);
     }
 }

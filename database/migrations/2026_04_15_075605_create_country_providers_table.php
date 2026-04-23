@@ -1,6 +1,5 @@
 <?php
 
-use App\Models\Provider;
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
@@ -14,11 +13,13 @@ return new class extends Migration
     {
         Schema::create('country_providers', function (Blueprint $table) {
             $table->id();
-            $table->foreignIdFor(Country::class)->constrained()->cascadeOnDelete();
-            $table->foreignIdFor(Provider::class)->constrained()->cascadeOnDelete();
+            $table->foreignId('country_id')->constrained()->cascadeOnDelete();
+            $table->foreignId('provider_id')->constrained()->cascadeOnDelete();
             $table->unsignedSmallInteger('priority')->default(0);
             $table->schemalessAttributes('extra_attributes')->nullable();
             $table->timestamps();
+
+            $table->unique(['country_id', 'provider_id']);
         });
     }
 

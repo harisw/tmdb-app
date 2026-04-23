@@ -26,6 +26,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsToMany;
  * @method static \Illuminate\Database\Eloquent\Builder<static>|ProductionCompany whereSlug($value)
  *
  * @mixin \Eloquent
+ * @mixin IdeHelperProductionCompany
  */
 class ProductionCompany extends Model
 {

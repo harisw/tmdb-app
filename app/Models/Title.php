@@ -63,6 +63,7 @@ use Illuminate\Support\Carbon;
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Title whereUpdatedAt($value)
  *
  * @mixin \Eloquent
+ * @mixin IdeHelperTitle
  */
 class Title extends Model
 {

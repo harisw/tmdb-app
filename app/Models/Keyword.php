@@ -26,6 +26,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsToMany;
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Keyword whereSlug($value)
  *
  * @mixin \Eloquent
+ * @mixin IdeHelperKeyword
  */
 class Keyword extends Model
 {
