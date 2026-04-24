@@ -1,8 +1,8 @@
 <?php
 
-namespace App\Service;
+namespace App\Services;
 
-use App\DTOs\TitleDTO;
+use App\DTOs\TitleData;
 use App\Models\Genre;
 use App\Models\Keyword;
 use App\Models\ProductionCompany;
@@ -33,14 +33,14 @@ class TitleService
     {
         $static = new self($uploadId);
         foreach ($data as $row) {
-            $static->insertRow(TitleDTO::from(array_combine($headers, $row)));
+            $static->insertRow(TitleData::from(array_combine($headers, $row)));
         }
         Artisan::call('titles:refresh-searchable');
 
         return $static->insertedRowCount;
     }
 
-    public function insertRow(TitleDTO $row): void
+    public function insertRow(TitleData $row): void
     {
         if ($this->titleDict->has($row->slug)) {
             return;

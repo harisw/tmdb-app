@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Service;
+namespace App\Services;
 
 use App\DTOs\ProviderData;
 use App\DTOs\ProviderDataCollection;

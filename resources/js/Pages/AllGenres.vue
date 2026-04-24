@@ -8,8 +8,6 @@ import useModal from '../Composables/useModal.js'
 
 defineProps({
     allGenres: Array,
-    poster_url: String,
-    backdrop_url: String,
 })
 const { openModal, closeModal, selectedItem, showModal } = useModal()
 </script>
@@ -26,7 +24,6 @@ const { openModal, closeModal, selectedItem, showModal } = useModal()
                         :key="item.id"
                         :on-click="openModal"
                         :item="item"
-                        :poster-url="poster_url"
                         :show-genres="false"
                         size="w-3xs"
                     />
@@ -34,7 +31,7 @@ const { openModal, closeModal, selectedItem, showModal } = useModal()
             </div>
         </div>
     </AppLayout>
-    <TitleModal :show="showModal" :item="selectedItem" :backdrop_url="backdrop_url" @close="closeModal" />
+    <TitleModal :show="showModal" :item="selectedItem" @close="closeModal" />
 </template>
 
 <style>

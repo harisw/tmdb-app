@@ -820,7 +820,7 @@ class ProductionCompanySeeder extends Seeder
             ['slug' => 'mediaset-espana', 'name' => 'Mediaset Espa?a'],
             ['slug' => 'la-trini', 'name' => 'La Trini'],
             ['slug' => 'generalitat-valenciana', 'name' => 'Generalitat Valenciana'],
-            ['slug' => 'vs-service', 'name' => 'VS Service'],
+            ['slug' => 'vs-service', 'name' => 'VS Services'],
             ['slug' => 'tgim-films', 'name' => 'TGIM Films'],
             ['slug' => 'film-i-vast', 'name' => 'Film i V?st'],
             ['slug' => 'saturn-films', 'name' => 'Saturn Films'],

@@ -1,13 +1,15 @@
 <script setup>
 import { onMounted, onUnmounted } from 'vue'
+import { usePage } from '@inertiajs/vue3'
 import { X } from 'lucide-vue-next'
 import RatingBadge from './RatingBadge.vue'
 
 const props = defineProps({
     show: { type: Boolean, required: true },
     item: { type: Object, default: null },
-    backdrop_url: { type: String, default: null },
 })
+
+const page = usePage()
 
 const emits = defineEmits(['close'])
 
@@ -46,7 +48,7 @@ onUnmounted(() => window.removeEventListener('keydown', handleKey))
                         <!-- Large image -->
                         <div class="w-full h-72 md:h-96 bg-black">
                             <img
-                                :src="backdrop_url + item.img_backdrop"
+                                :src="page.props.img.backdrop + item.img_backdrop"
                                 alt="Poster"
                                 class="w-full h-full object-cover"
                             />

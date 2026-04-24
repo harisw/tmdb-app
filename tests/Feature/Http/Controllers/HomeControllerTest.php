@@ -36,8 +36,6 @@ class HomeControllerTest extends TestCase
             ->assertInertia(fn ($page) => $page
                 ->component('Home')
                 ->has('titles')
-                ->has('poster_url')
-                ->has('backdrop_url')
             );
     }
 
@@ -61,8 +59,6 @@ class HomeControllerTest extends TestCase
             ->assertInertia(fn ($page) => $page
                 ->component('AllGenres')
                 ->has('allGenres', 3)
-                ->has('poster_url')
-                ->has('backdrop_url')
             );
     }
 
@@ -90,8 +86,6 @@ class HomeControllerTest extends TestCase
                 ->component('TitleByGenre')
                 ->has('genre')
                 ->has('titles')
-                ->has('poster_url')
-                ->has('backdrop_url')
             );
     }
 
@@ -119,8 +113,6 @@ class HomeControllerTest extends TestCase
             ->assertInertia(fn ($page) => $page
                 ->component('TitleByLanguage')
                 ->has('languages', 3)
-                ->has('poster_url')
-                ->has('backdrop_url')
             );
     }
 
@@ -155,8 +147,6 @@ class HomeControllerTest extends TestCase
             ->assertInertia(fn ($page) => $page
                 ->component('TitleByKeyword')
                 ->has('tags')
-                ->has('poster_url')
-                ->has('backdrop_url')
             );
     }
 
@@ -225,8 +215,6 @@ class HomeControllerTest extends TestCase
                 ->has('genres')
                 ->has('languages')
                 ->has('tags')
-                ->has('poster_url')
-                ->has('backdrop_url')
                 ->where('titles', [])
             );
     }

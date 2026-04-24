@@ -2,25 +2,15 @@
 
 namespace App\Http\Controllers;
 
-use App\Service\CsvUploadService;
+use App\Http\Requests\UploadCsvRequest;
+use App\Services\CsvUploadService;
 use Cache;
 use Illuminate\Http\JsonResponse;
 
 class CsvUploadController extends Controller
 {
-    public function upload(\Request $request)
+    public function upload(UploadCsvRequest $request): JsonResponse
     {
-        $validator = \Validator::make($request->all(), [
-            'file' => 'required|file|mimes:csv,txt',
-        ]);
-
-        if ($validator->fails()) {
-            return response()->json([
-                'message' => 'Invalid file',
-                'errors' => $validator->errors(),
-            ], 422);
-        }
-
         $result = CsvUploadService::for($request->file('csv_file'));
 
         return response()->json(

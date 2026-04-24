@@ -2,7 +2,7 @@
 
 namespace App\Jobs;
 
-use App\Service\TitleService;
+use App\Services\TitleService;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;

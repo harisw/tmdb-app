@@ -11,7 +11,7 @@ php artisan test
 
 Run a specific file:
 ```bash
-php artisan test tests/Feature/Service/MovieServiceTest.php
+php artisan test tests/Feature/Services/MovieServiceTest.php
 ```
 
 ---

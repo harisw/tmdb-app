@@ -1,6 +1,6 @@
 <script setup>
-import { ref, computed, onMounted, onBeforeUnmount } from 'vue'
-import { usePage, Link } from '@inertiajs/vue3'
+import {ref, computed, onMounted, onBeforeUnmount} from 'vue'
+import {usePage, Link} from '@inertiajs/vue3'
 import useBaseUrl from '../Composables/useBaseUrl.js'
 import CsvUploadModal from '../Components/CsvUploadModal.vue'
 
@@ -34,6 +34,8 @@ function closeMobileMenu() {
 
 const page = usePage()
 const genres = computed(() => page.props.genres)
+const posterBase = computed(() => page.props.img.poster)
+const backdropBase = computed(() => page.props.img.backdrop)
 const user = computed(() => page.props.auth.user)
 const isAuthenticated = computed(() => !!user.value)
 const menuRef = ref(null)
@@ -81,7 +83,7 @@ onBeforeUnmount(() => {
                                             fill="currentColor"
                                             viewBox="0 0 20 20"
                                         >
-                                            <path d="M5.25 7.5L10 12.25L14.75 7.5H5.25Z" />
+                                            <path d="M5.25 7.5L10 12.25L14.75 7.5H5.25Z"/>
                                         </svg>
                                     </button>
                                     <ul
@@ -108,7 +110,8 @@ onBeforeUnmount(() => {
                                 </li>
                                 <li>
                                     <Link :href="baseUrl + '/languages'" class="hover:text-gray-300"
-                                        >Browse by Languages</Link
+                                    >Browse by Languages
+                                    </Link
                                     >
                                 </li>
                                 <li>
@@ -132,7 +135,7 @@ onBeforeUnmount(() => {
                                         :class="{ 'rotate-180': isSettingOpen }"
                                         viewBox="0 0 20 20"
                                     >
-                                        <path d="M5.25 7.5L10 12.25L14.75 7.5H5.25Z" />
+                                        <path d="M5.25 7.5L10 12.25L14.75 7.5H5.25Z"/>
                                     </svg>
                                 </div>
                                 <div
@@ -142,7 +145,7 @@ onBeforeUnmount(() => {
                                     <span
                                         class="block px-4 py-2 hover:bg-gray-800 cursor-pointer"
                                         @click="toggleUploadModal"
-                                        >Upload Data</span
+                                    >Upload Data</span
                                     >
                                     <a href="#" class="block px-4 py-2 hover:bg-gray-800">Logout</a>
                                 </div>
@@ -198,7 +201,7 @@ onBeforeUnmount(() => {
                                     fill="currentColor"
                                     viewBox="0 0 20 20"
                                 >
-                                    <path d="M5.25 7.5L10 12.25L14.75 7.5H5.25Z" />
+                                    <path d="M5.25 7.5L10 12.25L14.75 7.5H5.25Z"/>
                                 </svg>
                             </button>
                             <ul v-if="isGenresOpen" class="pl-4 mt-2 flex flex-col gap-1">
@@ -207,7 +210,8 @@ onBeforeUnmount(() => {
                                         :href="genre.url"
                                         class="block py-1 hover:text-gray-300"
                                         @click="closeMobileMenu"
-                                        >{{ genre.name }}</Link
+                                    >{{ genre.name }}
+                                    </Link
                                     >
                                 </li>
                                 <li>
@@ -215,24 +219,28 @@ onBeforeUnmount(() => {
                                         :href="baseUrl + '/genre/all'"
                                         class="block py-1 hover:text-gray-300"
                                         @click="closeMobileMenu"
-                                        >See more</Link
+                                    >See more
+                                    </Link
                                     >
                                 </li>
                             </ul>
                         </div>
                         <Link :href="baseUrl + '/tags'" class="hover:text-gray-300" @click="closeMobileMenu"
-                            >Browse by Tags</Link
+                        >Browse by Tags
+                        </Link
                         >
                         <Link :href="baseUrl + '/languages'" class="hover:text-gray-300" @click="closeMobileMenu"
-                            >Browse by Languages</Link
+                        >Browse by Languages
+                        </Link
                         >
                         <Link :href="baseUrl + '/search-all'" class="hover:text-gray-300" @click="closeMobileMenu"
-                            >Find more</Link
+                        >Find more
+                        </Link
                         >
 
                         <!-- Profile links on mobile -->
                         <template v-if="isAuthenticated">
-                            <hr class="border-gray-800" />
+                            <hr class="border-gray-800"/>
                             <span
                                 class="cursor-pointer hover:text-gray-300"
                                 @click="
@@ -241,7 +249,7 @@ onBeforeUnmount(() => {
                                         closeMobileMenu()
                                     }
                                 "
-                                >Upload Data</span
+                            >Upload Data</span
                             >
                             <a href="#" class="hover:text-gray-300">Logout</a>
                         </template>
@@ -250,9 +258,9 @@ onBeforeUnmount(() => {
             </header>
 
             <div class="max-w-[2200px] mx-auto px-4 pt-24 pb-8 md:px-10 md:pt-28 lg:px-20 2xl:px-28 2xl:pt-36">
-                <slot />
+                <slot/>
             </div>
         </main>
     </div>
-    <CsvUploadModal :is-open="isUploadModalOpen" />
+    <CsvUploadModal :is-open="isUploadModalOpen"/>
 </template>

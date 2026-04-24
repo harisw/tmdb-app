@@ -2,7 +2,7 @@
 
 namespace Database\Seeders;
 
-use App\Service\CountryProviderService;
+use App\Services\CountryProviderService;
 use Illuminate\Database\Seeder;
 
 class CountryProviderSeeder extends Seeder

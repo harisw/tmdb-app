@@ -7,7 +7,9 @@ use App\Models\Keyword;
 use App\Models\Language;
 use App\Models\SearchableTitle;
 use App\Models\Title;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -24,8 +26,6 @@ class HomeController extends Controller
             ->latest()->paginate(self::PAGINATE_SIZE);
 
         return Inertia::render('Home', [
-            'poster_url' => config('services.title_db.img_url').Title::IMG_SMALL_URL,
-            'backdrop_url' => config('services.title_db.img_url').Title::IMG_LARGE_URL,
             'titles' => $titles,
         ]);
     }
@@ -38,8 +38,7 @@ class HomeController extends Controller
 
         return Inertia::render('AllGenres', [
             'allGenres' => $genres,
-            'poster_url' => config('services.title_db.img_url').Title::IMG_SMALL_URL,
-            'backdrop_url' => config('services.title_db.img_url').Title::IMG_LARGE_URL,
+
         ]);
     }
 
@@ -47,30 +46,26 @@ class HomeController extends Controller
     {
         return Inertia::render('TitleByGenre', [
             'genre' => $genre,
-            'poster_url' => config('services.title_db.img_url').Title::IMG_SMALL_URL,
-            'backdrop_url' => config('services.title_db.img_url').Title::IMG_LARGE_URL,
             'titles' => $genre->titles()->with(['genres', 'keywords'])->latest()->paginate(self::PAGINATE_SIZE),
         ]);
     }
 
-    public function getByLanguage(): Response
+    public function getByLanguage(Request $request): Response
     {
-        $lang = request()->query('lang');
+        $lang = $request->query('lang');
         $language = $lang ? Language::whereCode($lang)->first() : null;
 
         return Inertia::render('TitleByLanguage', [
             'languages' => Language::orderByDesc('count')->get(),
-            'poster_url' => config('services.title_db.img_url').Title::IMG_SMALL_URL,
-            'backdrop_url' => config('services.title_db.img_url').Title::IMG_LARGE_URL,
             'titles' => $language ? $language->titles()->with(['genres', 'keywords'])->latest()->paginate(self::PAGINATE_SIZE)
                 : null,
         ]);
     }
 
-    public function getByTag(): Response
+    public function getByTag(Request $request): Response
     {
-        $keyQuery = request()->query('tag');
-        $tagOffset = request()->query('tagOffset', 0);
+        $keyQuery = $request->query('tag');
+        $tagOffset = $request->query('tagOffset', 0);
         $key = $keyQuery ? Keyword::whereSlug($keyQuery)->first() : null;
 
         $tags = Keyword::orderByDesc('count')->offset($tagOffset)
@@ -79,16 +74,14 @@ class HomeController extends Controller
 
         return Inertia::render('TitleByKeyword', [
             'tags' => $tags,
-            'poster_url' => config('services.title_db.img_url').Title::IMG_SMALL_URL,
-            'backdrop_url' => config('services.title_db.img_url').Title::IMG_LARGE_URL,
             'titles' => $key ? $key->titles()->with(['genres', 'keywords'])->latest()->paginate(self::PAGINATE_SIZE)
                 : null,
         ]);
     }
 
-    public function search(): JsonResponse
+    public function search(Request $request): JsonResponse
     {
-        $q = request()->query('q');
+        $q = $request->query('q');
         $results = SearchableTitle::selectRaw("title_id, ts_rank(search_vector, plainto_tsquery('english',(?))) as rank", [$q])
             ->whereRaw('search_vector @@ plainto_tsquery(?)', [$q])
             ->with('title')
@@ -103,13 +96,13 @@ class HomeController extends Controller
         ]);
     }
 
-    public function searchAll(): Response
+    public function searchAll(Request $request): Response
     {
-        $hasParams = request()->hasAny(['q', 'lang', 'gen', 'tag']);
+        $hasParams = $request->hasAny(['q', 'lang', 'gen', 'tag']);
 
         $results = collect([]);
         if ($hasParams) {
-            $q = request()->query('q');
+            $q = $request->query('q');
 
             $results = $q ? SearchableTitle::selectRaw("title_id, ts_rank(search_vector, plainto_tsquery('english',(?))) as rank", [$q])
                 ->whereRaw('search_vector @@ plainto_tsquery(?)', [$q])
@@ -117,39 +110,35 @@ class HomeController extends Controller
                 ->orderByDesc('rank')
                 ->take(100)->pluck('title_id') : collect();
 
-            $results = $this->applyFilters($results)->paginate(self::PAGINATE_SIZE);
+            $results = $this->applyFilters($results, $request->query('lang'), $request->query('gen'),
+                $request->query('tag'))->paginate(self::PAGINATE_SIZE);
         }
 
         return Inertia::render('TitleSearchAll', [
             'genres' => Genre::orderByDesc('count')->get(),
             'languages' => Language::orderByDesc('count')->get(),
             'tags' => Keyword::where('count', '>', 100)->orderByDesc('count')->get(),
-            'poster_url' => config('services.title_db.img_url').Title::IMG_SMALL_URL,
-            'backdrop_url' => config('services.title_db.img_url').Title::IMG_LARGE_URL,
             'titles' => $results,
         ]);
     }
 
-    private function applyFilters(Collection $titleIds)
+    private function applyFilters(Collection $titleIds, ?string $lang, ?string $gen, ?string $tag): Builder
     {
         $query = Title::query()->with(['genres', 'keywords']);
-        $languageIds = request()->query('lang') ? Language::whereCode(request()->query('lang'))
-            ->pluck('id') : [];
+        $languageIds = $lang ? Language::whereCode($lang)->pluck('id') : [];
 
         if ($languageIds) {
             $query->whereIn('language_id', $languageIds);
         }
 
-        $genreIds = request()->query('gen') ? Genre::whereSlug(request()->query('gen'))
-            ->pluck('id') : [];
+        $genreIds = $gen ? Genre::whereSlug($gen)->pluck('id') : [];
         if ($genreIds) {
             $query->whereHas('genres', function ($q) use ($genreIds) {
                 $q->whereIn('genres.id', $genreIds);
             });
         }
 
-        $keywordIds = request()->query('tag') ? Keyword::whereSlug(request()->query('tag'))
-            ->pluck('id') : [];
+        $keywordIds = $tag ? Keyword::whereSlug($tag)->pluck('id') : [];
 
         if ($keywordIds) {
             $query->whereHas('keywords', function ($q) use ($keywordIds) {

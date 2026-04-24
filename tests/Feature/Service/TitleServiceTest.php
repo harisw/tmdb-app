@@ -5,7 +5,7 @@ namespace Tests\Feature\Service;
 use App\Models\Genre;
 use App\Models\Language;
 use App\Models\Title;
-use App\Service\TitleService;
+use App\Services\TitleService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Cache;
 use Tests\TestCase;

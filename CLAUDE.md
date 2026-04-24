@@ -37,7 +37,7 @@ This is a Laravel + Vue 3 SPA using **Inertia.js** as the bridge — there are n
 - `routes/web.php` — all routes (no separate API routes used by frontend)
 - `app/Http/Controllers/` — HomeController, Auth controllers, CsvUploadController
 - `app/Models/` — Movie, Genre, Keyword, Language, ProductionCompany, SearchableMovie
-- `app/Service/` — MovieService (query logic), CsvUploadService (CSV import)
+- `app/Services/` — MovieService (query logic), CsvUploadService (CSV import)
 - `app/Jobs/ProcessCsv` — queued job for bulk CSV imports
 
 **Movie relationships:** Movies belong to many genres, keywords, and production companies (pivot tables). Languages are a direct foreign key on titles.

@@ -1,13 +1,15 @@
 <script setup>
+import { usePage } from '@inertiajs/vue3'
 import RatingBadge from './RatingBadge.vue'
 
 const props = defineProps({
     onClick: { type: Function },
-    posterUrl: { type: String },
     item: { type: Object, required: true },
     showGenres: { type: Boolean, default: true },
     size: { type: String, default: '' },
 })
+
+const page = usePage()
 </script>
 
 <template>
@@ -20,7 +22,7 @@ const props = defineProps({
                 class="bg-white rounded-xl shadow-xl transition-transform duration-500 transform group-hover:rotate-y-3 group-hover:-rotate-x-1 group-hover:scale-105 [transform-style:preserve-3d] overflow-x-hidden h-full"
             >
                 <img
-                    :src="posterUrl + item.img_poster"
+                    :src="page.props.img.poster + item.img_poster"
                     :alt="`${item.title} Poster`"
                     class="w-full h-90 object-cover rounded-t-xl"
                 />

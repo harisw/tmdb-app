@@ -7,7 +7,7 @@ use Spatie\LaravelData\Attributes\MapInputName;
 use Spatie\LaravelData\Data;
 use Str;
 
-class TitleDTO extends Data
+class TitleData extends Data
 {
     #[Computed]
     public readonly string $slug;

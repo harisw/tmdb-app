@@ -2,7 +2,7 @@
 
 namespace Database\Seeders;
 
-use App\Service\TitleService;
+use App\Services\TitleService;
 use Exception;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Storage;

@@ -11,7 +11,6 @@
                     :key="item.id"
                     :on-click="openModal"
                     :item="item"
-                    :poster-url="poster_url"
                 />
             </div>
             <div ref="sentinel" class="flex justify-center items-center py-4 text-white">
@@ -20,7 +19,7 @@
             </div>
         </div>
     </AppLayout>
-    <TitleModal :show="showModal" :item="selectedItem" :backdrop_url="backdrop_url" @close="closeModal" />
+    <TitleModal :show="showModal" :item="selectedItem" @close="closeModal" />
 </template>
 
 <script setup>
@@ -35,8 +34,6 @@ import useModal from '../Composables/useModal.js'
 const props = defineProps({
     genre: Object,
     titles: Object,
-    poster_url: String,
-    backdrop_url: String,
 })
 
 const { items, loading, sentinel, _, hasMore } = useInfiniteScroll({ titles: props.titles })
