@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Casts\RoundFloat;
+use App\Domain\Enums\TitleType;
 use App\Helpers\DateTimeHelper;
 use Database\Factories\TitleFactory;
 use Illuminate\Database\Eloquent\Collection;
@@ -82,6 +83,7 @@ class Title extends Model
         'runtime' => 'string',
         'release_date' => 'datetime:Y',
         'rating' => RoundFloat::class,
+        'type' => TitleType::class,
     ];
 
     public function getRuntimeAttribute($value): string

@@ -13,6 +13,9 @@ return new class extends Migration
     {
         Schema::create('title_provider_languages', function (Blueprint $table) {
             $table->id();
+            $table->foreignId('title_provider_id')->constrained();
+            $table->foreignId('language_id')->constrained();
+            $table->string('type');
             $table->timestamps();
         });
     }

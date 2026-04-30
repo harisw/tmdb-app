@@ -15,8 +15,9 @@ return new class extends Migration
             $table->id();
             $table->string('name');
             $table->string('slug')->unique();
+            $table->string('type');
             $table->float('rating', 2);
-            $table->string('status', 100);
+            $table->string('status');
             $table->date('release_date');
             $table->bigInteger('revenue');
             $table->unsignedSmallInteger('runtime');

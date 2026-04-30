@@ -2,6 +2,7 @@
 
 namespace Database\Factories;
 
+use App\Domain\Enums\TitleType;
 use App\Models\Language;
 use App\Models\Title;
 use Illuminate\Database\Eloquent\Factories\Factory;
@@ -21,6 +22,7 @@ class TitleFactory extends Factory
         return [
             'name' => fake()->words(3, true),
             'slug' => fake()->unique()->slug(3),
+            'type' => TitleType::MOVIE->value,
             'rating' => fake()->randomFloat(1, 1, 10),
             'status' => 'Released',
             'release_date' => fake()->date(),

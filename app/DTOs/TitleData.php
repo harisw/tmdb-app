@@ -14,6 +14,7 @@ class TitleData extends Data
 
     public function __construct(
         public readonly string $name,
+        public readonly string $type,
         #[MapInputName('id')]
         public readonly ?int $tmdb_id,
         public readonly float $rating,

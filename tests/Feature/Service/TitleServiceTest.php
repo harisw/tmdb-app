@@ -25,7 +25,7 @@ class TitleServiceTest extends TestCase
         $this->language = Language::factory()->create();
 
         $this->headers = [
-            'id', 'name', 'rating', 'status', 'release_date', 'revenue',
+            'id', 'name', 'type', 'rating', 'status', 'release_date', 'revenue',
             'runtime', 'img_backdrop', 'imdb_id', 'overview', 'popularity',
             'img_poster', 'tagline', 'language_id', 'homepage',
             'genres', 'keywords', 'production_companies',
@@ -37,6 +37,7 @@ class TitleServiceTest extends TestCase
         return array_merge([
             'id' => '12345',
             'name' => 'The Matrix',
+            'type' => 'movie',
             'rating' => '8.7',
             'status' => 'Released',
             'release_date' => '1999-03-31',
