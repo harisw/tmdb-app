@@ -43,8 +43,8 @@ class HandleInertiaRequests extends Middleware
                 return Genre::orderByDesc('count')->take(7)->get();
             }), // dropdown data
             'img' => [
-                'poster' => config('services.title_db.img_url').Title::IMG_SMALL_URL,
-                'backdrop' => config('services.title_db.img_url').Title::IMG_LARGE_URL,
+                'poster' => config('services.tmdb.img_url').Title::IMG_SMALL_URL,
+                'backdrop' => config('services.tmdb.img_url').Title::IMG_LARGE_URL,
             ],
             'auth' => [
                 'user' => $request->user() ? [
