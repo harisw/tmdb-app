@@ -2,6 +2,8 @@
 
 namespace App\Services;
 
+use App\Domain\Enums\TitleType;
+use App\Utils\Enum\TimeWindow;
 use Illuminate\Support\Facades\Http;
 
 class TmdbService
@@ -15,6 +17,19 @@ class TmdbService
         // This runs every single time with bind()
         $this->client = Http::withToken($apiKey)
             ->baseUrl($this->baseUrl)
+            ->withHeader(['accept' => 'application/json'])
             ->timeout(30);
+    }
+
+    public function getDetail(TitleType $type, int $id)
+    {
+        return $this->client->get("3/{$type}/{$id}")
+            ->json();
+    }
+
+    public function getTrending(TitleType $type, TimeWindow $window)
+    {
+        return $this->client->get("3/trending/{$type}/{$window}")
+            ->json();
     }
 }

@@ -27,7 +27,7 @@ return new class extends Migration
             $table->float('popularity')->default(0);
             $table->string('img_poster')->nullable();
             $table->text('tagline')->nullable();
-            $table->unsignedBigInteger('tmdb_id')->nullable();
+            $table->unsignedBigInteger('tmdb_id')->nullable()->index();
             $table->string('homepage')->nullable();
             $table->foreignId('language_id')->constrained();
             $table->index('language_id');
