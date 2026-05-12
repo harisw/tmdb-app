@@ -48,7 +48,7 @@ onUnmounted(() => window.removeEventListener('keydown', handleKey))
                         <!-- Large image -->
                         <div class="w-full h-72 md:h-96 bg-black">
                             <img
-                                :src="page.props.img.backdrop + item.img_backdrop"
+                                :src="page.props.img.backdrop + item.backdrop_path"
                                 alt="Poster"
                                 class="w-full h-full object-cover"
                             />

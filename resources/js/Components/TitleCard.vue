@@ -22,7 +22,7 @@ const page = usePage()
                 class="bg-white rounded-xl shadow-xl transition-transform duration-500 transform group-hover:rotate-y-3 group-hover:-rotate-x-1 group-hover:scale-105 [transform-style:preserve-3d] overflow-x-hidden h-full"
             >
                 <img
-                    :src="page.props.img.poster + item.img_poster"
+                    :src="page.props.img.poster + item.poster_path"
                     :alt="`${item.title} Poster`"
                     class="w-full h-90 object-cover rounded-t-xl"
                 />

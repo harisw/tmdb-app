@@ -4,7 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 
-class Collection extends Model
+class TitleCollection extends Model
 {
     //
 }

@@ -3,113 +3,80 @@
 namespace App\Services;
 
 use App\DTOs\TitleData;
+use App\DTOs\TmdbApi\TmdbTitleData;
 use App\Models\Genre;
 use App\Models\Keyword;
 use App\Models\ProductionCompany;
 use App\Models\Title;
 use Artisan;
-use Cache;
 use DB;
 use Illuminate\Support\Collection;
-use Illuminate\Support\Str;
+use Spatie\LaravelData\DataCollection;
 
 class TitleService
 {
     private int $insertedRowCount = 0;
 
-    private ?string $uploadId;
-
     private Collection $titleDict;
 
     private array $relationCache = [];
 
-    public function __construct(?string $uploadId = null)
+    public function __construct()
     {
-        $this->uploadId = $uploadId;
         $this->loadCaches();
     }
 
-    public static function insertBulk($data, $headers, ?string $uploadId = null): int
+    public static function insertBulk($data, $headers): int
     {
-        $static = new self($uploadId);
+        $static = new self;
         foreach ($data as $row) {
-            $static->insertRow(TitleData::from(array_combine($headers, $row)));
+            $titleData = TitleData::from(array_combine($headers, $row));
+            if ($static->titleDict->has($titleData->slug)) {
+                continue;
+            }
+
+            $static->insertRow($titleData->toTmdbTitleData());
         }
         Artisan::call('titles:refresh-searchable');
 
         return $static->insertedRowCount;
     }
 
-    public function insertRow(TitleData $row): void
+    public function insertRow(TmdbTitleData $row): void
     {
-        if ($this->titleDict->has($row->slug)) {
-            return;
-        }
-
         try {
+            // NOTE: Transaction here is important for testing critical behavior to safely rollback for error
             DB::transaction(function () use ($row) {
                 $genres = $this->prepareRelations($row->genres, Genre::class);
                 $companies = $this->prepareRelations($row->production_companies, ProductionCompany::class);
-                $keywords = $this->prepareRelations($row->keywords, Keyword::class);
+                $keywords = $row->keywords ? $this->prepareRelations($row->keywords, Keyword::class) : collect();
 
-                $title = Title::create($row->except('genres', 'production_companies', 'keywords')->toArray());
+                $title = Title::create($row->except('genres', 'production_companies', 'keywords', 'belongs_to_collection')->toArray());
                 $title->genres()->attach($genres->pluck('id')->toArray());
                 $title->companies()->attach($companies->pluck('id')->toArray());
                 $title->keywords()->attach($keywords->pluck('id')->toArray());
-                $this->titleDict->put($title->slug, $title->id);
 
+                $this->titleDict->put($title->slug, $title->id);
                 $this->insertedRowCount++;
             });
-
-            if ($this->uploadId) {
-                $this->updateProgress();
-            }
         } catch (\Exception $e) {
             report($e);
             $this->reloadRelationCache();
-
-            if ($this->uploadId) {
-                $this->updateProgress(true, $e->getMessage());
-            }
         }
     }
 
-    private function prepareRelations(string $values, $class): Collection
+    private function prepareRelations(DataCollection $items, $class): Collection
     {
         $result = collect();
-        foreach (explode(',', $values) as $val) {
-            $cleanedVal = ucwords(trim($val));
-            $slug = Str::slug($cleanedVal);
-            $relation = $this->relationCache[$class]->get($slug)
-                ?? $class::create(['slug' => $slug, 'name' => $cleanedVal]);
+        foreach ($items as $item) {
+            $relation = $this->relationCache[$class]->get($item->slug)
+                ?? $class::create(['slug' => $item->slug, 'name' => $item->name]);
 
             $result->push($relation);
-            $this->relationCache[$class]->put($slug, $relation);
+            $this->relationCache[$class]->put($item->slug, $relation);
         }
 
         return $result;
-    }
-
-    /**
-     * Update progress in cache
-     */
-    private function updateProgress($failed = false, $error = null): void
-    {
-        $cacheKey = "csv_upload_{$this->uploadId}";
-        $progress = Cache::get($cacheKey);
-
-        if ($progress) {
-            $progress['processed_rows']++;
-
-            if ($failed) {
-                $progress['status'] = 'failed';
-                $progress['error'] = $error;
-            } elseif ($progress['processed_rows'] >= $progress['total_rows']) {
-                $progress['status'] = 'completed';
-            }
-
-            Cache::put($cacheKey, $progress, now()->addHours(1));
-        }
     }
 
     private function loadCaches(): void

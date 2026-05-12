@@ -50,4 +50,11 @@ class Language extends Model
     {
         return self::firstWhere('code', 'other');
     }
+
+    public static function findByCode(string $code): self
+    {
+        return cache()->remember("language-$code", 60 * 60 * 24, function () use ($code) {
+            return self::firstWhere('code', $code);
+        }) ?? self::findOther();
+    }
 }

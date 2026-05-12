@@ -9,6 +9,7 @@ use Database\Factories\TitleFactory;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Support\Carbon;
 
@@ -21,11 +22,11 @@ use Illuminate\Support\Carbon;
  * @property Carbon $release_date
  * @property int $revenue
  * @property string $runtime
- * @property string|null $img_backdrop
+ * @property string|null $backdrop_path
  * @property string|null $imdb_id
  * @property string|null $overview
  * @property float $popularity
- * @property string|null $img_poster
+ * @property string|null $poster_path
  * @property string|null $tagline
  * @property int $language_id
  * @property Carbon|null $created_at
@@ -104,5 +105,10 @@ class Title extends Model
     public function keywords(): BelongsToMany
     {
         return $this->belongsToMany(Keyword::class);
+    }
+
+    public function collection(): BelongsTo
+    {
+        return $this->belongsTo(TitleCollection::class);
     }
 }

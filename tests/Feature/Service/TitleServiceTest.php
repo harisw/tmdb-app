@@ -7,7 +7,6 @@ use App\Models\Language;
 use App\Models\Title;
 use App\Services\TitleService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Illuminate\Support\Facades\Cache;
 use Tests\TestCase;
 
 class TitleServiceTest extends TestCase
@@ -26,8 +25,8 @@ class TitleServiceTest extends TestCase
 
         $this->headers = [
             'id', 'name', 'type', 'rating', 'status', 'release_date', 'revenue',
-            'runtime', 'img_backdrop', 'imdb_id', 'overview', 'popularity',
-            'img_poster', 'tagline', 'language_id', 'homepage',
+            'runtime', 'backdrop_path', 'imdb_id', 'overview', 'popularity',
+            'poster_path', 'tagline', 'language_id', 'homepage',
             'genres', 'keywords', 'production_companies',
         ];
     }
@@ -43,11 +42,11 @@ class TitleServiceTest extends TestCase
             'release_date' => '1999-03-31',
             'revenue' => '463517383',
             'runtime' => '136',
-            'img_backdrop' => '/backdrop.jpg',
+            'backdrop_path' => '/backdrop.jpg',
             'imdb_id' => 'tt0133093',
             'overview' => 'A computer hacker learns the truth.',
             'popularity' => '85.4',
-            'img_poster' => '/poster.jpg',
+            'poster_path' => '/poster.jpg',
             'tagline' => 'Free your mind.',
             'language_id' => (string) $this->language->id,
             'homepage' => 'https://matrix.example.com',
@@ -163,43 +162,6 @@ class TitleServiceTest extends TestCase
         //        $this->assertSame(1, $count);
         $this->assertDatabaseHas('titles', ['slug' => 'another-good-title']);
         $this->assertDatabaseMissing('titles', ['slug' => 'good-title']);
-    }
-
-    public function test_insert_bulk_tracks_progress_in_cache(): void
-    {
-        $uploadId = 'test-upload-123';
-        Cache::put("csv_upload_{$uploadId}", [
-            'total_rows' => 1,
-            'processed_rows' => 0,
-            'status' => 'processing',
-        ]);
-
-        $data = [array_values($this->makeRow())];
-
-        TitleService::insertBulk($data, $this->headers, $uploadId);
-
-        $progress = Cache::get("csv_upload_{$uploadId}");
-        $this->assertSame('completed', $progress['status']);
-        $this->assertSame(1, $progress['processed_rows']);
-    }
-
-    public function test_insert_bulk_marks_progress_as_failed_on_error(): void
-    {
-        $uploadId = 'test-upload-456';
-        Cache::put("csv_upload_{$uploadId}", [
-            'total_rows' => 1,
-            'processed_rows' => 0,
-            'status' => 'processing',
-        ]);
-
-        $rows = [$this->makeRow(['language_id' => '99999'])]; // invalid FK
-        $data = array_map(fn ($r) => array_values($r), $rows);
-
-        TitleService::insertBulk($data, $this->headers, $uploadId);
-
-        $progress = Cache::get("csv_upload_{$uploadId}");
-        $this->assertSame('failed', $progress['status']);
-        $this->assertNotNull($progress['error']);
     }
 
     public function test_insert_bulk_returns_zero_when_all_rows_are_duplicates(): void

@@ -11,8 +11,13 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('collections', function (Blueprint $table) {
+        Schema::create('title_collections', function (Blueprint $table) {
             $table->id();
+            $table->unsignedBigInteger('tmdb_id')->nullable()->index();
+            $table->string('slug')->unique();
+            $table->string('name');
+            $table->string('poster_path')->nullable();
+            $table->string('backdrop_path')->nullable();
             $table->timestamps();
         });
     }
@@ -22,6 +27,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('collections');
+        Schema::dropIfExists('title_collections');
     }
 };

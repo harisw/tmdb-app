@@ -21,15 +21,16 @@ return new class extends Migration
             $table->date('release_date');
             $table->bigInteger('revenue');
             $table->unsignedSmallInteger('runtime');
-            $table->string('img_backdrop')->nullable();
+            $table->string('backdrop_path')->nullable();
             $table->string('imdb_id')->nullable();
             $table->text('overview')->nullable();
             $table->float('popularity')->default(0);
-            $table->string('img_poster')->nullable();
+            $table->string('poster_path')->nullable();
             $table->text('tagline')->nullable();
             $table->unsignedBigInteger('tmdb_id')->nullable()->index();
             $table->string('homepage')->nullable();
             $table->foreignId('language_id')->constrained();
+            $table->foreignId('collection_id')->nullable()->constrained('title_collections');
             $table->index('language_id');
             $table->timestamps();
         });

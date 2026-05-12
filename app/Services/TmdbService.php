@@ -21,13 +21,13 @@ class TmdbService
             ->timeout(30);
     }
 
-    public function getDetail(TitleType $type, int $id)
+    public function getTitle(TitleType $type, int $id)
     {
         return $this->client->get("3/{$type}/{$id}")
             ->json();
     }
 
-    public function getTrending(TitleType $type, TimeWindow $window)
+    public function getTrendings(TitleType $type, TimeWindow $window)
     {
         return $this->client->get("3/trending/{$type}/{$window}")
             ->json();
