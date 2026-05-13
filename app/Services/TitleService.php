@@ -42,11 +42,11 @@ class TitleService
         return $static->insertedRowCount;
     }
 
-    public function insertRow(TmdbTitleData $row): void
+    public function insertRow(TmdbTitleData $row): ?Title
     {
         try {
             // NOTE: Transaction here is important for testing critical behavior to safely rollback for error
-            DB::transaction(function () use ($row) {
+            return DB::transaction(function () use ($row) {
                 $genres = $this->prepareRelations($row->genres, Genre::class);
                 $companies = $this->prepareRelations($row->production_companies, ProductionCompany::class);
                 $keywords = $row->keywords ? $this->prepareRelations($row->keywords, Keyword::class) : collect();
@@ -58,11 +58,15 @@ class TitleService
 
                 $this->titleDict->put($title->slug, $title->id);
                 $this->insertedRowCount++;
+
+                return $title;
             });
         } catch (\Exception $e) {
             report($e);
             $this->reloadRelationCache();
         }
+
+        return null;
     }
 
     private function prepareRelations(DataCollection $items, $class): Collection

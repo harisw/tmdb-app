@@ -15,6 +15,9 @@ class TmdbTitleData extends Data
     #[Computed]
     public readonly string $slug;
 
+    #[DataCollectionOf(TmdbProductionCompanyData::class)]
+    public readonly DataCollection $production_companies;
+
     public function __construct(
         #[MapInputName('id')]
         public readonly int $tmdb_id,
@@ -37,12 +40,15 @@ class TmdbTitleData extends Data
         public readonly ?string $homepage,
         #[DataCollectionOf(TmdbGenreData::class)]
         public readonly DataCollection $genres,
-        #[DataCollectionOf(TmdbProductionCompanyData::class)]
-        public readonly DataCollection $production_companies,
+        DataCollection $production_companies,
         public readonly ?TmdbCollectionData $belongs_to_collection,
         #[DataCollectionOf(TmdbKeywordData::class)]
         public readonly ?DataCollection $keywords = null,
     ) {
         $this->slug = Str::slug($this->name);
+        $this->production_companies = new DataCollection(
+            TmdbProductionCompanyData::class,
+            $production_companies->toCollection()->unique('slug')->values()->all()
+        );
     }
 }

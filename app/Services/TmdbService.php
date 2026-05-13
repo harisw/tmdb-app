@@ -4,11 +4,12 @@ namespace App\Services;
 
 use App\Domain\Enums\TitleType;
 use App\Utils\Enum\TimeWindow;
+use Illuminate\Http\Client\PendingRequest;
 use Illuminate\Support\Facades\Http;
 
 class TmdbService
 {
-    private Http $client;
+    private PendingRequest $client;
 
     public function __construct(
         private readonly string $apiKey,
@@ -17,19 +18,20 @@ class TmdbService
         // This runs every single time with bind()
         $this->client = Http::withToken($apiKey)
             ->baseUrl($this->baseUrl)
-            ->withHeader(['accept' => 'application/json'])
+            ->withHeader('accept', 'application/json')
             ->timeout(30);
     }
 
     public function getTitle(TitleType $type, int $id)
     {
-        return $this->client->get("3/{$type}/{$id}")
+        return $this->client->get("3/{$type->value}/{$id}")
             ->json();
     }
 
-    public function getTrendings(TitleType $type, TimeWindow $window)
+    public function getTrendings(TitleType $type, TimeWindow $window, int $page = 1)
     {
-        return $this->client->get("3/trending/{$type}/{$window}")
+        return $this->client->get("3/trending/{$type->value}/{$window->value}",
+            ['page' => $page])
             ->json();
     }
 }
