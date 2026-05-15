@@ -1,8 +1,8 @@
 <?php
 
-namespace App\DTOs;
+namespace App\Data\DTOs;
 
-use App\DTOs\TmdbApi\TmdbTitleData;
+use App\Data\DTOs\TmdbApi\TmdbTitleData;
 use Spatie\LaravelData\Attributes\Computed;
 use Spatie\LaravelData\Attributes\MapInputName;
 use Spatie\LaravelData\Data;

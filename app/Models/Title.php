@@ -15,8 +15,9 @@ use Illuminate\Support\Carbon;
 
 /**
  * @property int $id
- * @property string $title
+ * @property string $name
  * @property string $slug
+ * @property TitleType $type
  * @property mixed $rating
  * @property string $status
  * @property Carbon $release_date
@@ -28,11 +29,13 @@ use Illuminate\Support\Carbon;
  * @property float $popularity
  * @property string|null $poster_path
  * @property string|null $tagline
- * @property int $language_id
- * @property Carbon|null $created_at
- * @property Carbon|null $updated_at
  * @property int|null $tmdb_id
  * @property string|null $homepage
+ * @property int $language_id
+ * @property int|null $collection_id
+ * @property Carbon|null $created_at
+ * @property Carbon|null $updated_at
+ * @property-read TitleCollection|null $collection
  * @property-read Collection<int, ProductionCompany> $companies
  * @property-read int|null $companies_count
  * @property-read Collection<int, Genre> $genres
@@ -44,15 +47,17 @@ use Illuminate\Support\Carbon;
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Title newModelQuery()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Title newQuery()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Title query()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Title whereBackdropPath($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Title whereCollectionId($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Title whereCreatedAt($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Title whereHomepage($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Title whereId($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Title whereImdbId($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|Title whereImgBackdrop($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|Title whereImgPoster($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Title whereLanguageId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Title whereName($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Title whereOverview($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Title wherePopularity($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Title wherePosterPath($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Title whereRating($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Title whereReleaseDate($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Title whereRevenue($value)
@@ -60,12 +65,11 @@ use Illuminate\Support\Carbon;
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Title whereSlug($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Title whereStatus($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Title whereTagline($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|Title whereTitle($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Title whereTmdbId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Title whereType($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Title whereUpdatedAt($value)
  *
  * @mixin \Eloquent
- * @mixin IdeHelperTitle
  */
 class Title extends Model
 {

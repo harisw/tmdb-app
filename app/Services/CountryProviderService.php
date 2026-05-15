@@ -2,8 +2,8 @@
 
 namespace App\Services;
 
-use App\DTOs\ProviderData;
-use App\DTOs\ProviderDataCollection;
+use App\Data\DTOs\ProviderData;
+use App\Data\DTOs\ProviderDataCollection;
 use App\Models\Country;
 use App\Models\CountryProvider;
 use App\Models\Provider;

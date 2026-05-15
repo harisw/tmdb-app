@@ -34,4 +34,16 @@ class TmdbService
             ['page' => $page])
             ->json();
     }
+
+    public function getKeywords(TitleType $type, int $tmdbId)
+    {
+        return $this->client->get("3/{$type->value}/{$tmdbId}/keywords")
+            ->json();
+    }
+
+    public function getWatchProviders(TitleType $type, int $tmdbId)
+    {
+        return $this->client->get("3/{$type->value}/{$tmdbId}/watch/providers")
+            ->json();
+    }
 }

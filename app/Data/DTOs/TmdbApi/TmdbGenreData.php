@@ -1,6 +1,6 @@
 <?php
 
-namespace App\DTOs\TmdbApi;
+namespace App\Data\DTOs\TmdbApi;
 
 use Spatie\LaravelData\Attributes\Computed;
 use Spatie\LaravelData\Data;

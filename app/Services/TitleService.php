@@ -2,8 +2,8 @@
 
 namespace App\Services;
 
-use App\DTOs\TitleData;
-use App\DTOs\TmdbApi\TmdbTitleData;
+use App\Data\DTOs\TitleData;
+use App\Data\DTOs\TmdbApi\TmdbTitleData;
 use App\Models\Genre;
 use App\Models\Keyword;
 use App\Models\ProductionCompany;

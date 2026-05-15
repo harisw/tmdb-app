@@ -1,6 +1,6 @@
 <?php
 
-namespace App\DTOs\TmdbApi;
+namespace App\Data\DTOs\TmdbApi;
 
 use App\Domain\Enums\TitleType;
 use Spatie\LaravelData\Attributes\Computed;

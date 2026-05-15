@@ -3,13 +3,49 @@
 namespace App\Models;
 
 use App\Domain\Enums\StreamType;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Carbon;
 
 /**
- * @mixin IdeHelperTitleProvider
+ * @property int $id
+ * @property int $country_provider
+ * @property int $country_id
+ * @property int $provider_id
+ * @property int $title_id
+ * @property StreamType $type
+ * @property int $priority
+ * @property array<array-key, mixed> $audio_languages
+ * @property array<array-key, mixed> $subtitle_languages
+ * @property Carbon|null $created_at
+ * @property Carbon|null $updated_at
+ * @property-read Country $country
+ * @property-read CountryProvider $countryProvider
+ * @property-read Provider $provider
+ * @property-read Collection<int, TitleProviderLanguage> $providerLanguages
+ * @property-read int|null $provider_languages_count
+ * @property-read Title $title
+ *
+ * @method static \Database\Factories\TitleProviderFactory factory($count = null, $state = [])
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|TitleProvider newModelQuery()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|TitleProvider newQuery()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|TitleProvider query()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|TitleProvider whereAudioLanguages($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|TitleProvider whereCountryId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|TitleProvider whereCountryProvider($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|TitleProvider whereCreatedAt($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|TitleProvider whereId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|TitleProvider wherePriority($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|TitleProvider whereProviderId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|TitleProvider whereSubtitleLanguages($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|TitleProvider whereTitleId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|TitleProvider whereType($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|TitleProvider whereUpdatedAt($value)
+ *
+ * @mixin \Eloquent
  */
 class TitleProvider extends Model
 {
@@ -25,7 +61,7 @@ class TitleProvider extends Model
 
     public function countryProvider(): BelongsTo
     {
-        return $this->belongsTo(CountryProvider::class, 'country_provider');
+        return $this->belongsTo(CountryProvider::class, 'country_provider_id');
     }
 
     public function country(): BelongsTo

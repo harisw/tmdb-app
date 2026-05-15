@@ -13,11 +13,10 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @method static \Illuminate\Database\Eloquent\Builder<static>|SearchableTitle newModelQuery()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|SearchableTitle newQuery()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|SearchableTitle query()
- * @method static \Illuminate\Database\Eloquent\Builder<static>|SearchableTitle whereTitleId($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|SearchableTitle whereSearchVector($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|SearchableTitle whereTitleId($value)
  *
  * @mixin \Eloquent
- * @mixin IdeHelperSearchableTitle
  */
 class SearchableTitle extends Model
 {

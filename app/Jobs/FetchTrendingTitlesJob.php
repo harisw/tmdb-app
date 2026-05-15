@@ -2,8 +2,8 @@
 
 namespace App\Jobs;
 
+use App\Data\DTOs\TmdbApi\TmdbTitleData;
 use App\Domain\Enums\TitleType;
-use App\DTOs\TmdbApi\TmdbTitleData;
 use App\Models\Language;
 use App\Models\Title;
 use App\Services\TitleService;
@@ -66,6 +66,7 @@ class FetchTrendingTitlesJob implements ShouldQueue
                 if ($newTitle) {
                     $this->titleIdDict->put($tmdbId, $newTitle->id);
                 }
+                EnrichTitleJob::dispatchSync($newTitle);
             } catch (\Exception $e) {
                 Log::error($e->getMessage());
             }

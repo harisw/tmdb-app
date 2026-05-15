@@ -1,12 +1,12 @@
 <?php
 
-namespace App\DTOs\TmdbApi;
+namespace App\Data\DTOs\TmdbApi;
 
 use Spatie\LaravelData\Attributes\Computed;
 use Spatie\LaravelData\Data;
 use Str;
 
-class TmdbKeywordData extends Data
+class TmdbProductionCompanyData extends Data
 {
     #[Computed]
     public readonly string $slug;

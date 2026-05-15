@@ -13,12 +13,13 @@ return new class extends Migration
     {
         Schema::create('title_providers', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('country_provider')->constrained();
+            $table->foreignId('country_provider_id')->constrained();
             // FOR redundancies
             $table->foreignId('country_id')->constrained();
             $table->foreignId('provider_id')->constrained();
             $table->foreignId('title_id')->constrained();
             $table->string('type');
+            $table->string('tmdb_link');
             $table->unsignedSmallInteger('priority')->default(0);
             $table->json('audio_languages');
             $table->json('subtitle_languages');

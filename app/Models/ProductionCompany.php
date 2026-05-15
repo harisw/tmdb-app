@@ -7,11 +7,14 @@ use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Support\Carbon;
 
 /**
  * @property int $id
  * @property string $slug
  * @property string $name
+ * @property Carbon|null $created_at
+ * @property Carbon|null $updated_at
  * @property int $count
  * @property-read Collection<int, Title> $titles
  * @property-read int|null $titles_count
@@ -21,19 +24,18 @@ use Illuminate\Database\Eloquent\Relations\BelongsToMany;
  * @method static \Illuminate\Database\Eloquent\Builder<static>|ProductionCompany newQuery()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|ProductionCompany query()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|ProductionCompany whereCount($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|ProductionCompany whereCreatedAt($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|ProductionCompany whereId($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|ProductionCompany whereName($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|ProductionCompany whereSlug($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|ProductionCompany whereUpdatedAt($value)
  *
  * @mixin \Eloquent
- * @mixin IdeHelperProductionCompany
  */
 class ProductionCompany extends Model
 {
     /** @use HasFactory<ProductionCompanyFactory> */
     use HasFactory;
-
-    public $timestamps = false;
 
     protected $guarded = [];
 
