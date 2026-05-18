@@ -155,7 +155,7 @@ namespace App\Models{
 namespace App\Models{
 /**
  * @property int $id
- * @property int $tmdb_provider_id
+ * @property int $tmdb_id
  * @property string $slug
  * @property string $name
  * @property string|null $img_logo

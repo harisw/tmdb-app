@@ -16,12 +16,13 @@ class ProcessKeywords
     {
         $keywords = $this->tmdb->getKeywords($ctx->title->type, $ctx->title->tmdb_id)['keywords'];
 
-        $ctx->keywordIds = TmdbKeywordData::collect(collect($keywords)->unique('name'))
+        $keywordIds = TmdbKeywordData::collect(collect($keywords)->unique('name'))
             ->toBase()
             ->map(fn (TmdbKeywordData $kw) => Keyword::firstOrCreate(
                 ['slug' => $kw->slug],
                 ['name' => $kw->name]
             )->id);
+        $ctx->title->keywords()->sync($keywordIds);
 
         return $next($ctx);
     }

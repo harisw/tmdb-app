@@ -14,7 +14,7 @@ class ProviderData extends Data
 
     public function __construct(
         #[MapInputName('provider_id')]
-        public readonly int $tmdb_provider_id,
+        public readonly int $tmdb_id,
         #[MapInputName('provider_name')]
         public readonly string $name,
         #[MapInputName('logo_path')]

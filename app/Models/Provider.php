@@ -11,7 +11,7 @@ use Illuminate\Support\Carbon;
 
 /**
  * @property int $id
- * @property int $tmdb_provider_id
+ * @property int $tmdb_id
  * @property string $slug
  * @property string $name
  * @property string|null $img_logo
@@ -43,7 +43,7 @@ class Provider extends Model
     use HasFactory;
 
     protected $fillable = [
-        'tmdb_provider_id',
+        'tmdb_id',
         'slug',
         'name',
         'img_logo',
@@ -51,7 +51,7 @@ class Provider extends Model
     ];
 
     protected $casts = [
-        'tmdb_provider_id' => 'integer',
+        'tmdb_id' => 'integer',
         'slug' => 'string',
         'name' => 'string',
         'img_logo' => 'string',

@@ -16,7 +16,7 @@ class ProviderFactory extends Factory
         $name = fake()->company();
 
         return [
-            'tmdb_provider_id' => fake()->unique()->randomNumber(5),
+            'tmdb_id' => fake()->unique()->randomNumber(5),
             'slug' => Str::slug($name),
             'name' => $name,
             'img_logo' => null,

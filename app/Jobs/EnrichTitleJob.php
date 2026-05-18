@@ -5,6 +5,7 @@ namespace App\Jobs;
 use App\Data\EnrichmentContext;
 use App\Models\Title;
 use App\Pipelines\Stages\ProcessKeywords;
+use App\Pipelines\Stages\ProcessWatchProviders;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
 use Illuminate\Support\Facades\Pipeline;
@@ -25,13 +26,13 @@ class EnrichTitleJob implements ShouldQueue
     {
         $context = new EnrichmentContext($this->title);
 
-        $context = Pipeline::send($context)
+        Pipeline::send($context)
             ->through([
                 ProcessKeywords::class,
+                ProcessWatchProviders::class,
             ])
             ->thenReturn();
 
-        $this->title->keywords()->sync($context->keywordIds);
         \Log::info('FInished syncing keywords '.$this->title->slug);
     }
 }
