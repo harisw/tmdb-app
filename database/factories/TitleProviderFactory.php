@@ -25,11 +25,12 @@ class TitleProviderFactory extends Factory
         ]);
 
         return [
-            'country_provider' => $countryProvider->id,
+            'country_provider_id' => $countryProvider->id,
             'country_id' => $country->id,
             'provider_id' => $provider->id,
             'title_id' => Title::factory(),
             'type' => StreamType::FLATRATE->value,
+            'tmdb_link' => fake()->url(),
             'priority' => 0,
             'audio_languages' => ['en'],
             'subtitle_languages' => [],

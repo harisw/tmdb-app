@@ -13,7 +13,7 @@ return new class extends Migration
     {
         Schema::create('providers', function (Blueprint $table) {
             $table->id();
-            $table->unsignedInteger('tmdb_id');
+            $table->unsignedInteger('tmdb_id')->unique();
             $table->string('slug')->unique();
             $table->string('name');
             $table->string('img_logo')->nullable();

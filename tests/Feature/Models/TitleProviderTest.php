@@ -27,7 +27,7 @@ class TitleProviderTest extends TestCase
         ]);
 
         return TitleProvider::factory()->create(array_merge([
-            'country_provider' => $countryProvider->id,
+            'country_provider_id' => $countryProvider->id,
             'country_id' => $country->id,
             'provider_id' => $provider->id,
         ], $overrides));
@@ -108,7 +108,7 @@ class TitleProviderTest extends TestCase
             'provider_id' => $provider->id,
         ]);
         $tp = TitleProvider::factory()->create([
-            'country_provider' => $countryProvider->id,
+            'country_provider_id' => $countryProvider->id,
             'country_id' => $country->id,
             'provider_id' => $provider->id,
         ]);
@@ -126,7 +126,7 @@ class TitleProviderTest extends TestCase
             'provider_id' => $provider->id,
         ]);
         $tp = TitleProvider::factory()->create([
-            'country_provider' => $countryProvider->id,
+            'country_provider_id' => $countryProvider->id,
             'country_id' => $country->id,
             'provider_id' => $provider->id,
         ]);
@@ -144,7 +144,7 @@ class TitleProviderTest extends TestCase
             'provider_id' => $provider->id,
         ]);
         $tp = TitleProvider::factory()->create([
-            'country_provider' => $countryProvider->id,
+            'country_provider_id' => $countryProvider->id,
             'country_id' => $country->id,
             'provider_id' => $provider->id,
         ]);

@@ -12,7 +12,6 @@ class TmdbKeywordData extends Data
     public readonly string $slug;
 
     public function __construct(
-        public readonly int $id,
         public readonly string $name
     ) {
         $this->slug = Str::slug($this->name);

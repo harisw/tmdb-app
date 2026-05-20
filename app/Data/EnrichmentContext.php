@@ -3,13 +3,8 @@
 namespace App\Data;
 
 use App\Models\Title;
-use Illuminate\Support\Collection;
 
-class EnrichmentContext
+readonly class EnrichmentContext
 {
-    public ?Collection $keywordIds = null;
-
-    public ?Collection $titleProvidersData = null;
-
-    public function __construct(public readonly Title $title) {}
+    public function __construct(public Title $title) {}
 }

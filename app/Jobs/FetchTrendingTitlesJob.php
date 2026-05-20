@@ -66,7 +66,7 @@ class FetchTrendingTitlesJob implements ShouldQueue
                 if ($newTitle) {
                     $this->titleIdDict->put($tmdbId, $newTitle->id);
                 }
-                EnrichTitleJob::dispatchSync($newTitle);
+                EnrichTitleJob::dispatch($newTitle);
             } catch (\Exception $e) {
                 Log::error($e->getMessage());
             }

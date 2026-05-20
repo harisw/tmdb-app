@@ -50,6 +50,6 @@ class RunJob extends Command
         //            TitleType::values()
         //        ));
         //        FetchTrendingTitlesJob::dispatch($timeWindow, $titleType);
-        FetchTrendingTitlesJob::dispatchSync(TimeWindow::from('day'), TitleType::from('movie'), 2);
+        FetchTrendingTitlesJob::dispatch(TimeWindow::from('day'), TitleType::from('movie'), 5);
     }
 }

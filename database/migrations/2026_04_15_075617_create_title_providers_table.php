@@ -19,10 +19,10 @@ return new class extends Migration
             $table->foreignId('provider_id')->constrained();
             $table->foreignId('title_id')->constrained();
             $table->string('type');
-            $table->string('tmdb_link');
+            $table->string('tmdb_link')->nullable();
             $table->unsignedSmallInteger('priority')->default(0);
-            $table->json('audio_languages')->default([]);
-            $table->json('subtitle_languages')->default([]);
+            $table->json('audio_languages')->default('[]');
+            $table->json('subtitle_languages')->default('[]');
             $table->timestamps();
 
             $table->unique(['title_id', 'country_provider_id', 'type']);

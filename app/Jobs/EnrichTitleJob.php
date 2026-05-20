@@ -8,20 +8,15 @@ use App\Pipelines\Stages\ProcessKeywords;
 use App\Pipelines\Stages\ProcessWatchProviders;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Pipeline;
 
 class EnrichTitleJob implements ShouldQueue
 {
     use Queueable;
 
-    /**
-     * Create a new job instance.
-     */
-    public function __construct(private Title $title) {}
+    public function __construct(private readonly Title $title) {}
 
-    /**
-     * Execute the job.
-     */
     public function handle(): void
     {
         $context = new EnrichmentContext($this->title);
@@ -33,6 +28,6 @@ class EnrichTitleJob implements ShouldQueue
             ])
             ->thenReturn();
 
-        \Log::info('FInished syncing keywords '.$this->title->slug);
+        Log::info('Finished enriching title: '.$this->title->slug);
     }
 }
