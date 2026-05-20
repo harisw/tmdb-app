@@ -11,4 +11,6 @@ enum StreamType: string
     case RENT = 'rent';
     case BUY = 'buy';
     case FLATRATE = 'flatrate';
+    case FREE = 'free';
+    case ADS = 'ads';
 }
