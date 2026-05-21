@@ -16,7 +16,7 @@
                     v-model="q"
                     :debounce="400"
                     :min-length="2"
-                    placeholder="Search movies..."
+                    placeholder="Search titles..."
                     :preserve-state="true"
                     :replace="false"
                     route="search"
@@ -24,17 +24,11 @@
                 />
             </div>
 
-            <h2 class="text-2xl 2xl:text-4xl font-bold mb-6 text-madder">Hottest Movies</h2>
+            <h2 class="text-2xl 2xl:text-4xl font-bold mb-6 text-madder">Hottest Titles</h2>
             <div
                 class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-7 gap-6 auto-rows-[450px] 2xl:auto-rows-[520px]"
             >
-                <MovieCard
-                    v-for="item in items"
-                    :key="item.id"
-                    :on-click="openModal"
-                    :item="item"
-                    :poster-url="poster_url"
-                />
+                <TitleCard v-for="item in items" :key="item.id" :on-click="openModal" :item="item" />
             </div>
             <div ref="sentinel" class="flex justify-center items-center py-4 text-white">
                 <LoadingSpinner v-if="loading" text="Loading more" size="8" color="white" />
@@ -42,15 +36,15 @@
             </div>
         </div>
     </AppLayout>
-    <MovieModal :show="showModal" :item="selectedItem" :backdrop_url="backdrop_url" @close="closeModal" />
+    <TitleModal :show="showModal" :item="selectedItem" @close="closeModal" />
 </template>
 
 <script setup>
 import { Head } from '@inertiajs/vue3'
 import { ref } from 'vue'
 import AppLayout from '../Layouts/AppLayout.vue'
-import MovieModal from '../Components/MovieModal.vue'
-import MovieCard from '../Components/MovieCard.vue'
+import TitleModal from '../Components/TitleModal.vue'
+import TitleCard from '../Components/TitleCard.vue'
 import LoadingSpinner from '../Components/LoadingSpinner.vue'
 import RotatingHeader from '../Components/RotatingHeader.vue'
 import SearchInput from '../Components/SearchInput.vue'
@@ -58,12 +52,10 @@ import useInfiniteScroll from '../Composables/useInfiniteScroll.js'
 import useModal from '../Composables/useModal.js'
 
 const props = defineProps({
-    movies: Object,
-    poster_url: String,
-    backdrop_url: String,
+    titles: Object,
 })
 
-const { items, loading, sentinel, _, hasMore } = useInfiniteScroll({ movies: props.movies })
+const { items, loading, sentinel, _, hasMore } = useInfiniteScroll({ titles: props.titles })
 const { openModal, closeModal, selectedItem, showModal } = useModal()
 
 const headlines = [

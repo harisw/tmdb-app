@@ -13,6 +13,7 @@ RDS PostgreSQL db.t3.micro (private, only EC2 can reach it)
 ```
 
 Two containers run on EC2 via docker compose:
+
 - **app** — Laravel PHP-FPM (port 9000, internal only)
 - **nginx** — Nginx reverse proxy (port 80/443), copies static assets from the app image at build time
 
@@ -52,6 +53,7 @@ Two containers run on EC2 via docker compose:
 ### ECR Repositories
 
 Create two private repositories:
+
 - `tmdb-app`
 - `tmdb-nginx`
 
@@ -63,10 +65,10 @@ Two separate identities — never share credentials between CI and the EC2 insta
 
 ### IAM User — GitHub Actions
 
-| Policy |
-|---|
+| Policy                                |
+| ------------------------------------- |
 | `AmazonEC2ContainerRegistryPowerUser` |
-| `AmazonSSMFullAccess` |
+| `AmazonSSMFullAccess`                 |
 
 > Must be `PowerUser`, not `ReadOnly` — `ReadOnly` doesn't have permission to push images (`ecr:InitiateLayerUpload` will be denied).
 
@@ -76,9 +78,9 @@ Generate access keys and add them as GitHub repository secrets.
 
 Create a role with `EC2` as the trusted entity and attach:
 
-| Policy |
-|---|
-| `AmazonSSMManagedInstanceCore` |
+| Policy                               |
+| ------------------------------------ |
+| `AmazonSSMManagedInstanceCore`       |
 | `AmazonEC2ContainerRegistryReadOnly` |
 
 Attach via **EC2 → Instance → Actions → Security → Modify IAM role**.
@@ -236,12 +238,12 @@ chmod +x /opt/tmdb/deploy.sh
 
 Go to **repo → Settings → Secrets and variables → Actions → Repository secrets** and add:
 
-| Secret | Value |
-|---|---|
-| `AWS_ACCESS_KEY_ID` | From IAM user |
-| `AWS_SECRET_ACCESS_KEY` | From IAM user |
-| `AWS_REGION` | e.g. `ap-northeast-2` |
-| `EC2_INSTANCE_ID` | e.g. `i-1234567890abcdef0` |
+| Secret                  | Value                      |
+| ----------------------- | -------------------------- |
+| `AWS_ACCESS_KEY_ID`     | From IAM user              |
+| `AWS_SECRET_ACCESS_KEY` | From IAM user              |
+| `AWS_REGION`            | e.g. `ap-northeast-2`      |
+| `EC2_INSTANCE_ID`       | e.g. `i-1234567890abcdef0` |
 
 > Use **repository secrets**, not environment secrets. Environment secrets are for multi-environment setups (e.g. staging vs production with different values).
 
@@ -250,6 +252,7 @@ Go to **repo → Settings → Secrets and variables → Actions → Repository s
 ## How Deployments Work
 
 On every push to `master`, GitHub Actions will:
+
 1. Build and push the `tmdb-app` Docker image to ECR
 2. Build and push the `tmdb-nginx` image to ECR (copies `public/build` static assets from the app image at build time)
 3. Trigger `/opt/tmdb/deploy.sh` on EC2 via SSM — no open SSH port needed
@@ -259,52 +262,69 @@ On every push to `master`, GitHub Actions will:
 ## Debugging Notes
 
 ### ECR push forbidden (`ecr:InitiateLayerUpload`)
+
 The IAM user had `AmazonEC2ContainerRegistryReadOnly` — not enough for pushing. Must be changed to `AmazonEC2ContainerRegistryPowerUser`.
 
 ### Wrong ECR repository path
+
 The image tag must exactly match the repository name in ECR. If the repo is `tmdb-app`, the tag must be `<account-id>.dkr.ecr.<region>.amazonaws.com/tmdb-app:latest` with no extra path segments.
 
 ### SSH timeout from GitHub Actions (`dial tcp ***:22: i/o timeout`)
+
 Caused by having SSH restricted to a specific IP. GitHub Actions IPs change constantly so an allowlist doesn't work. Removed SSH from the security group entirely and switched to SSM `send-command` — no open ports required.
 
 ### Node.js deprecation warning in GitHub Actions
+
 The warning comes from the action versions, not the Dockerfile. Pinning to specific versions resolves it: `actions/checkout@v4.2.2`, `aws-actions/configure-aws-credentials@v4.0.3`, `aws-actions/amazon-ecr-login@v2.0.1`.
 
 ### RDS connection falling back to local socket
+
 Symptom: `connection to server on socket "/var/run/postgresql/.s.PGSQL.5432" failed`. Caused by `DB_HOST` being empty or missing in `.env`. Must be set to the full RDS endpoint, not `localhost` or `127.0.0.1`.
 
 ### Queue worker failing with `[tries=3] queue connection has not been configured`
+
 Caused by a typo in the supervisor config — the `--` prefix was missing from the flags, so Laravel interpreted `tries=3` as the connection name instead of a flag. Fixed by correcting the command in `tmdb-worker.conf`.
 
 ### Queue worker failing with `queue connection has not been configured` (different cause)
+
 `config/queue.php` has `'connection' => env('DB_QUEUE_CONNECTION')` with no default value. Without `DB_QUEUE_CONNECTION=pgsql` in `.env`, Laravel can't resolve the queue database connection.
 
 ### Supervisor starts worker before Docker is ready
+
 `autostart=true` causes supervisor to start the worker on EC2 boot, before Docker and the containers are up. Set `autostart=false` and let `deploy.sh` handle starting the worker after containers are confirmed running.
 
 ### Container named unexpectedly (e.g. `repo-app-1` instead of `tmdb-app-1`)
+
 Docker compose uses the folder name as the project name by default. When the repo was cloned into `/opt/tmdb/repo`, the containers became `repo-app-1`. Fixed by adding `name: tmdb` at the top of `docker-compose.prod.yml` to pin the project name regardless of folder.
 
 ### APP_KEY not set
+
 Symptom: Laravel errors or blank page on first run. Generate the key once locally with `php artisan key:generate --show` and add it to `/opt/tmdb/.env`. Never regenerate it — doing so invalidates all active sessions.
 
 ### Seeder asks for confirmation in production (`APPLICATION IN PRODUCTION. Command cancelled.`)
+
 Laravel prompts for confirmation when running seeders in production. Bypass it with `--force`:
+
 ```bash
-docker exec tmdb-app-1 php artisan db:seed --class=MovieSeeder --force
+docker exec tmdb-app-1 php artisan db:seed --class=TitleSeeder --force
 ```
 
 ### CountsSeeder memory exhausted
-The original seeder used `with('movies')` which loaded every movie record for every keyword/language/company into PHP memory. Replaced with raw SQL `UPDATE ... SET count = (SELECT COUNT(*) ...)` queries — runs entirely on the database with no PHP memory overhead.
+
+The original seeder used `with('titles')` which loaded every title record for every keyword/language/company into PHP memory. Replaced with raw SQL `UPDATE ... SET count = (SELECT COUNT(*) ...)` queries — runs entirely on the database with no PHP memory overhead.
 
 ### SSM Session Manager stopped working after EC2 restart (prompted for username/password)
+
 The SSM agent was not running. Ubuntu 24.04 on EC2 does not always persist snap services across reboots. Fix:
+
 ```bash
 sudo snap install amazon-ssm-agent --classic
 sudo systemctl enable snap.amazon-ssm-agent.amazon-ssm-agent
 sudo systemctl start snap.amazon-ssm-agent.amazon-ssm-agent
 ```
+
 The `enable` command ensures it starts automatically on every future boot. Once running, SSM Session Manager in the AWS console and `ssm send-command` in GitHub Actions will work again.
 
 ### Browser shows old/cached page after EC2 restart
+
 Not an actual outage — the browser cached the previous response. `curl http://<elastic-ip>` bypasses the cache and confirms whether the app is actually up. Once curl returns HTML, the browser will work again after its cache TTL expires or on a hard refresh.

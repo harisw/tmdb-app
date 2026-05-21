@@ -46,11 +46,11 @@ export default function useInfiniteScroll(initialData, options = {}) {
             preserveState: true,
             replace: !reset, // keep history cleaner
             onSuccess: (page) => {
-                const data = page.props.movies.data
-                if (!page.props.movies || !data) return
+                const data = page.props.titles.data
+                if (!page.props.titles || !data) return
                 if (reset) items.value = data
                 else items.value.push(...data)
-                hasMore.value = !!page.props.movies.next_page_url
+                hasMore.value = !!page.props.titles.next_page_url
             },
             onFinish: () => (loading.value = false),
         })

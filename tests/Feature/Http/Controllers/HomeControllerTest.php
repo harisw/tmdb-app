@@ -5,8 +5,10 @@ namespace Tests\Feature\Http\Controllers;
 use App\Models\Genre;
 use App\Models\Keyword;
 use App\Models\Language;
-use App\Models\Movie;
+use App\Models\ProductionCompany;
+use App\Models\Title;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Artisan;
 use Tests\TestCase;
 
 class HomeControllerTest extends TestCase
@@ -21,32 +23,30 @@ class HomeControllerTest extends TestCase
 
     public function test_index_returns_ok(): void
     {
-        Movie::factory(3)->create();
+        Title::factory(3)->create();
 
         $this->get('/')->assertOk();
     }
 
     public function test_index_renders_home_component_with_props(): void
     {
-        Movie::factory(2)->create();
+        Title::factory(2)->create();
 
         $this->get('/')
             ->assertInertia(fn ($page) => $page
                 ->component('Home')
-                ->has('movies')
-                ->has('poster_url')
-                ->has('backdrop_url')
+                ->has('titles')
             );
     }
 
-    public function test_index_paginates_movies(): void
+    public function test_index_paginates_titles(): void
     {
-        Movie::factory(35)->create();
+        Title::factory(35)->create();
 
         $this->get('/')
             ->assertInertia(fn ($page) => $page
                 ->component('Home')
-                ->has('movies.data', 30)
+                ->has('titles.data', 30)
             );
     }
 
@@ -59,52 +59,48 @@ class HomeControllerTest extends TestCase
             ->assertInertia(fn ($page) => $page
                 ->component('AllGenres')
                 ->has('allGenres', 3)
-                ->has('poster_url')
-                ->has('backdrop_url')
             );
     }
 
-    public function test_get_all_genres_eager_loads_movies(): void
+    public function test_get_all_genres_eager_loads_titles(): void
     {
         $genre = Genre::factory()->create();
-        $movies = Movie::factory(2)->create();
-        $genre->movies()->attach($movies->pluck('id'));
+        $titles = Title::factory(2)->create();
+        $genre->titles()->attach($titles->pluck('id'));
 
         $this->get('/genre/all')
             ->assertInertia(fn ($page) => $page
                 ->component('AllGenres')
-                ->has('allGenres.0.movies', 2)
+                ->has('allGenres.0.titles', 2)
             );
     }
 
-    public function test_get_by_genre_renders_movie_by_genre_component(): void
+    public function test_get_by_genre_renders_title_by_genre_component(): void
     {
         $genre = Genre::factory()->create(['slug' => 'action']);
-        Movie::factory(2)->create()->each(fn ($movie) => $movie->genres()->attach($genre));
+        Title::factory(2)->create()->each(fn ($title) => $title->genres()->attach($genre));
 
         $this->get('/genre/action')
             ->assertOk()
             ->assertInertia(fn ($page) => $page
-                ->component('MovieByGenre')
+                ->component('TitleByGenre')
                 ->has('genre')
-                ->has('movies')
-                ->has('poster_url')
-                ->has('backdrop_url')
+                ->has('titles')
             );
     }
 
-    public function test_get_by_genre_returns_only_movies_for_that_genre(): void
+    public function test_get_by_genre_returns_only_titles_for_that_genre(): void
     {
         $genre = Genre::factory()->create(['slug' => 'drama']);
         $other = Genre::factory()->create(['slug' => 'comedy']);
 
-        $matched = Movie::factory(2)->create()->each(fn ($m) => $m->genres()->attach($genre));
-        Movie::factory()->create()->each(fn ($m) => $m->genres()->attach($other));
+        $matched = Title::factory(2)->create()->each(fn ($m) => $m->genres()->attach($genre));
+        Title::factory()->create()->each(fn ($m) => $m->genres()->attach($other));
 
         $this->get('/genre/drama')
             ->assertInertia(fn ($page) => $page
-                ->component('MovieByGenre')
-                ->has('movies.data', 2)
+                ->component('TitleByGenre')
+                ->has('titles.data', 2)
             );
     }
 
@@ -115,32 +111,30 @@ class HomeControllerTest extends TestCase
         $this->get('/languages')
             ->assertOk()
             ->assertInertia(fn ($page) => $page
-                ->component('MovieByLanguage')
+                ->component('TitleByLanguage')
                 ->has('languages', 3)
-                ->has('poster_url')
-                ->has('backdrop_url')
             );
     }
 
-    public function test_get_by_language_without_lang_param_returns_null_movies(): void
+    public function test_get_by_language_without_lang_param_returns_null_titles(): void
     {
         $this->get('/languages')
             ->assertInertia(fn ($page) => $page
-                ->component('MovieByLanguage')
-                ->where('movies', null)
+                ->component('TitleByLanguage')
+                ->where('titles', null)
             );
     }
 
-    public function test_get_by_language_with_lang_param_returns_movies(): void
+    public function test_get_by_language_with_lang_param_returns_titles(): void
     {
         $language = Language::factory()->create(['code' => 'en']);
-        Movie::factory(2)->create(['language_id' => $language->id]);
-        Movie::factory()->create(); // different language
+        Title::factory(2)->create(['language_id' => $language->id]);
+        Title::factory()->create(); // different language
 
         $this->get('/languages?lang=en')
             ->assertInertia(fn ($page) => $page
-                ->component('MovieByLanguage')
-                ->has('movies.data', 2)
+                ->component('TitleByLanguage')
+                ->has('titles.data', 2)
             );
     }
 
@@ -151,41 +145,62 @@ class HomeControllerTest extends TestCase
         $this->get('/tags')
             ->assertOk()
             ->assertInertia(fn ($page) => $page
-                ->component('MovieByKeyword')
+                ->component('TitleByKeyword')
                 ->has('tags')
-                ->has('poster_url')
-                ->has('backdrop_url')
             );
     }
 
-    public function test_get_by_tag_without_tag_param_returns_null_movies(): void
+    public function test_get_by_tag_without_tag_param_returns_null_titles(): void
     {
         $this->get('/tags')
             ->assertInertia(fn ($page) => $page
-                ->component('MovieByKeyword')
-                ->where('movies', null)
+                ->component('TitleByKeyword')
+                ->where('titles', null)
             );
     }
 
-    public function test_get_by_tag_with_tag_param_returns_movies(): void
+    public function test_get_by_tag_with_tag_param_returns_titles(): void
     {
         $keyword = Keyword::factory()->create(['slug' => 'space-opera']);
-        $movies = Movie::factory(3)->create();
-        $keyword->movies()->attach($movies->pluck('id'));
-        Movie::factory()->create(); // no keyword
+        $titles = Title::factory(3)->create();
+        $keyword->titles()->attach($titles->pluck('id'));
+        Title::factory()->create(); // no keyword
 
         $this->get('/tags?tag=space-opera')
             ->assertInertia(fn ($page) => $page
-                ->component('MovieByKeyword')
-                ->has('movies.data', 3)
+                ->component('TitleByKeyword')
+                ->has('titles.data', 3)
             );
     }
 
-    public function test_search_requires_postgresql(): void
+    public function test_search_returns_matching_results(): void
     {
-        $this->markTestSkipped(
-            'search() uses PostgreSQL tsvector (plainto_tsquery). Run against a real PostgreSQL instance.'
-        );
+        $this->createSearchableTitle(['name' => 'Inception Dreams']);
+        $this->createSearchableTitle(['name' => 'Unrelated Film']);
+        $this->refreshSearchIndex();
+
+        $this->get('/search?q=inception')
+            ->assertOk()
+            ->assertJsonPath('hasMore', false)
+            ->assertJsonCount(1, 'results');
+    }
+
+    public function test_search_sets_has_more_when_results_exceed_limit(): void
+    {
+        $genre = Genre::factory()->create(['name' => 'Space Adventure']);
+        $company = ProductionCompany::factory()->create();
+
+        Title::factory(11)->create()->each(function ($title) use ($genre, $company) {
+            $title->genres()->attach($genre);
+            $title->companies()->attach($company);
+        });
+
+        $this->refreshSearchIndex();
+
+        $this->get('/search?q=space')
+            ->assertOk()
+            ->assertJsonPath('hasMore', true)
+            ->assertJsonCount(10, 'results');
     }
 
     public function test_search_all_renders_page_without_params(): void
@@ -196,64 +211,86 @@ class HomeControllerTest extends TestCase
         $this->get('/search-all')
             ->assertOk()
             ->assertInertia(fn ($page) => $page
-                ->component('MovieSearchAll')
+                ->component('TitleSearchAll')
                 ->has('genres')
                 ->has('languages')
                 ->has('tags')
-                ->has('poster_url')
-                ->has('backdrop_url')
-                ->where('movies', [])
+                ->where('titles', [])
             );
     }
 
     public function test_search_all_filters_by_language(): void
     {
         $language = Language::factory()->create(['code' => 'fr']);
-        Movie::factory(2)->create(['language_id' => $language->id]);
-        Movie::factory()->create(); // different language
+        Title::factory(2)->create(['language_id' => $language->id]);
+        Title::factory()->create(); // different language
 
         $this->get('/search-all?lang=fr')
             ->assertOk()
             ->assertInertia(fn ($page) => $page
-                ->component('MovieSearchAll')
-                ->has('movies.data', 2)
+                ->component('TitleSearchAll')
+                ->has('titles.data', 2)
             );
     }
 
     public function test_search_all_filters_by_genre(): void
     {
         $genre = Genre::factory()->create(['slug' => 'thriller']);
-        $movies = Movie::factory(2)->create();
-        $movies->each(fn ($m) => $m->genres()->attach($genre));
-        Movie::factory()->create(); // no genre
+        $titles = Title::factory(2)->create();
+        $titles->each(fn ($m) => $m->genres()->attach($genre));
+        Title::factory()->create(); // no genre
 
         $this->get('/search-all?gen=thriller')
             ->assertOk()
             ->assertInertia(fn ($page) => $page
-                ->component('MovieSearchAll')
-                ->has('movies.data', 2)
+                ->component('TitleSearchAll')
+                ->has('titles.data', 2)
             );
     }
 
     public function test_search_all_filters_by_tag(): void
     {
         $keyword = Keyword::factory()->create(['slug' => 'heist']);
-        $movies = Movie::factory(2)->create();
-        $movies->each(fn ($m) => $m->keywords()->attach($keyword));
-        Movie::factory()->create(); // no keyword
+        $titles = Title::factory(2)->create();
+        $titles->each(fn ($m) => $m->keywords()->attach($keyword));
+        Title::factory()->create(); // no keyword
 
         $this->get('/search-all?tag=heist')
             ->assertOk()
             ->assertInertia(fn ($page) => $page
-                ->component('MovieSearchAll')
-                ->has('movies.data', 2)
+                ->component('TitleSearchAll')
+                ->has('titles.data', 2)
             );
     }
 
-    public function test_search_all_with_text_query_requires_postgresql(): void
+    public function test_search_all_with_text_query_returns_matching_titles(): void
     {
-        $this->markTestSkipped(
-            'searchAll() with ?q= uses PostgreSQL tsvector. Run against a real PostgreSQL instance.'
-        );
+        $match = $this->createSearchableTitle(['name' => 'Galaxy Quest']);
+        $this->createSearchableTitle(['name' => 'Earth Bound']);
+        $this->refreshSearchIndex();
+
+        $this->get('/search-all?q=galaxy')
+            ->assertOk()
+            ->assertInertia(fn ($page) => $page
+                ->component('TitleSearchAll')
+                ->has('titles.data', 1)
+                ->where('titles.data.0.id', $match->id)
+            );
+    }
+
+    // Helpers
+
+    private function createSearchableTitle(array $overrides = []): Title
+    {
+        $title = Title::factory()->create($overrides);
+        $title->genres()->attach(Genre::factory()->create());
+        $title->companies()->attach(ProductionCompany::factory()->create());
+
+        return $title;
+    }
+
+    private function refreshSearchIndex(): void
+    {
+        Artisan::call('titles:refresh-searchable');
     }
 }

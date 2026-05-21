@@ -16,7 +16,9 @@ class DatabaseSeeder extends Seeder
             GenreSeeder::class,
             ProductionCompanySeeder::class,
             KeywordSeeder::class,
-            MovieSeeder::class,
+            CountrySeeder::class,
+            //            CountryProviderSeeder::class,
+            //            TitleSeeder::class,
             //            CountsSeeder::class,
         ]);
     }

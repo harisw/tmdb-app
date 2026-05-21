@@ -2,38 +2,45 @@
 
 namespace App\Models;
 
+use Database\Factories\KeywordFactory;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Support\Carbon;
 
 /**
  * @property int $id
  * @property string $slug
  * @property string $name
+ * @property Carbon|null $created_at
+ * @property Carbon|null $updated_at
  * @property int $count
- * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\Movie> $movies
- * @property-read int|null $movies_count
+ * @property-read Collection<int, Title> $titles
+ * @property-read int|null $titles_count
  *
  * @method static \Database\Factories\KeywordFactory factory($count = null, $state = [])
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Keyword newModelQuery()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Keyword newQuery()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Keyword query()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Keyword whereCount($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Keyword whereCreatedAt($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Keyword whereId($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Keyword whereName($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Keyword whereSlug($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Keyword whereUpdatedAt($value)
  *
  * @mixin \Eloquent
  */
 class Keyword extends Model
 {
-    /** @use HasFactory<\Database\Factories\KeywordFactory> */
+    /** @use HasFactory<KeywordFactory> */
     use HasFactory;
 
-    public $timestamps = false;
+    protected $guarded = [];
 
-    public function movies(): BelongsToMany
+    public function titles(): BelongsToMany
     {
-        return $this->belongsToMany(Movie::class);
+        return $this->belongsToMany(Title::class);
     }
 }

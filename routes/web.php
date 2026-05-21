@@ -6,12 +6,15 @@ use App\Http\Controllers\HomeController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', [HomeController::class, 'index']);
-Route::get('/genre/all', [HomeController::class, 'getAllGenres'])->name('movie-all-genres');
-Route::get('/genre/{slug}', [HomeController::class, 'getByGenre'])->name('movie-by-genre');
-Route::get('/languages', [HomeController::class, 'getByLanguage'])->name('movie-by-language');
-Route::get('/tags', [HomeController::class, 'getByTag'])->name('movie-by-tag');
-Route::get('/search', [HomeController::class, 'search'])->name('search-movie');
-Route::get('/search-all', [HomeController::class, 'searchAll'])->name('search-all-movie');
+Route::get('/genre/all', [HomeController::class, 'getAllGenres'])->name('title-all-genres');
+Route::get('/genre/{genre}', [HomeController::class, 'getByGenre'])->name('title-by-genre');
+Route::get('/languages', [HomeController::class, 'getByLanguage'])->name('title-by-language');
+Route::get('/tags', [HomeController::class, 'getByTag'])->name('title-by-tag');
+Route::middleware('throttle:40,1')->group(function () {
+    Route::get('/search', [HomeController::class, 'search'])->name('search-title');
+});
+
+Route::get('/search-all', [HomeController::class, 'searchAll'])->name('search-all-title');
 
 if (config('auth.allow_register')) {
     Route::get('/register', [RegisterController::class, 'create'])->name('register');

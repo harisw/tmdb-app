@@ -1,18 +1,40 @@
 name: tmdb
 
 services:
-  app:
-    image: ${ECR_URI}/tmdb-app:latest
-    env_file:
-      - /opt/tmdb/.env
-    ports:
-      - "127.0.0.1:9000:9000"
-    volumes:
-      - /opt/tmdb/public:/var/www/public
-    restart: unless-stopped
-    networks:
-      - laravel-network
+    app:
+        image: ${ECR_URI}/tmdb-app:latest
+        env_file:
+            - /opt/tmdb/.env
+        ports:
+            - '127.0.0.1:9000:9000'
+        volumes:
+            - /opt/tmdb/public:/var/www/public
+        restart: unless-stopped
+        networks:
+            - laravel-network
+    redis:
+        image: redis:7-alpine
+        restart: unless-stopped
+        volumes:
+            - redis-data:/data
+        networks:
+            - laravel-network
+        command: redis-server --maxmemory 256mb --maxmemory-policy allkeys-lru
+
+    horizon:
+        image: ${ECR_URI}/tmdb-app:latest
+        env_file:
+            - /opt/tmdb/.env
+        command: php artisan horizon
+        restart: unless-stopped
+        depends_on:
+            - redis
+        networks:
+            - laravel-network
+
+volumes:
+    redis-data:
 
 networks:
-  laravel-network:
-    driver: bridge
+    laravel-network:
+        driver: bridge

@@ -2,6 +2,8 @@
 
 namespace App\Models;
 
+use Database\Factories\LanguageFactory;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -11,8 +13,8 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * @property string $code
  * @property string $name
  * @property int $count
- * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\Movie> $movies
- * @property-read int|null $movies_count
+ * @property-read Collection<int, Title> $titles
+ * @property-read int|null $titles_count
  *
  * @method static \Database\Factories\LanguageFactory factory($count = null, $state = [])
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Language newModelQuery()
@@ -27,7 +29,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  */
 class Language extends Model
 {
-    /** @use HasFactory<\Database\Factories\LanguageFactory> */
+    /** @use HasFactory<LanguageFactory> */
     use HasFactory;
 
     protected $fillable = [
@@ -38,8 +40,20 @@ class Language extends Model
 
     public $timestamps = false;
 
-    public function movies(): HasMany
+    public function titles(): HasMany
     {
-        return $this->hasMany(Movie::class);
+        return $this->hasMany(Title::class);
+    }
+
+    public static function findOther(): self
+    {
+        return self::firstWhere('code', 'other');
+    }
+
+    public static function findByCode(string $code): self
+    {
+        return cache()->remember("language-$code", 60 * 60 * 24, function () use ($code) {
+            return self::firstWhere('code', $code);
+        }) ?? self::findOther();
     }
 }

@@ -13,15 +13,15 @@ class CountsSeeder extends Seeder
     public function run(): void
     {
         echo "Adding Genre count \r\n";
-        DB::statement('UPDATE genres SET count = (SELECT COUNT(*) FROM genre_movie WHERE genre_id = genres.id)');
+        DB::statement('UPDATE genres SET count = (SELECT COUNT(*) FROM genre_title WHERE genre_id = genres.id)');
 
         echo "Adding Language count \r\n";
-        DB::statement('UPDATE languages SET count = (SELECT COUNT(*) FROM movies WHERE language_id = languages.id)');
+        DB::statement('UPDATE languages SET count = (SELECT COUNT(*) FROM titles WHERE language_id = languages.id)');
 
         echo "Adding Keyword count \r\n";
-        DB::statement('UPDATE keywords SET count = (SELECT COUNT(*) FROM keyword_movie WHERE keyword_id = keywords.id)');
+        DB::statement('UPDATE keywords SET count = (SELECT COUNT(*) FROM keyword_title WHERE keyword_id = keywords.id)');
 
         echo "Adding ProductionCompany count \r\n";
-        DB::statement('UPDATE production_companies SET count = (SELECT COUNT(*) FROM movie_production_company WHERE production_company_id = production_companies.id)');
+        DB::statement('UPDATE production_companies SET count = (SELECT COUNT(*) FROM title_production_company WHERE production_company_id = production_companies.id)');
     }
 }
