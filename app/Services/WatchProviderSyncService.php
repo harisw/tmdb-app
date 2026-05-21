@@ -11,6 +11,7 @@ use App\Models\Title;
 use App\Models\TitleProvider;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Log;
+use Str;
 
 class WatchProviderSyncService
 {

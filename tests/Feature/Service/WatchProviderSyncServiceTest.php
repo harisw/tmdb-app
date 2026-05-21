@@ -40,7 +40,7 @@ class WatchProviderSyncServiceTest extends TestCase
     public function test_inserts_title_provider_when_provider_and_country_provider_exist(): void
     {
         $country = Country::factory()->create(['iso2' => 'US']);
-        $provider = Provider::factory()->create(['tmdb_id' => 8]);
+        $provider = Provider::factory()->create(['tmdb_id' => 8, 'slug' => 'netflix']);
         $countryProvider = CountryProvider::factory()->create([
             'country_id' => $country->id,
             'provider_id' => $provider->id,
@@ -64,7 +64,7 @@ class WatchProviderSyncServiceTest extends TestCase
     public function test_inserts_one_row_per_stream_type_for_same_provider_and_country(): void
     {
         $country = Country::factory()->create(['iso2' => 'US']);
-        $provider = Provider::factory()->create(['tmdb_id' => 8]);
+        $provider = Provider::factory()->create(['tmdb_id' => 8, 'slug' => 'netflix']);
         CountryProvider::factory()->create([
             'country_id' => $country->id,
             'provider_id' => $provider->id,
@@ -78,12 +78,14 @@ class WatchProviderSyncServiceTest extends TestCase
                 'flatrate' => [$raw],
                 'rent' => [$raw],
                 'buy' => [$raw],
+                'free' => [$raw],
+                'ads' => [$raw],
             ],
         ];
 
         (new WatchProviderSyncService)->sync($title, $results);
 
-        $this->assertDatabaseCount('title_providers', 3);
+        $this->assertDatabaseCount('title_providers', 5);
         foreach (StreamType::cases() as $type) {
             $this->assertDatabaseHas('title_providers', [
                 'title_id' => $title->id,
@@ -138,7 +140,7 @@ class WatchProviderSyncServiceTest extends TestCase
     public function test_creates_country_provider_when_provider_exists_but_not_linked_to_country(): void
     {
         $country = Country::factory()->create(['iso2' => 'US']);
-        $provider = Provider::factory()->create(['tmdb_id' => 8]);
+        $provider = Provider::factory()->create(['tmdb_id' => 8, 'slug' => 'netflix']);
         // deliberately no CountryProvider
         $title = Title::factory()->create();
 
@@ -179,7 +181,7 @@ class WatchProviderSyncServiceTest extends TestCase
     public function test_deduplicates_same_provider_listed_twice_in_same_stream_type(): void
     {
         $country = Country::factory()->create(['iso2' => 'US']);
-        $provider = Provider::factory()->create(['tmdb_id' => 8]);
+        $provider = Provider::factory()->create(['tmdb_id' => 8, 'slug' => 'netflix']);
         CountryProvider::factory()->create([
             'country_id' => $country->id,
             'provider_id' => $provider->id,
@@ -239,7 +241,7 @@ class WatchProviderSyncServiceTest extends TestCase
     public function test_resync_replaces_existing_title_providers_instead_of_accumulating(): void
     {
         $country = Country::factory()->create(['iso2' => 'US']);
-        $provider = Provider::factory()->create(['tmdb_id' => 8]);
+        $provider = Provider::factory()->create(['tmdb_id' => 8, 'slug' => 'netflix']);
         CountryProvider::factory()->create([
             'country_id' => $country->id,
             'provider_id' => $provider->id,
@@ -259,7 +261,7 @@ class WatchProviderSyncServiceTest extends TestCase
     public function test_resync_with_no_matching_data_removes_existing_title_providers(): void
     {
         $country = Country::factory()->create(['iso2' => 'US']);
-        $provider = Provider::factory()->create(['tmdb_id' => 8]);
+        $provider = Provider::factory()->create(['tmdb_id' => 8, 'slug' => 'netflix']);
         CountryProvider::factory()->create([
             'country_id' => $country->id,
             'provider_id' => $provider->id,

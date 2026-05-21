@@ -17,7 +17,7 @@ class DatabaseSeeder extends Seeder
             ProductionCompanySeeder::class,
             KeywordSeeder::class,
             CountrySeeder::class,
-            CountryProviderSeeder::class,
+            //            CountryProviderSeeder::class,
             //            TitleSeeder::class,
             //            CountsSeeder::class,
         ]);
