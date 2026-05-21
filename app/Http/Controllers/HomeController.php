@@ -5,9 +5,11 @@ namespace App\Http\Controllers;
 use App\Models\Genre;
 use App\Models\Keyword;
 use App\Models\Language;
-use App\Models\Movie;
-use App\Models\SearchableMovie;
+use App\Models\SearchableTitle;
+use App\Models\Title;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -20,80 +22,71 @@ class HomeController extends Controller
 
     public function index(): Response
     {
-        $movies = Movie::with(['genres', 'keywords'])
+        $titles = Title::with(['genres', 'keywords'])
             ->latest()->paginate(self::PAGINATE_SIZE);
 
         return Inertia::render('Home', [
-            'poster_url' => config('services.movie_db.img_url').Movie::IMG_SMALL_URL,
-            'backdrop_url' => config('services.movie_db.img_url').Movie::IMG_LARGE_URL,
-            'movies' => $movies,
+            'titles' => $titles,
         ]);
     }
 
     public function getAllGenres(): Response
     {
-        $genres = Genre::with(['movies' => function ($query) {
+        $genres = Genre::with(['titles' => function ($query) {
             $query->orderByDesc('created_at')->take(30);
         }])->get();
 
         return Inertia::render('AllGenres', [
             'allGenres' => $genres,
-            'poster_url' => config('services.movie_db.img_url').Movie::IMG_SMALL_URL,
-            'backdrop_url' => config('services.movie_db.img_url').Movie::IMG_LARGE_URL,
+
         ]);
     }
 
     public function getByGenre(Genre $genre): Response
     {
-        return Inertia::render('MovieByGenre', [
+        return Inertia::render('TitleByGenre', [
             'genre' => $genre,
-            'poster_url' => config('services.movie_db.img_url').Movie::IMG_SMALL_URL,
-            'backdrop_url' => config('services.movie_db.img_url').Movie::IMG_LARGE_URL,
-            'movies' => $genre->movies()->with(['genres', 'keywords'])->latest()->paginate(self::PAGINATE_SIZE),
+            'titles' => $genre->titles()->with(['genres', 'keywords'])->latest()->paginate(self::PAGINATE_SIZE),
         ]);
     }
 
-    public function getByLanguage(): Response
+    public function getByLanguage(Request $request): Response
     {
-        $lang = request()->query('lang');
+        $lang = $request->query('lang');
         $language = $lang ? Language::whereCode($lang)->first() : null;
 
-        return Inertia::render('MovieByLanguage', [
+        return Inertia::render('TitleByLanguage', [
             'languages' => Language::orderByDesc('count')->get(),
-            'poster_url' => config('services.movie_db.img_url').Movie::IMG_SMALL_URL,
-            'backdrop_url' => config('services.movie_db.img_url').Movie::IMG_LARGE_URL,
-            'movies' => $language ? $language->movies()->with(['genres', 'keywords'])->latest()->paginate(self::PAGINATE_SIZE)
+            'titles' => $language ? $language->titles()->with(['genres', 'keywords'])->latest()->paginate(self::PAGINATE_SIZE)
                 : null,
         ]);
     }
 
-    public function getByTag(): Response
+    public function getByTag(Request $request): Response
     {
-        $keyQuery = request()->query('tag');
-        $tagOffset = request()->query('tagOffset', 0);
+        $keyQuery = $request->query('tag');
+        $tagOffset = $request->query('tagOffset', 0);
         $key = $keyQuery ? Keyword::whereSlug($keyQuery)->first() : null;
 
         $tags = Keyword::orderByDesc('count')->offset($tagOffset)
             ->take($tagOffset ? 35 : 50)
             ->get();
 
-        return Inertia::render('MovieByKeyword', [
+        return Inertia::render('TitleByKeyword', [
             'tags' => $tags,
-            'poster_url' => config('services.movie_db.img_url').Movie::IMG_SMALL_URL,
-            'backdrop_url' => config('services.movie_db.img_url').Movie::IMG_LARGE_URL,
-            'movies' => $key ? $key->movies()->with(['genres', 'keywords'])->latest()->paginate(self::PAGINATE_SIZE)
+            'titles' => $key ? $key->titles()->with(['genres', 'keywords'])->latest()->paginate(self::PAGINATE_SIZE)
                 : null,
         ]);
     }
 
-    public function search(): JsonResponse
+    public function search(Request $request): JsonResponse
     {
-        $q = request()->query('q');
-        $results = SearchableMovie::selectRaw("movie_id, ts_rank(search_vector, plainto_tsquery('english',(?))) as rank", [$q])
+        $q = $request->query('q');
+        $results = SearchableTitle::selectRaw("title_id, ts_rank(search_vector, plainto_tsquery('english',(?))) as rank", [$q])
             ->whereRaw('search_vector @@ plainto_tsquery(?)', [$q])
-            ->with('movie')
+            ->with('title')
             ->orderByDesc('rank')
-            ->take(30)->get()->pluck('movie');
+            ->take(30)->get()->pluck('title');
 
         $hasMore = $results->count() > self::SEARCH_LIMIT;
 
@@ -103,53 +96,49 @@ class HomeController extends Controller
         ]);
     }
 
-    public function searchAll(): Response
+    public function searchAll(Request $request): Response
     {
-        $hasParams = request()->hasAny(['q', 'lang', 'gen', 'tag']);
+        $hasParams = $request->hasAny(['q', 'lang', 'gen', 'tag']);
 
         $results = collect([]);
         if ($hasParams) {
-            $q = request()->query('q');
+            $q = $request->query('q');
 
-            $results = $q ? SearchableMovie::selectRaw("movie_id, ts_rank(search_vector, plainto_tsquery('english',(?))) as rank", [$q])
+            $results = $q ? SearchableTitle::selectRaw("title_id, ts_rank(search_vector, plainto_tsquery('english',(?))) as rank", [$q])
                 ->whereRaw('search_vector @@ plainto_tsquery(?)', [$q])
-                ->with('movie')
+                ->with('title')
                 ->orderByDesc('rank')
-                ->take(100)->pluck('movie_id') : collect();
+                ->take(100)->pluck('title_id') : collect();
 
-            $results = $this->applyFilters($results)->paginate(self::PAGINATE_SIZE);
+            $results = $this->applyFilters($results, $request->query('lang'), $request->query('gen'),
+                $request->query('tag'))->paginate(self::PAGINATE_SIZE);
         }
 
-        return Inertia::render('MovieSearchAll', [
+        return Inertia::render('TitleSearchAll', [
             'genres' => Genre::orderByDesc('count')->get(),
             'languages' => Language::orderByDesc('count')->get(),
             'tags' => Keyword::where('count', '>', 100)->orderByDesc('count')->get(),
-            'poster_url' => config('services.movie_db.img_url').Movie::IMG_SMALL_URL,
-            'backdrop_url' => config('services.movie_db.img_url').Movie::IMG_LARGE_URL,
-            'movies' => $results,
+            'titles' => $results,
         ]);
     }
 
-    private function applyFilters(Collection $movieIds)
+    private function applyFilters(Collection $titleIds, ?string $lang, ?string $gen, ?string $tag): Builder
     {
-        $query = Movie::query()->with(['genres', 'keywords']);
-        $languageIds = request()->query('lang') ? Language::whereCode(request()->query('lang'))
-            ->pluck('id') : [];
+        $query = Title::query()->with(['genres', 'keywords']);
+        $languageIds = $lang ? Language::whereCode($lang)->pluck('id') : [];
 
         if ($languageIds) {
             $query->whereIn('language_id', $languageIds);
         }
 
-        $genreIds = request()->query('gen') ? Genre::whereSlug(request()->query('gen'))
-            ->pluck('id') : [];
+        $genreIds = $gen ? Genre::whereSlug($gen)->pluck('id') : [];
         if ($genreIds) {
             $query->whereHas('genres', function ($q) use ($genreIds) {
                 $q->whereIn('genres.id', $genreIds);
             });
         }
 
-        $keywordIds = request()->query('tag') ? Keyword::whereSlug(request()->query('tag'))
-            ->pluck('id') : [];
+        $keywordIds = $tag ? Keyword::whereSlug($tag)->pluck('id') : [];
 
         if ($keywordIds) {
             $query->whereHas('keywords', function ($q) use ($keywordIds) {
@@ -157,8 +146,8 @@ class HomeController extends Controller
             });
         }
 
-        if ($movieIds->isNotEmpty()) {
-            $query->whereIn('id', $movieIds);
+        if ($titleIds->isNotEmpty()) {
+            $query->whereIn('id', $titleIds);
         }
 
         return $query;

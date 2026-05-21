@@ -34,6 +34,8 @@ function closeMobileMenu() {
 
 const page = usePage()
 const genres = computed(() => page.props.genres)
+const posterBase = computed(() => page.props.img.poster)
+const backdropBase = computed(() => page.props.img.backdrop)
 const user = computed(() => page.props.auth.user)
 const isAuthenticated = computed(() => !!user.value)
 const menuRef = ref(null)
@@ -108,8 +110,8 @@ onBeforeUnmount(() => {
                                 </li>
                                 <li>
                                     <Link :href="baseUrl + '/languages'" class="hover:text-gray-300"
-                                        >Browse by Languages</Link
-                                    >
+                                        >Browse by Languages
+                                    </Link>
                                 </li>
                                 <li>
                                     <Link :href="baseUrl + '/search-all'" class="hover:text-gray-300">Find more</Link>
@@ -207,28 +209,28 @@ onBeforeUnmount(() => {
                                         :href="genre.url"
                                         class="block py-1 hover:text-gray-300"
                                         @click="closeMobileMenu"
-                                        >{{ genre.name }}</Link
-                                    >
+                                        >{{ genre.name }}
+                                    </Link>
                                 </li>
                                 <li>
                                     <Link
                                         :href="baseUrl + '/genre/all'"
                                         class="block py-1 hover:text-gray-300"
                                         @click="closeMobileMenu"
-                                        >See more</Link
-                                    >
+                                        >See more
+                                    </Link>
                                 </li>
                             </ul>
                         </div>
                         <Link :href="baseUrl + '/tags'" class="hover:text-gray-300" @click="closeMobileMenu"
-                            >Browse by Tags</Link
-                        >
+                            >Browse by Tags
+                        </Link>
                         <Link :href="baseUrl + '/languages'" class="hover:text-gray-300" @click="closeMobileMenu"
-                            >Browse by Languages</Link
-                        >
+                            >Browse by Languages
+                        </Link>
                         <Link :href="baseUrl + '/search-all'" class="hover:text-gray-300" @click="closeMobileMenu"
-                            >Find more</Link
-                        >
+                            >Find more
+                        </Link>
 
                         <!-- Profile links on mobile -->
                         <template v-if="isAuthenticated">

@@ -1,26 +1,24 @@
 <script setup>
-import {useForm} from '@inertiajs/vue3';
+import { useForm } from '@inertiajs/vue3'
 
 const form = useForm({
     email: '',
     password: '',
     remember: false,
-});
+})
 
 const submit = () => {
     form.post('/login', {
         onFinish: () => form.reset('password'),
-    });
-};
+    })
+}
 </script>
 
 <template>
     <div class="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4">
         <div class="max-w-md w-full space-y-8">
             <div>
-                <h2 class="mt-6 text-center text-3xl font-extrabold text-gray-900">
-                    Sign in to your account
-                </h2>
+                <h2 class="mt-6 text-center text-3xl font-extrabold text-gray-900">Sign in to your account</h2>
             </div>
 
             <form class="mt-8 space-y-6" @submit.prevent="submit">
@@ -61,9 +59,7 @@ const submit = () => {
                         type="checkbox"
                         class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
                     />
-                    <label for="remember" class="ml-2 block text-sm text-gray-900">
-                        Remember me
-                    </label>
+                    <label for="remember" class="ml-2 block text-sm text-gray-900"> Remember me </label>
                 </div>
 
                 <div>
@@ -77,9 +73,7 @@ const submit = () => {
                 </div>
 
                 <div class="text-center">
-                    <a href="/register" class="text-blue-600 hover:text-blue-500">
-                        Don't have an account? Register
-                    </a>
+                    <a href="/register" class="text-blue-600 hover:text-blue-500"> Don't have an account? Register </a>
                 </div>
             </form>
         </div>

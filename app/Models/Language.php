@@ -13,8 +13,8 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * @property string $code
  * @property string $name
  * @property int $count
- * @property-read Collection<int, Movie> $movies
- * @property-read int|null $movies_count
+ * @property-read Collection<int, Title> $titles
+ * @property-read int|null $titles_count
  *
  * @method static \Database\Factories\LanguageFactory factory($count = null, $state = [])
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Language newModelQuery()
@@ -40,8 +40,20 @@ class Language extends Model
 
     public $timestamps = false;
 
-    public function movies(): HasMany
+    public function titles(): HasMany
     {
-        return $this->hasMany(Movie::class);
+        return $this->hasMany(Title::class);
+    }
+
+    public static function findOther(): self
+    {
+        return self::firstWhere('code', 'other');
+    }
+
+    public static function findByCode(string $code): self
+    {
+        return cache()->remember("language-$code", 60 * 60 * 24, function () use ($code) {
+            return self::firstWhere('code', $code);
+        }) ?? self::findOther();
     }
 }

@@ -35,7 +35,9 @@ return [
         ],
     ],
 
-    'movie_db' => [
+    'tmdb' => [
+        'base_url' => env('TMDB_BASE_URL'),
+        'api_key' => env('TMDB_API_KEY'),
         'img_url' => env('MOVIE_DB_IMG_URL'),
     ],
 

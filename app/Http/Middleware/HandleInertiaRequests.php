@@ -3,6 +3,7 @@
 namespace App\Http\Middleware;
 
 use App\Models\Genre;
+use App\Models\Title;
 use Cache;
 use Illuminate\Http\Request;
 use Inertia\Middleware;
@@ -39,12 +40,12 @@ class HandleInertiaRequests extends Middleware
     {
         return array_merge(parent::share($request), [
             'genres' => Cache::remember('top-genres', 7200, static function () {
-                return Genre::orderByDesc('count')->take(7)->get()->map(function (Genre $genre) {
-                    $genre['url'] = route('movie-by-genre', $genre->slug);
-
-                    return $genre;
-                });
+                return Genre::orderByDesc('count')->take(7)->get();
             }), // dropdown data
+            'img' => [
+                'poster' => config('services.tmdb.img_url').Title::IMG_SMALL_URL,
+                'backdrop' => config('services.tmdb.img_url').Title::IMG_LARGE_URL,
+            ],
             'auth' => [
                 'user' => $request->user() ? [
                     'id' => $request->user()->id,

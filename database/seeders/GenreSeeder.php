@@ -30,7 +30,7 @@ class GenreSeeder extends Seeder
             ['slug' => 'horror', 'name' => 'Horror'],
             ['slug' => 'music', 'name' => 'Music'],
             ['slug' => 'history', 'name' => 'History'],
-            ['slug' => 'tv-movie', 'name' => 'TV Movie'],
+            ['slug' => 'tv-title', 'name' => 'TV Title'],
             ['slug' => 'documentary', 'name' => 'Documentary'],
             ['slug' => 'other', 'name' => 'Other'],
 

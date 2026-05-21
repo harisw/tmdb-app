@@ -5,13 +5,15 @@
 This project uses **PHPUnit Feature tests** backed by a real **PostgreSQL** database. Tests are located in `tests/Feature/`.
 
 Run all tests:
+
 ```bash
 php artisan test
 ```
 
 Run a specific file:
+
 ```bash
-php artisan test tests/Feature/Service/MovieServiceTest.php
+php artisan test tests/Feature/Services/MovieServiceTest.php
 ```
 
 ---
@@ -25,6 +27,7 @@ The default Laravel setup uses SQLite in-memory for tests (`DB_CONNECTION=sqlite
 - SQLite does not reliably enforce foreign key constraints (even with `foreign_key_constraints = true`), which makes error-recovery tests non-deterministic
 
 **`phpunit.xml` is configured for PostgreSQL:**
+
 ```xml
 <env name="DB_CONNECTION" value="pgsql"/>
 <env name="DB_HOST" value="127.0.0.1"/>
@@ -35,6 +38,7 @@ The default Laravel setup uses SQLite in-memory for tests (`DB_CONNECTION=sqlite
 ```
 
 **Local setup:** create the test database once against your local Docker PostgreSQL:
+
 ```bash
 docker exec -it <postgres-container> psql -U user -c "CREATE DATABASE tmdb_test;"
 ```
@@ -50,6 +54,7 @@ docker exec -it <postgres-container> psql -U user -c "CREATE DATABASE tmdb_test;
 The reason: their logic is entirely about database state — inserting records, attaching pivot relations, deduplicating slugs, enforcing constraints. Mocking Eloquent would only test that mocks were called, not that the data ends up correct. `RefreshDatabase` keeps each test isolated.
 
 **Rule of thumb:**
+
 - Logic that touches the database → Feature test with `RefreshDatabase`
 - Pure computation with no I/O → Unit test
 
@@ -72,6 +77,7 @@ All models used with `Model::create()` must have `protected $guarded = [];` or e
 `Artisan::fake()` is not a Laravel testing helper — do not use it. The fakes that exist are `Bus::fake()`, `Event::fake()`, `Mail::fake()`, `Queue::fake()`, `Notification::fake()`.
 
 To prevent a command from running in tests, guard it in the command's `handle()` method — the same pattern the migrations use:
+
 ```php
 // In a command:
 if (app()->environment('testing')) {
@@ -82,6 +88,7 @@ if (app()->environment('testing')) {
 Or more precisely for this project, use `DB::transactionLevel()` (see point 4 below).
 
 To mock Artisan calls, bind the concrete kernel — not the interface:
+
 ```php
 // WRONG — Artisan facade resolves to 'artisan' key, not the interface
 $this->mock(\Illuminate\Contracts\Console\Kernel::class)
@@ -110,6 +117,7 @@ current transaction is aborted, commands ignored until end of transaction block
 **The fix: wrap each row's insert in `DB::transaction(fn)`.**
 
 When called inside an existing transaction, Laravel automatically uses a PostgreSQL **SAVEPOINT** instead of a real transaction:
+
 - Failure → rolls back to the savepoint only
 - The outer transaction remains valid
 - Subsequent rows and queries proceed normally
@@ -117,7 +125,7 @@ When called inside an existing transaction, Laravel automatically uses a Postgre
 ```php
 try {
     DB::transaction(function () use ($row) {
-        // ... create movie, attach relations
+        // ... create title, attach relations
     });
 } catch (\Exception $e) {
     // outer transaction is still alive — safe to continue
@@ -133,11 +141,12 @@ try {
 PostgreSQL does not allow `REFRESH MATERIALIZED VIEW CONCURRENTLY` inside a transaction block. Since `RefreshDatabase` wraps tests in a transaction, calling this in tests always fails.
 
 **Fix: detect the transaction level and choose the appropriate refresh:**
+
 ```php
 if (DB::transactionLevel() > 0) {
-    DB::statement('REFRESH MATERIALIZED VIEW searchable_movies');
+    DB::statement('REFRESH MATERIALIZED VIEW searchable_titles');
 } else {
-    DB::statement('REFRESH MATERIALIZED VIEW CONCURRENTLY searchable_movies');
+    DB::statement('REFRESH MATERIALIZED VIEW CONCURRENTLY searchable_titles');
 }
 ```
 
@@ -153,6 +162,7 @@ if (DB::transactionLevel() > 0) {
 The next row then finds stale IDs in cache, tries to attach them, hits a foreign key violation, and also fails.
 
 **Fix: reload the relation cache from DB after any failed row:**
+
 ```php
 } catch (\Exception $e) {
     $this->reloadRelationCache(); // re-sync cache with DB state after rollback
@@ -166,14 +176,15 @@ This is a general principle: **in-memory caches must be treated as invalid after
 
 ### 6. The Materialized View Requires COALESCE on All Aggregates
 
-The `searchable_movies` materialized view builds a `tsvector` by concatenating weighted vectors. If any `string_agg()` returns `null` (because a movie has no genres or no production companies), the entire concatenation becomes `null` and the movie is excluded from search results.
+The `searchable_titles` materialized view builds a `tsvector` by concatenating weighted vectors. If any `string_agg()` returns `null` (because a title has no genres or no production companies), the entire concatenation becomes `null` and the title is excluded from search results.
 
 All `string_agg` calls must use `COALESCE`:
+
 ```sql
 setweight(to_tsvector('english', coalesce(string_agg(distinct g.name, '| '), '')), 'B')
 ```
 
-In tests, any test that exercises full-text search must call `Artisan::call('movies:refresh-searchable')` after creating movies to populate the view.
+In tests, any test that exercises full-text search must call `Artisan::call('titles:refresh-searchable')` after creating titles to populate the view.
 
 ---
 
@@ -187,9 +198,10 @@ Route::get('/genre/{slug}', [HomeController::class, 'getByGenre']);
 public function getByGenre(Genre $genre) // $genre ≠ {slug}
 ```
 
-When names don't match, Laravel cannot bind the model. The controller receives an empty model instance — `$genre->movies()` returns no results.
+When names don't match, Laravel cannot bind the model. The controller receives an empty model instance — `$genre->titles()` returns no results.
 
 **Fix:** match the route parameter name to the controller variable name:
+
 ```php
 Route::get('/genre/{genre}', [HomeController::class, 'getByGenre']);
 ```
@@ -204,17 +216,17 @@ Tests run in GitHub Actions with a PostgreSQL service container. No external dat
 
 ```yaml
 services:
-  postgres:
-    image: postgres:15
-    env:
-      POSTGRES_DB: tmdb_test
-      POSTGRES_USER: user
-      POSTGRES_PASSWORD: password
-    options: >-
-      --health-cmd pg_isready
-      --health-interval 10s
-      --health-timeout 5s
-      --health-retries 5
+    postgres:
+        image: postgres:15
+        env:
+            POSTGRES_DB: tmdb_test
+            POSTGRES_USER: user
+            POSTGRES_PASSWORD: password
+        options: >-
+            --health-cmd pg_isready
+            --health-interval 10s
+            --health-timeout 5s
+            --health-retries 5
 ```
 
 The `--health-cmd pg_isready` options make the job wait until PostgreSQL is ready before running tests, preventing flaky "connection refused" failures.

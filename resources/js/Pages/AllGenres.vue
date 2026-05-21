@@ -1,15 +1,13 @@
 <script setup>
 import { Head } from '@inertiajs/vue3'
 import AppLayout from '../Layouts/AppLayout.vue'
-import MovieModal from '../Components/MovieModal.vue'
+import TitleModal from '../Components/TitleModal.vue'
 import Carousel from '../Components/Carousel.vue'
-import MovieCard from '../Components/MovieCard.vue'
+import TitleCard from '../Components/TitleCard.vue'
 import useModal from '../Composables/useModal.js'
 
 defineProps({
     allGenres: Array,
-    poster_url: String,
-    backdrop_url: String,
 })
 const { openModal, closeModal, selectedItem, showModal } = useModal()
 </script>
@@ -21,12 +19,11 @@ const { openModal, closeModal, selectedItem, showModal } = useModal()
             <div v-for="genre in allGenres" :key="genre.id" class="mb-15">
                 <h1 class="text-2xl 2xl:text-4xl font-bold mb-6 text-madder">{{ genre.name }}</h1>
                 <Carousel>
-                    <MovieCard
-                        v-for="item in genre.movies"
+                    <TitleCard
+                        v-for="item in genre.titles"
                         :key="item.id"
                         :on-click="openModal"
                         :item="item"
-                        :poster-url="poster_url"
                         :show-genres="false"
                         size="w-3xs"
                     />
@@ -34,7 +31,7 @@ const { openModal, closeModal, selectedItem, showModal } = useModal()
             </div>
         </div>
     </AppLayout>
-    <MovieModal :show="showModal" :item="selectedItem" :backdrop_url="backdrop_url" @close="closeModal" />
+    <TitleModal :show="showModal" :item="selectedItem" @close="closeModal" />
 </template>
 
 <style>

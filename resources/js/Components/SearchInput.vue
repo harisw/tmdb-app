@@ -127,8 +127,8 @@ async function doSearch(q) {
     emit('search', q)
 }
 
-function itemOnClick(movie) {
-    emit('resultOnClick', movie)
+function itemOnClick(title) {
+    emit('resultOnClick', title)
 }
 
 function debounceSearch(q) {
