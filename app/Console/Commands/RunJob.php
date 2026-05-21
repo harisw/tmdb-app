@@ -43,13 +43,14 @@ class RunJob extends Command
 
     private function runFetchTrendingTitles(): void
     {
-        //        $timeWindow = TimeWindow::from($this->choice('Which time window?',
-        //            TimeWindow::values()
-        //        ));
-        //        $titleType = TitleType::from($this->choice('Which type of title?',
-        //            TitleType::values()
-        //        ));
-        //        FetchTrendingTitlesJob::dispatch($timeWindow, $titleType);
-        FetchTrendingTitlesJob::dispatch(TimeWindow::from('day'), TitleType::from('movie'), 3);
+        $timeWindow = TimeWindow::from($this->choice('Which time window?',
+            TimeWindow::values()
+        ));
+        $titleType = TitleType::from($this->choice('Which type of title?',
+            TitleType::values()
+        ));
+        $maxPage = (int) $this->ask('Max page number?');
+
+        FetchTrendingTitlesJob::dispatch($timeWindow, $titleType, $maxPage);
     }
 }

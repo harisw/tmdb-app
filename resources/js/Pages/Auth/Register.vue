@@ -1,27 +1,25 @@
 <script setup>
-import {useForm} from '@inertiajs/vue3';
+import { useForm } from '@inertiajs/vue3'
 
 const form = useForm({
     name: '',
     email: '',
     password: '',
     password_confirmation: '',
-});
+})
 
 const submit = () => {
     form.post('/register', {
         onFinish: () => form.reset('password', 'password_confirmation'),
-    });
-};
+    })
+}
 </script>
 
 <template>
     <div class="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4">
         <div class="max-w-md w-full space-y-8">
             <div>
-                <h2 class="mt-6 text-center text-3xl font-extrabold text-gray-900">
-                    Create your account
-                </h2>
+                <h2 class="mt-6 text-center text-3xl font-extrabold text-gray-900">Create your account</h2>
             </div>
 
             <form class="mt-8 space-y-6" @submit.prevent="submit">
@@ -69,8 +67,9 @@ const submit = () => {
                     </div>
 
                     <div>
-                        <label for="password_confirmation" class="block text-sm font-medium text-gray-700">Confirm
-                            Password</label>
+                        <label for="password_confirmation" class="block text-sm font-medium text-gray-700"
+                            >Confirm Password</label
+                        >
                         <input
                             id="password_confirmation"
                             v-model="form.password_confirmation"
@@ -92,9 +91,7 @@ const submit = () => {
                 </div>
 
                 <div class="text-center">
-                    <a href="/login" class="text-blue-600 hover:text-blue-500">
-                        Already have an account? Login
-                    </a>
+                    <a href="/login" class="text-blue-600 hover:text-blue-500"> Already have an account? Login </a>
                 </div>
             </form>
         </div>
