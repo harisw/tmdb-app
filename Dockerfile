@@ -26,7 +26,7 @@ RUN apk add --no-cache \
     libzip-dev \
     oniguruma-dev \
     unzip \
- && docker-php-ext-install pdo pdo_pgsql mbstring zip \
+ && docker-php-ext-install pdo pdo_pgsql mbstring zip pcntl \
  && apk del postgresql-dev libzip-dev oniguruma-dev unzip \
  && apk add --no-cache libpq libzip oniguruma
 
