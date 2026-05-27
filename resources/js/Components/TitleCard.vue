@@ -1,12 +1,12 @@
 <script setup>
-import {usePage} from '@inertiajs/vue3'
+import { usePage } from '@inertiajs/vue3'
 import RatingBadge from './RatingBadge.vue'
 
 const props = defineProps({
-    onClick: {type: Function},
-    item: {type: Object, required: true},
-    showGenres: {type: Boolean, default: true},
-    size: {type: String, default: ''},
+    onClick: { type: Function },
+    item: { type: Object, required: true },
+    showGenres: { type: Boolean, default: true },
+    size: { type: String, default: '' },
 })
 
 const page = usePage()
@@ -32,7 +32,7 @@ const page = usePage()
                         <h2 class="text-md font-bold text-gray-800 line-clamp-2">
                             {{ item.name }}
                         </h2>
-                        <RatingBadge :rating="item.rating" size="xs"/>
+                        <RatingBadge :rating="item.rating" size="xs" />
                     </div>
                     <div v-if="showGenres" class="flex flex-2 gap-2 text-xs">
                         <span
