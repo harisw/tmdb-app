@@ -1,5 +1,8 @@
 <?php
 
+use App\Domain\Enums\TitleType;
+use App\Jobs\FetchTrendingTitlesJob;
+use App\Utils\Enum\TimeWindow;
 use Illuminate\Foundation\Inspiring;
 use Illuminate\Support\Facades\Artisan;
 
@@ -8,7 +11,19 @@ Artisan::command('inspire', function () {
 })->purpose('Display an inspiring quote');
 
 Schedule::command('db:seed --class=CountsSeeder --force')
-    ->daily();
+    ->dailyAt('07:00');
 
 Schedule::command('titles:refresh-searchable --force')
     ->everySixHours();
+
+Schedule::job(new FetchTrendingTitlesJob(TimeWindow::DAY, TitleType::MOVIE, 30))
+    ->dailyAt('02:00');
+
+Schedule::job(new FetchTrendingTitlesJob(TimeWindow::DAY, TitleType::TV, 30))
+    ->dailyAt('04:00');
+
+Schedule::job(new FetchTrendingTitlesJob(TimeWindow::WEEK, TitleType::MOVIE))
+    ->fridays();
+
+Schedule::job(new FetchTrendingTitlesJob(TimeWindow::WEEK, TitleType::TV))
+    ->saturdays();

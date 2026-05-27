@@ -50,7 +50,7 @@ class FetchTrendingTitlesJob implements ShouldQueue
             $response = $tmdbService->getTrendings($this->titleType, $this->timeWindow, ++$page);
             $this->processPage($tmdbService, $titleService, $response['results']);
             sleep(1);
-        } while ($page < $this->maxPage);
+        } while ($page < $this->maxPage && $page <= $response['total_pages']);
     }
 
     private function processPage(TmdbService $tmdbService, TitleService $titleService, ?array $results): void
@@ -65,8 +65,8 @@ class FetchTrendingTitlesJob implements ShouldQueue
                 $newTitle = $this->createNewTitle($titleDetail, $titleService);
                 if ($newTitle) {
                     $this->titleIdDict->put($tmdbId, $newTitle->id);
+                    EnrichTitleJob::dispatch($newTitle);
                 }
-                EnrichTitleJob::dispatch($newTitle);
             } catch (\Exception $e) {
                 Log::error($e->getMessage());
             }
