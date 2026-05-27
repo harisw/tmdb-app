@@ -22,13 +22,16 @@ FROM php:8.4-fpm-alpine AS builder
 WORKDIR /var/www
 
 RUN apk add --no-cache \
-    postgresql-dev \
-    libzip-dev \
-    oniguruma-dev \
-    unzip \
- && docker-php-ext-install pdo pdo_pgsql mbstring zip pcntl \
- && apk del postgresql-dev libzip-dev oniguruma-dev unzip \
- && apk add --no-cache libpq libzip oniguruma
+      postgresql-dev \
+      libzip-dev \
+      oniguruma-dev \
+      unzip \
+      autoconf g++ make \
+   && docker-php-ext-install pdo pdo_pgsql mbstring zip pcntl \
+   && pecl install redis \
+   && docker-php-ext-enable redis \
+   && apk del postgresql-dev libzip-dev oniguruma-dev unzip autoconf g++ make \
+   && apk add --no-cache libpq libzip oniguruma
 
 COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
 
