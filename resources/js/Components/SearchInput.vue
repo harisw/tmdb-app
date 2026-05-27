@@ -57,7 +57,7 @@
                 class="px-3 py-2 cursor-pointer hover:bg-indigo-50"
                 @click="itemOnClick(item)"
             >
-                {{ item.title }}
+                {{ item.name }}
             </li>
             <li
                 v-if="hasMore"
