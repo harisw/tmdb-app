@@ -6,6 +6,7 @@ use App\Domain\Enums\TitleType;
 use App\Jobs\FetchTrendingTitlesJob;
 use App\Utils\Enum\TimeWindow;
 use Illuminate\Console\Command;
+use Log;
 
 class RunJob extends Command
 {
@@ -50,7 +51,11 @@ class RunJob extends Command
             TitleType::values()
         ));
         $maxPage = (int) $this->ask('Max page number?');
-
+        Log::channel('user')->info('Running run Job', [
+            'timeWindow' => $timeWindow->value,
+            'titleType' => $titleType->value,
+            'maxPage' => $maxPage,
+        ]);
         FetchTrendingTitlesJob::dispatch($timeWindow, $titleType, $maxPage);
     }
 }

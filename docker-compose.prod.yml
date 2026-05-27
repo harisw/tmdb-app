@@ -1,40 +1,60 @@
 name: tmdb
 
 services:
-    app:
-        image: ${ECR_URI}/tmdb-app:latest
-        env_file:
-            - /opt/tmdb/.env
-        ports:
-            - '127.0.0.1:9000:9000'
-        volumes:
-            - /opt/tmdb/public:/var/www/public
-        restart: unless-stopped
-        networks:
-            - laravel-network
-    redis:
-        image: redis:7-alpine
-        restart: unless-stopped
-        volumes:
-            - redis-data:/data
-        networks:
-            - laravel-network
-        command: redis-server --maxmemory 256mb --maxmemory-policy allkeys-lru
+  app:
+    image: ${ECR_URI}/tmdb-app:latest
+    env_file:
+      - /opt/tmdb/.env
+    ports:
+      - '127.0.0.1:9000:9000'
+    volumes:
+      - /opt/tmdb/public:/var/www/public
+      - laravel_logs:/var/www/storage/logs
+    restart: unless-stopped
+    networks:
+      - laravel-network
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    volumes:
+      - redis-data:/data
+    networks:
+      - laravel-network
+    command: redis-server --maxmemory 256mb --maxmemory-policy allkeys-lru
 
-    horizon:
-        image: ${ECR_URI}/tmdb-app:latest
-        env_file:
-            - /opt/tmdb/.env
-        command: php artisan horizon
-        restart: unless-stopped
-        depends_on:
-            - redis
-        networks:
-            - laravel-network
+  horizon:
+    image: ${ECR_URI}/tmdb-app:latest
+    env_file:
+      - /opt/tmdb/.env
+    command: php artisan horizon
+    restart: unless-stopped
+    depends_on:
+      - redis
+    volumes:
+      - laravel_logs:/var/www/storage/logs
+    networks:
+      - laravel-network
+
+  alloy:
+    image: grafana/alloy:latest
+    environment:
+      - GRAFANA_LOKI_URL=${GRAFANA_LOKI_URL}
+      - GRAFANA_LOKI_USER=${GRAFANA_LOKI_USER}
+      - GRAFANA_LOKI_PASSWORD=${GRAFANA_LOKI_PASSWORD}
+    volumes:
+      - laravel_logs:/var/log/laravel:ro
+      - ./alloy/config.alloy:/etc/alloy/config.alloy:ro
+    command: run /etc/alloy/config.alloy
+    depends_on:
+      - app
+    restart: unless-stopped
+    ports:
+      - "12345:12345"
 
 volumes:
-    redis-data:
+  redis-data:
+  laravel_logs:
 
 networks:
-    laravel-network:
-        driver: bridge
+  laravel-network:
+    driver: bridge
