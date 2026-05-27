@@ -23,14 +23,14 @@ const page = usePage()
             >
                 <img
                     :src="page.props.img.poster + item.poster_path"
-                    :alt="`${item.title} Poster`"
+                    :alt="`${item.name} Poster`"
                     class="w-full h-90 object-cover rounded-t-xl"
                 />
 
                 <div class="p-2 flex flex-col max-h-48">
                     <div class="flex flex-1 justify-between">
                         <h2 class="text-md font-bold text-gray-800 line-clamp-2">
-                            {{ item.title }}
+                            {{ item.name }}
                         </h2>
                         <RatingBadge :rating="item.rating" size="xs" />
                     </div>
