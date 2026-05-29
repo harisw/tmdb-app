@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -50,6 +51,8 @@ class Provider extends Model
         'priority',
     ];
 
+    protected $appends = ['url'];
+
     protected $casts = [
         'tmdb_id' => 'integer',
         'slug' => 'string',
@@ -57,6 +60,23 @@ class Provider extends Model
         'img_logo' => 'string',
         'priority' => 'integer',
     ];
+
+    public function getRouteKeyName(): string
+    {
+        return 'slug';
+    }
+
+    protected function url(): Attribute
+    {
+        return Attribute::make(
+            get: fn (mixed $value, array $attributes) => route('title-by-provider', $attributes['slug'])
+        );
+    }
+
+    public function titles(): BelongsToMany
+    {
+        return $this->belongsToMany(Title::class, 'title_providers');
+    }
 
     public function countryProviders(): HasMany
     {
