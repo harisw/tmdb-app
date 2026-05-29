@@ -41,6 +41,8 @@ class Genre extends Model
 
     protected $guarded = [];
 
+    protected $appends = ['url'];
+
     public function titles(): BelongsToMany
     {
         return $this->belongsToMany(Title::class);
@@ -54,7 +56,7 @@ class Genre extends Model
     protected function url(): Attribute
     {
         return Attribute::make(
-            get: fn (mixed $value, array $attributes) => route('title-by-genre', $value->slug)
+            get: fn (mixed $value, array $attributes) => route('title-by-genre', $attributes['slug'])
         );
     }
 }
