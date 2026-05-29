@@ -34,8 +34,6 @@ function closeMobileMenu() {
 
 const page = usePage()
 const genres = computed(() => page.props.genres)
-const posterBase = computed(() => page.props.img.poster)
-const backdropBase = computed(() => page.props.img.backdrop)
 const user = computed(() => page.props.auth.user)
 const isAuthenticated = computed(() => !!user.value)
 const menuRef = ref(null)
