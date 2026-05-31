@@ -338,7 +338,13 @@ onBeforeUnmount(() => {
     </div>
     <footer class="fixed bottom-0 w-full bg-black/80 backdrop-blur-sm text-center text-xs text-gray-500 py-1.5 z-50">
         Streaming data provided by
-        <a href="https://www.justwatch.com" target="_blank" rel="noopener noreferrer" class="underline hover:text-gray-300">JustWatch</a>
+        <a
+            href="https://www.justwatch.com"
+            target="_blank"
+            rel="noopener noreferrer"
+            class="underline hover:text-gray-300"
+            >JustWatch</a
+        >
     </footer>
     <CsvUploadModal :is-open="isUploadModalOpen" />
 </template>

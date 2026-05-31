@@ -36,7 +36,7 @@ import TitleCard from '../Components/TitleCard.vue'
 import LoadingSpinner from '../Components/LoadingSpinner.vue'
 import useInfiniteScroll from '../Composables/useInfiniteScroll.js'
 import useModal from '../Composables/useModal.js'
-import TitleGrid from "../Components/TitleGrid.vue";
+import TitleGrid from '../Components/TitleGrid.vue'
 
 const props = defineProps({
     languages: Object,

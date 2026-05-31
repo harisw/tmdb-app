@@ -1,11 +1,10 @@
 <script setup>
-
-import {computed} from "vue";
-import {usePage} from "@inertiajs/vue3";
+import { computed } from 'vue'
+import { usePage } from '@inertiajs/vue3'
 
 const props = defineProps({
-    title: { type: String, required: true},
-    titleLogo: { type: String}
+    title: { type: String, required: true },
+    titleLogo: { type: String },
 })
 const img = computed(() => usePage().props.img)
 </script>
@@ -25,6 +24,4 @@ const img = computed(() => usePage().props.img)
     </div>
 </template>
 
-<style scoped>
-
-</style>
+<style scoped></style>

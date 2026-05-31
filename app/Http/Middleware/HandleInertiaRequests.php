@@ -2,6 +2,7 @@
 
 namespace App\Http\Middleware;
 
+use App\Domain\Enums\TitleType;
 use App\Models\Genre;
 use App\Models\Provider;
 use App\Models\Title;
@@ -57,6 +58,9 @@ class HandleInertiaRequests extends Middleware
                     'name' => $request->user()->name,
                     'email' => $request->user()->email,
                 ] : null,
+            ],
+            'enums' => [
+                'TitleType' => collect(TitleType::cases())->map(fn ($c) => $c->value),
             ],
             'flash' => [
                 'message' => fn () => $request->session()->get('message'),

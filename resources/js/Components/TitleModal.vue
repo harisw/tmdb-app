@@ -10,7 +10,7 @@ const props = defineProps({
 })
 
 const page = usePage()
-
+const titleType = page.props.enums.TitleType
 const emits = defineEmits(['close'])
 
 function close() {
@@ -58,7 +58,10 @@ onUnmounted(() => window.removeEventListener('keydown', handleKey))
                             <div class="flex justify-between gap-5">
                                 <div class="flex flex-col gap-2 text-slate-500">
                                     <div><RatingBadge :rating="item.rating" size="sm" /></div>
-                                    <h3 class="text-lg font-semibold">{{ item.release_date }} {{ item.runtime }}</h3>
+                                    <h3 class="text-lg font-semibold">
+                                        {{ item.release_date }}
+                                        {{ item.runtime }}
+                                    </h3>
                                     <p class="text-gray-300 leading-relaxed">
                                         {{ item.overview }}
                                     </p>

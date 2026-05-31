@@ -27,8 +27,9 @@ class TmdbTitleData extends Data
         #[MapInputName('vote_average')]
         public readonly float $rating,
         public readonly string $status,
-        public readonly string $release_date,
-        public readonly int $revenue,
+        #[MapInputName('release_date', 'first_air_date')]
+        public readonly ?string $release_date,
+        public readonly ?int $revenue,
         public readonly ?int $runtime,
         public readonly ?string $backdrop_path,
         public readonly ?string $imdb_id,
@@ -44,6 +45,7 @@ class TmdbTitleData extends Data
         public readonly ?TmdbCollectionData $belongs_to_collection,
         #[DataCollectionOf(TmdbKeywordData::class)]
         public readonly ?DataCollection $keywords = null,
+        public readonly ?array $extra_attributes = [],
     ) {
         $this->slug = Str::slug($this->name);
         $this->production_companies = new DataCollection(

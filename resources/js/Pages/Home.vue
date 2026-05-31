@@ -47,7 +47,7 @@ import RotatingHeader from '../Components/RotatingHeader.vue'
 import SearchInput from '../Components/SearchInput.vue'
 import useInfiniteScroll from '../Composables/useInfiniteScroll.js'
 import useModal from '../Composables/useModal.js'
-import TitleGrid from "../Components/TitleGrid.vue";
+import TitleGrid from '../Components/TitleGrid.vue'
 
 const props = defineProps({
     titles: Object,

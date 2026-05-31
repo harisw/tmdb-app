@@ -2,7 +2,7 @@
     <Head title="Find by Genre" />
     <AppLayout>
         <div>
-            <TitleGrid :title="`${genre.name } Titles`">
+            <TitleGrid :title="`${genre.name} Titles`">
                 <TitleCard v-for="item in items" :key="item.id" :on-click="openModal" :item="item" />
             </TitleGrid>
             <div ref="sentinel" class="flex justify-center items-center py-4 text-white">
@@ -22,7 +22,7 @@ import TitleCard from '../Components/TitleCard.vue'
 import LoadingSpinner from '../Components/LoadingSpinner.vue'
 import useInfiniteScroll from '../Composables/useInfiniteScroll.js'
 import useModal from '../Composables/useModal.js'
-import TitleGrid from "../Components/TitleGrid.vue";
+import TitleGrid from '../Components/TitleGrid.vue'
 
 const props = defineProps({
     genre: Object,

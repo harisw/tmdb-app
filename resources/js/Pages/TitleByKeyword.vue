@@ -14,7 +14,7 @@
                 </div>
             </div>
             <div v-if="hasMoreTags" class="flex justify-center items-center py-4 text-white">
-                <LoadingSpinner v-if="loadingTags" text="Loading more"/>
+                <LoadingSpinner v-if="loadingTags" text="Loading more" />
                 <button
                     v-else
                     class="bg-madder px-4 py-2 2xl:px-6 2xl:py-3 rounded-lg hover:cursor-pointer text-xs 2xl:text-base"
@@ -28,7 +28,7 @@
                     <TitleCard v-for="item in items" :key="item.id" :on-click="openModal" :item="item" />
                 </TitleGrid>
                 <div ref="sentinel" class="flex justify-center items-center py-4 text-white">
-                    <LoadingSpinner v-if="loading" text="Loading more"/>
+                    <LoadingSpinner v-if="loading" text="Loading more" />
                     <span v-else-if="!hasMore">No more results</span>
                 </div>
             </div>
@@ -46,7 +46,7 @@ import TitleCard from '../Components/TitleCard.vue'
 import LoadingSpinner from '../Components/LoadingSpinner.vue'
 import useInfiniteScroll from '../Composables/useInfiniteScroll.js'
 import useModal from '../Composables/useModal.js'
-import TitleGrid from "../Components/TitleGrid.vue";
+import TitleGrid from '../Components/TitleGrid.vue'
 
 const props = defineProps({
     tags: Object,

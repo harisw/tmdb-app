@@ -7,7 +7,7 @@ import TitleCard from '../Components/TitleCard.vue'
 import LoadingSpinner from '../Components/LoadingSpinner.vue'
 import useInfiniteScroll from '../Composables/useInfiniteScroll.js'
 import useModal from '../Composables/useModal.js'
-import TitleGrid from "../Components/TitleGrid.vue";
+import TitleGrid from '../Components/TitleGrid.vue'
 
 const props = defineProps({
     provider: Object,
@@ -23,9 +23,9 @@ const { openModal, closeModal, selectedItem, showModal } = useModal()
     <Head :title="`${provider.name} Titles`" />
     <AppLayout>
         <div>
-                <TitleGrid :title="`${provider.name} Titles`" :title-logo="provider.img_logo">
+            <TitleGrid :title="`${provider.name} Titles`" :title-logo="provider.img_logo">
                 <TitleCard v-for="item in items" :key="item.id" :on-click="openModal" :item="item" />
-                </TitleGrid>
+            </TitleGrid>
             <div ref="sentinel" class="flex justify-center items-center py-4 text-white">
                 <LoadingSpinner v-if="loading" text="Loading more" size="8" color="white" />
                 <span v-else-if="!hasMore">No more results</span>

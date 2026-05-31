@@ -17,7 +17,7 @@ class ProviderController extends Controller
         $providers = Provider::with(['titles' => function ($query) {
             $query->select('titles.*')
                 ->with(['genres', 'keywords'])
-                ->distinct()
+                ->groupBy(['titles.id', 'title_providers.title_id', 'title_providers.provider_id'])
                 ->orderByDesc('titles.created_at')
                 ->take(30);
         }])->orderByDesc('count')->get();
