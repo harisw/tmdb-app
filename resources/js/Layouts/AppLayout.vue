@@ -3,11 +3,14 @@ import { ref, computed, onMounted, onBeforeUnmount } from 'vue'
 import { usePage, Link } from '@inertiajs/vue3'
 import useBaseUrl from '../Composables/useBaseUrl.js'
 import CsvUploadModal from '../Components/CsvUploadModal.vue'
+import AuthModal from '../Components/AuthModal.vue'
 
 const isGenresOpen = ref(false)
 const isSettingOpen = ref(false)
 const isUploadModalOpen = ref(false)
 const isMobileMenuOpen = ref(false)
+const isAuthModalOpen = ref(false)
+const authModalTab = ref('login')
 const baseUrl = useBaseUrl()
 
 function toggleGenres() {
@@ -30,6 +33,12 @@ function toggleMobileMenu() {
 function closeMobileMenu() {
     isMobileMenuOpen.value = false
     isGenresOpen.value = false
+}
+
+function openAuthModal(tab) {
+    authModalTab.value = tab
+    isAuthModalOpen.value = true
+    isMobileMenuOpen.value = false
 }
 
 const page = usePage()
@@ -119,6 +128,20 @@ onBeforeUnmount(() => {
 
                         <!-- Right: Profile (desktop) + Hamburger (mobile) -->
                         <div class="flex items-center gap-4">
+                            <!-- Guest links (desktop) -->
+                            <div v-if="!isAuthenticated" class="hidden md:flex items-center gap-3 text-sm 2xl:text-lg">
+                                <button class="hover:text-gray-300 cursor-pointer" @click="openAuthModal('login')">
+                                    Login
+                                </button>
+                                <button
+                                    class="px-3 py-1.5 bg-madder rounded text-white hover:bg-red-800 transition-colors cursor-pointer"
+                                    @click="openAuthModal('register')"
+                                >
+                                    Register
+                                </button>
+                            </div>
+
+                            <!-- Authenticated user dropdown (desktop) -->
                             <div
                                 v-if="isAuthenticated"
                                 ref="settingRef"
@@ -126,7 +149,7 @@ onBeforeUnmount(() => {
                                 @click="toggleSetting"
                             >
                                 <div class="flex items-center gap-2 cursor-pointer">
-                                    {{ user.name }}
+                                    {{ user.username }}
                                     <svg
                                         class="w-4 h-4 2xl:w-6 2xl:h-6 fill-white transition-transform"
                                         :class="{ 'rotate-180': isSettingOpen }"
@@ -139,12 +162,13 @@ onBeforeUnmount(() => {
                                     v-if="isSettingOpen"
                                     class="absolute right-0 mt-2 w-40 2xl:w-56 bg-black text-sm 2xl:text-lg rounded shadow-lg z-50"
                                 >
-                                    <span
-                                        class="block px-4 py-2 hover:bg-gray-800 cursor-pointer"
-                                        @click="toggleUploadModal"
-                                        >Upload Data</span
+                                    <Link
+                                        href="/logout"
+                                        method="post"
+                                        as="button"
+                                        class="block w-full text-left px-4 py-2 hover:bg-gray-800"
+                                        >Logout</Link
                                     >
-                                    <a href="#" class="block px-4 py-2 hover:bg-gray-800">Logout</a>
                                 </div>
                             </div>
 
@@ -230,20 +254,30 @@ onBeforeUnmount(() => {
                             >Find more
                         </Link>
 
-                        <!-- Profile links on mobile -->
+                        <!-- Auth links on mobile -->
                         <template v-if="isAuthenticated">
-                            <hr class="border-gray-800" />
-                            <span
-                                class="cursor-pointer hover:text-gray-300"
-                                @click="
-                                    () => {
-                                        toggleUploadModal()
-                                        closeMobileMenu()
-                                    }
-                                "
-                                >Upload Data</span
+                            <Link
+                                href="/logout"
+                                method="post"
+                                as="button"
+                                class="text-left hover:text-gray-300"
+                                @click="closeMobileMenu"
+                                >Logout</Link
                             >
-                            <a href="#" class="hover:text-gray-300">Logout</a>
+                        </template>
+                        <template v-else>
+                            <button
+                                class="text-left hover:text-gray-300 cursor-pointer"
+                                @click="openAuthModal('login')"
+                            >
+                                Login
+                            </button>
+                            <button
+                                class="text-left hover:text-gray-300 cursor-pointer"
+                                @click="openAuthModal('register')"
+                            >
+                                Register
+                            </button>
                         </template>
                     </div>
                 </nav>
@@ -253,6 +287,7 @@ onBeforeUnmount(() => {
                 <slot />
             </div>
         </main>
+
+        <AuthModal :is-open="isAuthModalOpen" :initial-tab="authModalTab" @close="isAuthModalOpen = false" />
     </div>
-    <CsvUploadModal :is-open="isUploadModalOpen" />
 </template>

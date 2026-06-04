@@ -75,6 +75,16 @@ const submit = () => {
                 <div class="text-center">
                     <a href="/register" class="text-blue-600 hover:text-blue-500"> Don't have an account? Register </a>
                 </div>
+
+                <div class="mt-4">
+                    <a
+                        href="/auth/google"
+                        class="w-full flex justify-center items-center gap-2 py-2 px-4 border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50"
+                    >
+                        <img src="https://www.svgrepo.com/show/475656/google-color.svg" class="w-5 h-5" alt="Google" />
+                        Continue with Google
+                    </a>
+                </div>
             </form>
         </div>
     </div>
