@@ -1,7 +1,9 @@
 <script setup>
 import { usePage } from '@inertiajs/vue3'
 import RatingBadge from './RatingBadge.vue'
-import { FilmIcon, TvIcon, Star } from 'lucide-vue-next'
+import { FilmIcon, TvIcon } from 'lucide-vue-next'
+import {computed} from "vue";
+import ProvidersBadge from "./ProvidersBadge.vue";
 
 const props = defineProps({
     onClick: { type: Function },
@@ -11,6 +13,8 @@ const props = defineProps({
 })
 
 const page = usePage()
+const base_url = computed(() => page.props.base_url)
+
 </script>
 
 <template>
@@ -35,23 +39,23 @@ const page = usePage()
                     >
                         <TvIcon size="14" /> TV
                     </span>
-                    <span
-                        v-if="typeof item.rating === 'number' && item.rating > 0"
-                        class="flex items-center gap-1 bg-black/60 text-yellow-500 text-xs font-medium px-2 py-1 rounded-full"
-                    >
-                        <Star absoluteStrokeWidth :size="16" />
-                        {{ item.rating.toFixed(1) }}
-                    </span>
+                    <RatingBadge :rating="item.rating" />
+                </div>
+                <div class="absolute w-full h-90">
+                    <div class="absolute bottom-2 w-full flex justify-end gap-1 px-2">
+                        <ProvidersBadge v-if="item.title_providers?.length"
+                                        :titleProviders="item.title_providers.slice(0, 3)" />
+                    </div>
                 </div>
                 <img
-                    :src="page.props.img.poster + item.poster_path"
+                    :src="page.props.base_url.poster + item.poster_path"
                     :alt="`${item.name} Poster`"
                     class="w-full h-90 object-cover rounded-t-xl"
                 />
 
                 <div class="p-2 flex flex-col max-h-48">
                     <div class="flex flex-1 justify-between">
-                        <h2 class="text-md font-bold text-gray-800 line-clamp-2">
+                        <h2 class="text-base font-bold text-gray-800 line-clamp-2">
                             {{ item.name }}
                         </h2>
                     </div>

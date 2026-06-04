@@ -13,7 +13,9 @@ class GenreController extends Controller
     public function index(): Response
     {
         $genres = Genre::with(['titles' => function ($query) {
-            $query->orderByDesc('created_at')->take(30);
+            $query->with(['titleProviders' => function ($q) {
+                $q->with('provider')->uniqueByProvider();
+            }])->orderByDesc('created_at')->take(30);
         }])->get();
 
         return Inertia::render('AllGenres', [
@@ -25,7 +27,9 @@ class GenreController extends Controller
     {
         return Inertia::render('TitleByGenre', [
             'genre' => $genre,
-            'titles' => $genre->titles()->with(['genres', 'keywords'])->latest()->paginate(self::PAGINATE_SIZE),
+            'titles' => $genre->titles()->with(['genres', 'keywords', 'titleProviders' => function ($q) {
+                $q->with('provider')->uniqueByProvider();
+            }])->latest()->paginate(self::PAGINATE_SIZE),
         ]);
     }
 }

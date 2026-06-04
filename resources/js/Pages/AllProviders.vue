@@ -11,7 +11,7 @@ defineProps({
     allProviders: Array,
 })
 
-const img = computed(() => usePage().props.img)
+const img = computed(() => usePage().props.base_url)
 const { openModal, closeModal, selectedItem, showModal } = useModal()
 </script>
 

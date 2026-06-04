@@ -6,7 +6,7 @@ const props = defineProps({
     title: { type: String, required: true },
     titleLogo: { type: String },
 })
-const img = computed(() => usePage().props.img)
+const img = computed(() => usePage().props.base_url)
 </script>
 
 <template>

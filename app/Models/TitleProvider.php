@@ -3,6 +3,8 @@
 namespace App\Models;
 
 use App\Domain\Enums\StreamType;
+use DB;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -82,5 +84,22 @@ class TitleProvider extends Model
     public function providerLanguages(): HasMany
     {
         return $this->hasMany(TitleProviderLanguage::class);
+    }
+
+    public function scopeForCountry(Builder $query, int $countryId): Builder
+    {
+        return $query->where('country_id', $countryId);
+    }
+
+    public function scopeOfType(Builder $query, StreamType $type): Builder
+    {
+        return $query->where('type', $type);
+    }
+
+    public function scopeUniqueByProvider(Builder $query): Builder
+    {
+        return $query
+            ->select(DB::raw('DISTINCT ON (title_id, provider_id) title_providers.*'))
+            ->orderByRaw('title_id, provider_id, priority ASC');
     }
 }

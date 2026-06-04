@@ -12,6 +12,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Carbon;
 use Spatie\SchemalessAttributes\Casts\SchemalessAttributes;
 
@@ -122,5 +123,15 @@ class Title extends Model
     public function collection(): BelongsTo
     {
         return $this->belongsTo(TitleCollection::class);
+    }
+
+    public function providers(): BelongsToMany
+    {
+        return $this->belongsToMany(Provider::class, 'title_providers', 'title_providers.priority');
+    }
+
+    public function titleProviders(): HasMany
+    {
+        return $this->hasMany(TitleProvider::class);
     }
 }
