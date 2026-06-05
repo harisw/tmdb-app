@@ -1,6 +1,7 @@
 <script setup>
 import { ref, watch, onMounted, onBeforeUnmount } from 'vue'
-import { useForm } from '@inertiajs/vue3'
+import { useForm, usePage } from '@inertiajs/vue3'
+import { useGeoLocation } from '../Composables/useGeoLocation.js'
 
 const props = defineProps({
     isOpen: { type: Boolean, required: true },
@@ -12,6 +13,10 @@ const activeTab = ref(props.initialTab)
 const registrationPending = ref(false)
 const registeredEmail = ref('')
 const resent = ref(false)
+const page = usePage()
+
+const countries = page.props.countries
+const { country, loading } = useGeoLocation()
 
 watch(
     () => props.isOpen,
@@ -43,6 +48,14 @@ const registerForm = useForm({
     email: '',
     password: '',
     password_confirmation: '',
+    country: '',
+})
+
+watch(country, (val) => {
+    if (val && !registerForm.country) {
+        console.log('country: ', val)
+        registerForm.country = val
+    }
 })
 
 const resendForm = useForm({})
@@ -171,10 +184,7 @@ onBeforeUnmount(() => document.removeEventListener('keydown', handleKeydown))
                                 <button
                                     type="button"
                                     class="text-madder hover:underline cursor-pointer"
-                                    @click="
-                                        registrationPending = false
-                                        activeTab = 'register'
-                                    "
+                                    @click="((registrationPending = false), (activeTab = 'register'))"
                                 >
                                     Go back
                                 </button>
@@ -344,6 +354,17 @@ onBeforeUnmount(() => document.removeEventListener('keydown', handleKeydown))
                                 />
                             </div>
 
+                            <div>
+                                <label class="block text-sm text-gray-400 mb-1">Default Country</label>
+                                <select class="select" v-model="registerForm.country">
+                                    <option :disabled="true">Choose a country</option>
+                                    <option v-for="country in countries" :value="country.iso2">
+                                        <span :class="`fi fi-${country.iso2.toLowerCase()} fis`"></span>
+                                        {{ country.name }}
+                                    </option>
+                                </select>
+                            </div>
+
                             <button
                                 type="submit"
                                 :disabled="registerForm.processing"
@@ -375,6 +396,7 @@ onBeforeUnmount(() => document.removeEventListener('keydown', handleKeydown))
 .fade-leave-active {
     transition: opacity 0.15s ease;
 }
+
 .fade-enter-from,
 .fade-leave-to {
     opacity: 0;
@@ -386,10 +408,12 @@ onBeforeUnmount(() => document.removeEventListener('keydown', handleKeydown))
         opacity 0.2s ease,
         transform 0.2s ease;
 }
+
 .slide-up-enter-from {
     opacity: 0;
     transform: translateY(8px);
 }
+
 .slide-up-leave-to {
     opacity: 0;
     transform: translateY(-8px);

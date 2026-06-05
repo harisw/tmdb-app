@@ -2,6 +2,7 @@
 
 namespace App\Http\Middleware;
 
+use App\Models\Country;
 use App\Models\Genre;
 use App\Models\Title;
 use Cache;
@@ -41,7 +42,10 @@ class HandleInertiaRequests extends Middleware
         return array_merge(parent::share($request), [
             'genres' => Cache::remember('top-genres', 7200, static function () {
                 return Genre::orderByDesc('count')->take(7)->get();
-            }), // dropdown data
+            }),
+            'countries' => Cache::rememberForever('countries', static function () {
+                return Country::get();
+            }),
             'img' => [
                 'poster' => config('services.tmdb.img_url').Title::IMG_SMALL_URL,
                 'backdrop' => config('services.tmdb.img_url').Title::IMG_LARGE_URL,
