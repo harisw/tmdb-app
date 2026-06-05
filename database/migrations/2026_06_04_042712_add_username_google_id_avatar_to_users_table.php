@@ -15,8 +15,8 @@ return new class extends Migration
             $table->string('username')->unique()->after('name');
             $table->string('google_id')->nullable()->unique()->after('remember_token');
             $table->string('google_token')->nullable()->after('google_id');
-            $table->string('image')->nullable()->after('google_token');
-            $table->foreignId('country_id')->after('image')->nullable()->constrained('countries');
+            $table->foreignId('country_id')->after('google_token')->nullable()->constrained('countries');
+            $table->schemalessAttributes('extra_attributes')->after('country_id')->default('{}');
         });
     }
 

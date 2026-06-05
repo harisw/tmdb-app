@@ -3,44 +3,28 @@
 namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
-use App\Models\Country;
-use App\Models\User;
-use App\Utils\Helpers\GenerateUsername;
-use App\Utils\Traits\HasAuthMethods;
+use App\Http\Requests\Auth\StoreUserRequest;
+use App\Services\UserService;
 use Illuminate\Auth\Events\Registered;
 use Illuminate\Foundation\Auth\EmailVerificationRequest;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Hash;
-use Illuminate\Validation\Rules\Password;
 use Inertia\Inertia;
 use Inertia\Response;
 
 class RegisterController extends Controller
 {
-    use HasAuthMethods;
+    public function __construct(private readonly UserService $userService) {}
 
     public function create(): Response
     {
         return Inertia::render('Auth/Register', []);
     }
 
-    public function store(Request $request, GenerateUsername $generateUsername): RedirectResponse
+    public function store(StoreUserRequest $request): RedirectResponse
     {
-        $validated = $request->validate([
-            'email' => ['required', 'string', 'email', 'max:255', 'unique:users'],
-            'password' => ['required', 'confirmed', Password::defaults()],
-            'country' => ['required', 'string', 'max:3', 'exists:countries,iso2'],
-        ]);
-
-        $user = User::create([
-            'name' => explode('@', $validated['email'])[0],
-            'username' => $this->getUniqueUsername($generateUsername),
-            'email' => $validated['email'],
-            'password' => Hash::make($validated['password']),
-            'country_id' => Country::where('iso2', $validated['country'])->first()->id,
-        ]);
+        $user = $this->userService->create($request->validated());
 
         event(new Registered($user));
 

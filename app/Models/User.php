@@ -11,6 +11,7 @@ use Illuminate\Notifications\DatabaseNotification;
 use Illuminate\Notifications\DatabaseNotificationCollection;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Support\Carbon;
+use Spatie\SchemalessAttributes\SchemalessAttributes;
 
 /**
  * @property int $id
@@ -58,6 +59,7 @@ class User extends Authenticatable implements MustVerifyEmail
         'google_token',
         'image',
         'country_id',
+        'extra_attributes',
     ];
 
     /**
@@ -80,6 +82,7 @@ class User extends Authenticatable implements MustVerifyEmail
         return [
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
+            'extra_attributes' => SchemalessAttributes::class,
         ];
     }
 }
