@@ -2,6 +2,7 @@
 import { ref, watch, onMounted, onBeforeUnmount } from 'vue'
 import { useForm, usePage } from '@inertiajs/vue3'
 import { useGeoLocation } from '../Composables/useGeoLocation.js'
+import CountrySelect from './CountrySelect.vue'
 
 const props = defineProps({
     isOpen: { type: Boolean, required: true },
@@ -15,8 +16,7 @@ const registeredEmail = ref('')
 const resent = ref(false)
 const page = usePage()
 
-const countries = page.props.countries
-const { country, loading } = useGeoLocation()
+const { country } = useGeoLocation()
 
 watch(
     () => props.isOpen,
@@ -356,13 +356,7 @@ onBeforeUnmount(() => document.removeEventListener('keydown', handleKeydown))
 
                             <div>
                                 <label class="block text-sm text-gray-400 mb-1">Default Country</label>
-                                <select class="select" v-model="registerForm.country">
-                                    <option :disabled="true">Choose a country</option>
-                                    <option v-for="country in countries" :value="country.iso2">
-                                        <span :class="`fi fi-${country.iso2.toLowerCase()} fis`"></span>
-                                        {{ country.name }}
-                                    </option>
-                                </select>
+                                <CountrySelect v-model="registerForm.country" />
                             </div>
 
                             <button
@@ -394,7 +388,7 @@ onBeforeUnmount(() => document.removeEventListener('keydown', handleKeydown))
 <style scoped>
 .fade-enter-active,
 .fade-leave-active {
-    transition: opacity 0.15s ease;
+    transition: opacity 0.5s ease;
 }
 
 .fade-enter-from,

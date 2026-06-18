@@ -2,46 +2,41 @@
 
 namespace App\Http\Controllers\Auth;
 
+use App\Data\DTOs\GoogleUserData;
 use App\Http\Controllers\Controller;
-use App\Models\User;
-use App\Utils\Helpers\GenerateUsername;
-use App\Utils\Traits\HasAuthMethods;
+use App\Services\UserService;
 use Auth;
 use Laravel\Socialite\Socialite;
 
 class GoogleAuthController extends Controller
 {
-    use HasAuthMethods;
+    public function __construct(private UserService $userService) {}
 
     public function redirect()
     {
         return Socialite::driver('google')->redirect();
     }
 
-    public function callback(GenerateUsername $generateUsername)
+    public function callback()
     {
         $googleUser = Socialite::driver('google')->user();
 
-        $user = User::where('google_id', $googleUser->getId())->first();
-        if (! $user) {
-            $user = User::where('email', $googleUser->getEmail())->first();
+        $data = new GoogleUserData(
+            name: $googleUser->getName(),
+            email: $googleUser->getEmail(),
+            google_id: $googleUser->getId(),
+            google_token: $googleUser->token,
+        );
 
-            if ($user) {
-                $user->update([
-                    'google_id' => $googleUser->getId(),
-                    'google_token' => $googleUser->token,
-                ]);
-            } else {
-                $user = User::create([
-                    'name' => $googleUser->getName(),
-                    'username' => $this->getUniqueUsername($generateUsername),
-                    'email' => $googleUser->getEmail(),
-                    'google_id' => $googleUser->getId(),
-                    'google_token' => $googleUser->token,
-                    'email_verified_at' => now(), // Google already verified the email
-                ]);
-            }
+        $user = $this->userService->findByGoogleId($data->google_id);
+
+        if (! $user) {
+            $user = $this->userService->findByEmail($data->email);
+            $user = $user
+                ? $this->userService->linkGoogleAccount($user, $data)
+                : $this->userService->createFromGoogle($data);
         }
+
         Auth::login($user, true);
 
         return redirect('/');

@@ -14,7 +14,7 @@ return new class extends Migration
         Schema::table('users', function (Blueprint $table) {
             $table->string('username')->unique()->after('name');
             $table->string('google_id')->nullable()->unique()->after('remember_token');
-            $table->string('google_token')->nullable()->after('google_id');
+            $table->text('google_token')->nullable()->after('google_id');
             $table->foreignId('country_id')->after('google_token')->nullable()->constrained('countries');
             $table->schemalessAttributes('extra_attributes')->after('country_id')->default('{}');
         });
@@ -23,7 +23,7 @@ return new class extends Migration
     public function down(): void
     {
         Schema::table('users', function (Blueprint $table) {
-            $table->dropColumn(['username', 'google_id', 'google_token']);
+            $table->dropColumn(['username', 'google_id', 'google_token', 'country_id', 'extra_attributes']);
         });
     }
 };

@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Auth;
 
+use App\Data\DTOs\RegisterUserData;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Auth\StoreUserRequest;
 use App\Services\UserService;
@@ -24,7 +25,13 @@ class RegisterController extends Controller
 
     public function store(StoreUserRequest $request): RedirectResponse
     {
-        $user = $this->userService->create($request->validated());
+        $validated = $request->validated();
+
+        $user = $this->userService->create(new RegisterUserData(
+            email: $validated['email'],
+            password: $validated['password'],
+            country_iso2: $validated['country'],
+        ));
 
         event(new Registered($user));
 

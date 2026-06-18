@@ -5,13 +5,15 @@ namespace App\Models;
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Database\Factories\UserFactory;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
+use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\DatabaseNotification;
 use Illuminate\Notifications\DatabaseNotificationCollection;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Support\Carbon;
-use Spatie\SchemalessAttributes\SchemalessAttributes;
+use Spatie\SchemalessAttributes\Casts\SchemalessAttributes;
 
 /**
  * @property int $id
@@ -72,6 +74,8 @@ class User extends Authenticatable implements MustVerifyEmail
         'remember_token',
     ];
 
+    protected $appends = ['avatar_url'];
+
     /**
      * Get the attributes that should be cast.
      *
@@ -84,5 +88,20 @@ class User extends Authenticatable implements MustVerifyEmail
             'password' => 'hashed',
             'extra_attributes' => SchemalessAttributes::class,
         ];
+    }
+
+    public function country(): BelongsTo
+    {
+        return $this->belongsTo(Country::class);
+    }
+
+    public function avatarUrl(): Attribute
+    {
+        $avatar = $this->extra_attributes['avatar'];
+
+        // If using the HTTP API:
+        return Attribute::make(
+            get: fn (mixed $value, array $attributes) => "https://api.dicebear.com/9.x/{$avatar['style']}/svg?seed=".urlencode($avatar['seed'])
+        );
     }
 }

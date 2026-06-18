@@ -51,11 +51,14 @@ class HandleInertiaRequests extends Middleware
                 'backdrop' => config('services.tmdb.img_url').Title::IMG_LARGE_URL,
             ],
             'auth' => [
-                'user' => $request->user() ? [
+                'user' => fn () => $request->user()?->loadMissing('country') ? [
                     'id' => $request->user()->id,
                     'name' => $request->user()->name,
                     'username' => $request->user()->username,
                     'email' => $request->user()->email,
+                    'avatar_url' => $request->user()->avatar_url,
+                    'avatar_style' => $request->user()->extra_attributes->get('avatar.style'),
+                    'country' => $request->user()->country?->iso2,
                 ] : null,
             ],
             'flash' => [
