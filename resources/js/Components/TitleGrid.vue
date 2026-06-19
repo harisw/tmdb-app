@@ -4,7 +4,7 @@ import { usePage } from '@inertiajs/vue3'
 
 const props = defineProps({
     title: { type: String, required: true },
-    titleLogo: { type: String },
+    titleLogo: { type: String, default: '' },
 })
 const img = computed(() => usePage().props.base_url)
 </script>

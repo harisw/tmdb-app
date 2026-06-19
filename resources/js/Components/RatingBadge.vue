@@ -11,7 +11,7 @@ const props = defineProps({
         v-if="typeof rating === 'number' && rating > 0"
         class="flex items-center gap-1 bg-black/60 text-yellow-500 text-xs font-medium px-2 py-1 rounded-full"
     >
-        <Star absoluteStrokeWidth :size="16" />
+        <Star absolute-stroke-width :size="16" />
         {{ rating.toFixed(1) }}
     </span>
 </template>

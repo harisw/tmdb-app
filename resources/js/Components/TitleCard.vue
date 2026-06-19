@@ -44,7 +44,7 @@ const base_url = computed(() => page.props.base_url)
                     <div class="absolute bottom-2 w-full flex justify-end gap-1 px-2">
                         <ProvidersBadge
                             v-if="item.title_providers?.length"
-                            :titleProviders="item.title_providers.slice(0, 3)"
+                            :title-providers="item.title_providers.slice(0, 3)"
                         />
                     </div>
                 </div>

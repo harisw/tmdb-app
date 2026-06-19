@@ -8,7 +8,7 @@ import TitleCard from '../Components/TitleCard.vue'
 import useModal from '../Composables/useModal.js'
 
 defineProps({
-    allProviders: Array,
+    allProviders: { type: Array },
 })
 
 const img = computed(() => usePage().props.base_url)

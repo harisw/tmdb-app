@@ -50,7 +50,7 @@ import useModal from '../Composables/useModal.js'
 import TitleGrid from '../Components/TitleGrid.vue'
 
 const props = defineProps({
-    titles: Object,
+    titles: { type: Object },
 })
 
 const { items, loading, sentinel, _, hasMore } = useInfiniteScroll({ titles: props.titles })

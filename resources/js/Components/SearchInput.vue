@@ -63,7 +63,7 @@
                 v-if="hasMore"
                 class="px-3 py-2 cursor-pointer hover:bg-indigo-50 bg-color-licorice rounded-lg hover:rounded-xl"
             >
-                <Link :href="baseUrl + '/search-all'"> Find more </Link>
+                <Link :href="baseUrl + '/search-all'"> Find more</Link>
             </li>
         </ul>
         <!--        <LoadingSpinner v-if="loading" class="absolute right-10 top-1/2 -translate-y-1/2"/>-->
@@ -119,7 +119,6 @@ async function doSearch(q) {
         hasMore.value = data.hasMore
         results.value = data.results
     } catch (e) {
-        console.error('Error: ', e.message)
     } finally {
         loading.value = false
     }
