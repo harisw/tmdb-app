@@ -1,13 +1,12 @@
 <script setup>
-
-import {computed} from "vue";
-import {usePage} from "@inertiajs/vue3";
+import { computed } from 'vue'
+import { usePage } from '@inertiajs/vue3'
 
 const props = defineProps({
-    titleProviders: { type: Array }
+    titleProviders: { type: Array },
 })
-console.log('titleProvider: ', props.titleProviders);
-const base_url = computed(() => usePage().props.base_url);
+console.log('titleProvider: ', props.titleProviders)
+const base_url = computed(() => usePage().props.base_url)
 </script>
 
 <template>
@@ -19,6 +18,4 @@ const base_url = computed(() => usePage().props.base_url);
     />
 </template>
 
-<style scoped>
-
-</style>
+<style scoped></style>

@@ -2,8 +2,8 @@
 import { usePage } from '@inertiajs/vue3'
 import RatingBadge from './RatingBadge.vue'
 import { FilmIcon, TvIcon } from 'lucide-vue-next'
-import {computed} from "vue";
-import ProvidersBadge from "./ProvidersBadge.vue";
+import { computed } from 'vue'
+import ProvidersBadge from './ProvidersBadge.vue'
 
 const props = defineProps({
     onClick: { type: Function },
@@ -14,7 +14,6 @@ const props = defineProps({
 
 const page = usePage()
 const base_url = computed(() => page.props.base_url)
-
 </script>
 
 <template>
@@ -43,8 +42,10 @@ const base_url = computed(() => page.props.base_url)
                 </div>
                 <div class="absolute w-full h-90">
                     <div class="absolute bottom-2 w-full flex justify-end gap-1 px-2">
-                        <ProvidersBadge v-if="item.title_providers?.length"
-                                        :titleProviders="item.title_providers.slice(0, 3)" />
+                        <ProvidersBadge
+                            v-if="item.title_providers?.length"
+                            :titleProviders="item.title_providers.slice(0, 3)"
+                        />
                     </div>
                 </div>
                 <img
