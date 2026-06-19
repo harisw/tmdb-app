@@ -8,34 +8,9 @@ const props = defineProps({
 })
 const emit = defineEmits(['close'])
 
-const user = computed(() => usePage().props.auth.user)
-
-const AVATAR_STYLES = [
-    'adventurer',
-    'adventurer-neutral',
-    'avataaars',
-    'avataaars-neutral',
-    'big-ears',
-    'big-ears-neutral',
-    'big-smile',
-    'bottts',
-    'bottts-neutral',
-    'croodles',
-    'croodles-neutral',
-    'dylan',
-    'fun-emoji',
-    'lorelei',
-    'lorelei-neutral',
-    'micah',
-    'miniavs',
-    'notionists',
-    'notionists-neutral',
-    'open-peeps',
-    'personas',
-    'pixel-art',
-    'pixel-art-neutral',
-    'sketchpad',
-]
+const page = usePage()
+const user = computed(() => page.props.auth.user)
+const avatarStyles = computed(() => page.props.avatarStyles)
 
 const form = useForm({
     username: '',
@@ -62,11 +37,12 @@ const avatarPreview = computed(() => {
 })
 
 function randomizeAvatar() {
+    const styles = avatarStyles.value
     const current = form.avatar_style
     let next
     do {
-        next = AVATAR_STYLES[Math.floor(Math.random() * AVATAR_STYLES.length)]
-    } while (next === current && AVATAR_STYLES.length > 1)
+        next = styles[Math.floor(Math.random() * styles.length)]
+    } while (next === current && styles.length > 1)
     form.avatar_style = next
 }
 

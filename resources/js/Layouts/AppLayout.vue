@@ -4,6 +4,7 @@ import { usePage, Link } from '@inertiajs/vue3'
 import useBaseUrl from '../Composables/useBaseUrl.js'
 import AuthModal from '../Components/AuthModal.vue'
 import ProfileModal from '../Components/ProfileModal.vue'
+import Toast from '../Components/Toast.vue'
 
 const isAuthModalOpen = ref(false)
 const authModalTab = ref('login')
@@ -196,5 +197,6 @@ const isAuthenticated = computed(() => !!user.value)
 
         <AuthModal :is-open="isAuthModalOpen" :initial-tab="authModalTab" @close="isAuthModalOpen = false" />
         <ProfileModal :is-open="isProfileModalOpen" @close="isProfileModalOpen = false" />
+        <Toast />
     </div>
 </template>

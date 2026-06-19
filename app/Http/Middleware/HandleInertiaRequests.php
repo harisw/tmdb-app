@@ -5,6 +5,7 @@ namespace App\Http\Middleware;
 use App\Models\Country;
 use App\Models\Genre;
 use App\Models\Title;
+use App\Services\AvatarService;
 use Cache;
 use Illuminate\Http\Request;
 use Inertia\Middleware;
@@ -65,6 +66,7 @@ class HandleInertiaRequests extends Middleware
                 'message' => fn () => $request->session()->get('message'),
                 'error' => fn () => $request->session()->get('error'),
             ],
+            'avatarStyles' => Cache::rememberForever('avatar-styles', fn () => AvatarService::getStyles()),
         ]);
     }
 }

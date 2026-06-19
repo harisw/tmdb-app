@@ -37,7 +37,7 @@ class RegisterController extends Controller
 
         Auth::login($user);
 
-        return redirect('/')->with('message', 'Please check your email to verify your account.');
+        return redirect('/');
     }
 
     public function verifyNotice(): Response
@@ -49,7 +49,7 @@ class RegisterController extends Controller
     {
         $request->fulfill();
 
-        return redirect('/')->with('verification-message', 'Verification is successful!');
+        return redirect('/')->with('message', 'Your email has been verified successfully!');
     }
 
     public function resendVerification(Request $request): RedirectResponse
