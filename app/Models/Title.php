@@ -6,12 +6,15 @@ use App\Casts\RoundFloat;
 use App\Domain\Enums\TitleType;
 use App\Helpers\DateTimeHelper;
 use Database\Factories\TitleFactory;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Carbon;
+use Spatie\SchemalessAttributes\Casts\SchemalessAttributes;
 
 /**
  * @property int $id
@@ -89,11 +92,17 @@ class Title extends Model
         'release_date' => 'datetime:Y',
         'rating' => RoundFloat::class,
         'type' => TitleType::class,
+        'extra_attributes' => SchemalessAttributes::class,
     ];
 
-    public function getRuntimeAttribute($value): string
+    public function getRuntimeAttribute($value): ?string
     {
-        return DateTimeHelper::minutesToHours($value);
+        return $this->type === TitleType::MOVIE ? DateTimeHelper::minutesToHours($value) : null;
+    }
+
+    public function scopeWithExtraAttributes(): Builder
+    {
+        return $this->extra_attributes->modelScope();
     }
 
     public function genres(): BelongsToMany
@@ -114,5 +123,15 @@ class Title extends Model
     public function collection(): BelongsTo
     {
         return $this->belongsTo(TitleCollection::class);
+    }
+
+    public function providers(): BelongsToMany
+    {
+        return $this->belongsToMany(Provider::class, 'title_providers', 'title_providers.priority');
+    }
+
+    public function titleProviders(): HasMany
+    {
+        return $this->hasMany(TitleProvider::class);
     }
 }

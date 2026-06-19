@@ -5,6 +5,7 @@ import useBaseUrl from '../Composables/useBaseUrl.js'
 import CsvUploadModal from '../Components/CsvUploadModal.vue'
 
 const isGenresOpen = ref(false)
+const isProvidersOpen = ref(false)
 const isSettingOpen = ref(false)
 const isUploadModalOpen = ref(false)
 const isMobileMenuOpen = ref(false)
@@ -12,6 +13,12 @@ const baseUrl = useBaseUrl()
 
 function toggleGenres() {
     isGenresOpen.value = !isGenresOpen.value
+    isProvidersOpen.value = false
+}
+
+function toggleProviders() {
+    isProvidersOpen.value = !isProvidersOpen.value
+    isGenresOpen.value = false
 }
 
 function toggleSetting() {
@@ -24,16 +31,21 @@ function toggleUploadModal() {
 
 function toggleMobileMenu() {
     isMobileMenuOpen.value = !isMobileMenuOpen.value
-    if (!isMobileMenuOpen.value) isGenresOpen.value = false
+    if (!isMobileMenuOpen.value) {
+        isGenresOpen.value = false
+        isProvidersOpen.value = false
+    }
 }
 
 function closeMobileMenu() {
     isMobileMenuOpen.value = false
     isGenresOpen.value = false
+    isProvidersOpen.value = false
 }
 
 const page = usePage()
 const genres = computed(() => page.props.genres)
+const providers = computed(() => page.props.providers)
 const user = computed(() => page.props.auth.user)
 const isAuthenticated = computed(() => !!user.value)
 const menuRef = ref(null)
@@ -42,6 +54,7 @@ const settingRef = ref(null)
 function handleClickOutside(ev) {
     if (menuRef.value && !menuRef.value.contains(ev.target)) {
         isGenresOpen.value = false
+        isProvidersOpen.value = false
     }
     if (settingRef.value && !settingRef.value.contains(ev.target)) {
         isSettingOpen.value = false
@@ -96,6 +109,40 @@ onBeforeUnmount(() => {
                                         <li>
                                             <Link
                                                 :href="baseUrl + '/genre/all'"
+                                                class="block px-4 py-2 hover:bg-gray-800"
+                                            >
+                                                See more
+                                            </Link>
+                                        </li>
+                                    </ul>
+                                </li>
+                                <li class="relative">
+                                    <button
+                                        class="flex items-center gap-1 hover:text-gray-300 cursor-pointer"
+                                        @click="toggleProviders"
+                                    >
+                                        Providers
+                                        <svg
+                                            class="w-4 h-4 transition-transform"
+                                            :class="{ 'rotate-180': isProvidersOpen }"
+                                            fill="currentColor"
+                                            viewBox="0 0 20 20"
+                                        >
+                                            <path d="M5.25 7.5L10 12.25L14.75 7.5H5.25Z" />
+                                        </svg>
+                                    </button>
+                                    <ul
+                                        v-if="isProvidersOpen"
+                                        class="absolute top-8 2xl:top-12 left-0 w-40 2xl:w-56 bg-black rounded shadow-lg text-sm 2xl:text-lg z-50"
+                                    >
+                                        <li v-for="provider in providers" :key="provider.id">
+                                            <Link :href="provider.url" class="block px-4 py-2 hover:bg-gray-800">
+                                                {{ provider.name }}
+                                            </Link>
+                                        </li>
+                                        <li>
+                                            <Link
+                                                :href="baseUrl + '/provider/all'"
                                                 class="block px-4 py-2 hover:bg-gray-800"
                                             >
                                                 See more
@@ -220,6 +267,41 @@ onBeforeUnmount(() => {
                                 </li>
                             </ul>
                         </div>
+                        <!-- Providers accordion -->
+                        <div>
+                            <button
+                                class="flex items-center gap-1 w-full hover:text-gray-300 cursor-pointer"
+                                @click="toggleProviders"
+                            >
+                                Providers
+                                <svg
+                                    class="w-4 h-4 transition-transform"
+                                    :class="{ 'rotate-180': isProvidersOpen }"
+                                    fill="currentColor"
+                                    viewBox="0 0 20 20"
+                                >
+                                    <path d="M5.25 7.5L10 12.25L14.75 7.5H5.25Z" />
+                                </svg>
+                            </button>
+                            <ul v-if="isProvidersOpen" class="pl-4 mt-2 flex flex-col gap-1">
+                                <li v-for="provider in providers" :key="provider.id">
+                                    <Link
+                                        :href="provider.url"
+                                        class="block py-1 hover:text-gray-300"
+                                        @click="closeMobileMenu"
+                                        >{{ provider.name }}
+                                    </Link>
+                                </li>
+                                <li>
+                                    <Link
+                                        :href="baseUrl + '/provider/all'"
+                                        class="block py-1 hover:text-gray-300"
+                                        @click="closeMobileMenu"
+                                        >See more
+                                    </Link>
+                                </li>
+                            </ul>
+                        </div>
                         <Link :href="baseUrl + '/tags'" class="hover:text-gray-300" @click="closeMobileMenu"
                             >Browse by Tags
                         </Link>
@@ -249,10 +331,20 @@ onBeforeUnmount(() => {
                 </nav>
             </header>
 
-            <div class="max-w-[2200px] mx-auto px-4 pt-24 pb-8 md:px-10 md:pt-28 lg:px-20 2xl:px-28 2xl:pt-36">
+            <div class="max-w-[2200px] mx-auto px-4 pt-24 pb-14 md:px-10 md:pt-28 lg:px-20 2xl:px-28 2xl:pt-36">
                 <slot />
             </div>
         </main>
     </div>
+    <footer class="fixed bottom-0 w-full bg-black/80 backdrop-blur-sm text-center text-xs text-gray-500 py-1.5 z-50">
+        Streaming data provided by
+        <a
+            href="https://www.justwatch.com"
+            target="_blank"
+            rel="noopener noreferrer"
+            class="underline hover:text-gray-300"
+            >JustWatch</a
+        >
+    </footer>
     <CsvUploadModal :is-open="isUploadModalOpen" />
 </template>

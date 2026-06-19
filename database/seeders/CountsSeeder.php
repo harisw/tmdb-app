@@ -23,5 +23,9 @@ class CountsSeeder extends Seeder
 
         echo "Adding ProductionCompany count \r\n";
         DB::statement('UPDATE production_companies SET count = (SELECT COUNT(*) FROM title_production_company WHERE production_company_id = production_companies.id)');
+
+        echo "Adding Provider count \r\n";
+        DB::statement('UPDATE providers SET count = (SELECT COUNT(DISTINCT
+  title_id) FROM title_providers WHERE provider_id = providers.id)');
     }
 }

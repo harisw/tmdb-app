@@ -18,9 +18,9 @@ return new class extends Migration
             $table->string('type');
             $table->float('rating', 2);
             $table->string('status');
-            $table->date('release_date');
-            $table->bigInteger('revenue');
-            $table->unsignedSmallInteger('runtime');
+            $table->date('release_date')->nullable();
+            $table->bigInteger('revenue')->nullable();
+            $table->unsignedSmallInteger('runtime')->nullable();
             $table->string('backdrop_path')->nullable();
             $table->string('imdb_id')->nullable();
             $table->text('overview')->nullable();
@@ -31,6 +31,7 @@ return new class extends Migration
             $table->string('homepage')->nullable();
             $table->foreignId('language_id')->constrained();
             $table->foreignId('collection_id')->nullable()->constrained('title_collections');
+            $table->schemalessAttributes('extra_attributes')->nullable();
             $table->index('language_id');
             $table->timestamps();
         });

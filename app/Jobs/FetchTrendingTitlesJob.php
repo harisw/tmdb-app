@@ -80,6 +80,15 @@ class FetchTrendingTitlesJob implements ShouldQueue
         $tmdbData = TmdbTitleData::from(array_merge($titleDetail, [
             'language_id' => $languageId,
             'type' => $this->titleType,
+            ...($this->titleType === TitleType::TV
+            ? [
+                'extra_attributes' => [
+                    'number_of_episodes' => $titleDetail['number_of_episodes'] ?? 0,
+                    'number_of_seasons' => $titleDetail['number_of_seasons'] ?? 0,
+                ],
+            ]
+                : []
+            ),
         ]));
 
         return $titleService->insertRow($tmdbData);
