@@ -53,7 +53,6 @@ const registerForm = useForm({
 
 watch(country, (val) => {
     if (val && !registerForm.country) {
-        console.log('country: ', val)
         registerForm.country = val
     }
 })
