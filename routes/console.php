@@ -11,7 +11,7 @@ Artisan::command('inspire', function () {
 })->purpose('Display an inspiring quote');
 
 Schedule::command('db:seed --class=CountsSeeder --force')
-    ->dailyAt('07:00');
+    ->everyThreeHours(1);
 
 Schedule::command('titles:refresh-searchable --force')
     ->everySixHours();

@@ -8,6 +8,7 @@ export default [
             'no-console': 'warn',
             'vue/multi-word-component-names': 'off',
             'vue/no-unused-vars': 'error',
+            'vue/require-default-prop': 'off',
         },
     },
     prettier,

@@ -24,12 +24,9 @@
                 />
             </div>
 
-            <h2 class="text-2xl 2xl:text-4xl font-bold mb-6 text-madder">Hottest Titles</h2>
-            <div
-                class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-7 gap-6 auto-rows-[450px] 2xl:auto-rows-[520px]"
-            >
+            <TitleGrid title="Hottest Titles">
                 <TitleCard v-for="item in items" :key="item.id" :on-click="openModal" :item="item" />
-            </div>
+            </TitleGrid>
             <div ref="sentinel" class="flex justify-center items-center py-4 text-white">
                 <LoadingSpinner v-if="loading" text="Loading more" size="8" color="white" />
                 <span v-else-if="!hasMore">No more results</span>
@@ -50,9 +47,10 @@ import RotatingHeader from '../Components/RotatingHeader.vue'
 import SearchInput from '../Components/SearchInput.vue'
 import useInfiniteScroll from '../Composables/useInfiniteScroll.js'
 import useModal from '../Composables/useModal.js'
+import TitleGrid from '../Components/TitleGrid.vue'
 
 const props = defineProps({
-    titles: Object,
+    titles: { type: Object },
 })
 
 const { items, loading, sentinel, _, hasMore } = useInfiniteScroll({ titles: props.titles })

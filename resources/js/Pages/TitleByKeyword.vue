@@ -14,7 +14,7 @@
                 </div>
             </div>
             <div v-if="hasMoreTags" class="flex justify-center items-center py-4 text-white">
-                <LoadingSpinner v-if="loadingTags" text="Loading more" size="8" color="white" />
+                <LoadingSpinner v-if="loadingTags" text="Loading more" />
                 <button
                     v-else
                     class="bg-madder px-4 py-2 2xl:px-6 2xl:py-3 rounded-lg hover:cursor-pointer text-xs 2xl:text-base"
@@ -24,14 +24,11 @@
                 </button>
             </div>
             <div v-if="items && selectedTag" class="w-full mt-10">
-                <h1 class="text-2xl 2xl:text-4xl font-bold mb-6 text-madder">{{ selectedTag.name }} Titles</h1>
-                <div
-                    class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-7 gap-6 auto-rows-[450px] 2xl:auto-rows-[520px]"
-                >
+                <TitleGrid :title="`${selectedTag.name} Titles`">
                     <TitleCard v-for="item in items" :key="item.id" :on-click="openModal" :item="item" />
-                </div>
+                </TitleGrid>
                 <div ref="sentinel" class="flex justify-center items-center py-4 text-white">
-                    <LoadingSpinner v-if="loading" text="Loading more" size="8" color="white" />
+                    <LoadingSpinner v-if="loading" text="Loading more" />
                     <span v-else-if="!hasMore">No more results</span>
                 </div>
             </div>
@@ -49,6 +46,7 @@ import TitleCard from '../Components/TitleCard.vue'
 import LoadingSpinner from '../Components/LoadingSpinner.vue'
 import useInfiniteScroll from '../Composables/useInfiniteScroll.js'
 import useModal from '../Composables/useModal.js'
+import TitleGrid from '../Components/TitleGrid.vue'
 
 const props = defineProps({
     tags: Object,

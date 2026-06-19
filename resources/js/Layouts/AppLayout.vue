@@ -18,6 +18,7 @@ function openAuthModal(tab) {
 
 const page = usePage()
 const genres = computed(() => page.props.genres)
+const providers = computed(() => page.props.providers)
 const user = computed(() => page.props.auth.user)
 const isAuthenticated = computed(() => !!user.value)
 </script>
@@ -190,7 +191,7 @@ const isAuthenticated = computed(() => !!user.value)
                 </nav>
             </header>
 
-            <div class="max-w-[2200px] mx-auto px-4 pt-24 pb-8 md:px-10 md:pt-28 lg:px-20 2xl:px-28 2xl:pt-36">
+            <div class="max-w-[2200px] mx-auto px-4 pt-24 pb-14 md:px-10 md:pt-28 lg:px-20 2xl:px-28 2xl:pt-36">
                 <slot />
             </div>
         </main>

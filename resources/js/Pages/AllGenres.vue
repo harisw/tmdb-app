@@ -7,7 +7,7 @@ import TitleCard from '../Components/TitleCard.vue'
 import useModal from '../Composables/useModal.js'
 
 defineProps({
-    allGenres: Array,
+    allGenres: { type: Array },
 })
 const { openModal, closeModal, selectedItem, showModal } = useModal()
 </script>

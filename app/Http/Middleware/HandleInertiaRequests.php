@@ -2,8 +2,10 @@
 
 namespace App\Http\Middleware;
 
+use App\Domain\Enums\TitleType;
 use App\Models\Country;
 use App\Models\Genre;
+use App\Models\Provider;
 use App\Models\Title;
 use App\Services\AvatarService;
 use Cache;
@@ -47,9 +49,13 @@ class HandleInertiaRequests extends Middleware
             'countries' => Cache::rememberForever('countries', static function () {
                 return Country::get();
             }),
-            'img' => [
+            'providers' => Cache::remember('top-providers', 7200, static function () {
+                return Provider::orderByDesc('count')->take(7)->get();
+            }),
+            'base_url' => [
                 'poster' => config('services.tmdb.img_url').Title::IMG_SMALL_URL,
                 'backdrop' => config('services.tmdb.img_url').Title::IMG_LARGE_URL,
+                'logo' => config('services.tmdb.img_url').'original',
             ],
             'auth' => [
                 'user' => fn () => $request->user()?->loadMissing('country') ? [
@@ -61,6 +67,9 @@ class HandleInertiaRequests extends Middleware
                     'avatar_style' => $request->user()->extra_attributes->get('avatar.style'),
                     'country' => $request->user()->country?->iso2,
                 ] : null,
+            ],
+            'enums' => [
+                'TitleType' => collect(TitleType::cases())->map(fn ($c) => $c->value),
             ],
             'flash' => [
                 'message' => fn () => $request->session()->get('message'),
