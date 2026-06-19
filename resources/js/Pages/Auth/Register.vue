@@ -2,7 +2,6 @@
 import { useForm } from '@inertiajs/vue3'
 
 const form = useForm({
-    name: '',
     email: '',
     password: '',
     password_confirmation: '',
@@ -24,20 +23,6 @@ const submit = () => {
 
             <form class="mt-8 space-y-6" @submit.prevent="submit">
                 <div class="rounded-md shadow-sm space-y-4">
-                    <div>
-                        <label for="name" class="block text-sm font-medium text-gray-700">Name</label>
-                        <input
-                            id="name"
-                            v-model="form.name"
-                            type="text"
-                            required
-                            class="mt-1 appearance-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                        />
-                        <div v-if="form.errors.name" class="text-red-600 text-sm mt-1">
-                            {{ form.errors.name }}
-                        </div>
-                    </div>
-
                     <div>
                         <label for="email" class="block text-sm font-medium text-gray-700">Email</label>
                         <input

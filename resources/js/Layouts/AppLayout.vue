@@ -1,46 +1,19 @@
 <script setup>
-import { ref, computed, onMounted, onBeforeUnmount } from 'vue'
+import { ref, computed } from 'vue'
 import { usePage, Link } from '@inertiajs/vue3'
 import useBaseUrl from '../Composables/useBaseUrl.js'
-import CsvUploadModal from '../Components/CsvUploadModal.vue'
+import AuthModal from '../Components/AuthModal.vue'
+import ProfileModal from '../Components/ProfileModal.vue'
+import Toast from '../Components/Toast.vue'
 
-const isGenresOpen = ref(false)
-const isProvidersOpen = ref(false)
-const isSettingOpen = ref(false)
-const isUploadModalOpen = ref(false)
-const isMobileMenuOpen = ref(false)
+const isAuthModalOpen = ref(false)
+const authModalTab = ref('login')
+const isProfileModalOpen = ref(false)
 const baseUrl = useBaseUrl()
 
-function toggleGenres() {
-    isGenresOpen.value = !isGenresOpen.value
-    isProvidersOpen.value = false
-}
-
-function toggleProviders() {
-    isProvidersOpen.value = !isProvidersOpen.value
-    isGenresOpen.value = false
-}
-
-function toggleSetting() {
-    isSettingOpen.value = !isSettingOpen.value
-}
-
-function toggleUploadModal() {
-    isUploadModalOpen.value = true
-}
-
-function toggleMobileMenu() {
-    isMobileMenuOpen.value = !isMobileMenuOpen.value
-    if (!isMobileMenuOpen.value) {
-        isGenresOpen.value = false
-        isProvidersOpen.value = false
-    }
-}
-
-function closeMobileMenu() {
-    isMobileMenuOpen.value = false
-    isGenresOpen.value = false
-    isProvidersOpen.value = false
+function openAuthModal(tab) {
+    authModalTab.value = tab
+    isAuthModalOpen.value = true
 }
 
 const page = usePage()
@@ -48,285 +21,172 @@ const genres = computed(() => page.props.genres)
 const providers = computed(() => page.props.providers)
 const user = computed(() => page.props.auth.user)
 const isAuthenticated = computed(() => !!user.value)
-const menuRef = ref(null)
-const settingRef = ref(null)
-
-function handleClickOutside(ev) {
-    if (menuRef.value && !menuRef.value.contains(ev.target)) {
-        isGenresOpen.value = false
-        isProvidersOpen.value = false
-    }
-    if (settingRef.value && !settingRef.value.contains(ev.target)) {
-        isSettingOpen.value = false
-    }
-}
-
-onMounted(() => {
-    document.addEventListener('click', handleClickOutside)
-})
-
-onBeforeUnmount(() => {
-    document.removeEventListener('click', handleClickOutside)
-})
 </script>
 
 <template>
     <div class="min-h-screen bg-licorice">
         <main class="bg-licorice">
-            <header class="relative">
-                <nav class="fixed top-0 z-100 w-full bg-black text-white shadow-md">
-                    <!-- Main nav row -->
-                    <div class="max-w-[2200px] mx-auto px-6 py-4 2xl:py-6 flex items-center justify-between">
-                        <!-- Left: Logo + Desktop links -->
-                        <div class="flex items-center gap-6 2xl:gap-10">
-                            <Link :href="baseUrl" class="text-3xl 2xl:text-5xl font-bold text-madder">Chill</Link>
-
-                            <ul ref="menuRef" class="hidden md:flex gap-4 2xl:gap-8 text-sm 2xl:text-lg">
-                                <li class="relative">
-                                    <button
-                                        class="flex items-center gap-1 hover:text-gray-300 cursor-pointer"
-                                        @click="toggleGenres"
-                                    >
-                                        Genres
-                                        <svg
-                                            class="w-4 h-4 transition-transform"
-                                            :class="{ 'rotate-180': isGenresOpen }"
-                                            fill="currentColor"
-                                            viewBox="0 0 20 20"
-                                        >
-                                            <path d="M5.25 7.5L10 12.25L14.75 7.5H5.25Z" />
-                                        </svg>
-                                    </button>
-                                    <ul
-                                        v-if="isGenresOpen"
-                                        class="absolute top-8 2xl:top-12 left-0 w-40 2xl:w-56 bg-black rounded shadow-lg text-sm 2xl:text-lg z-50"
-                                    >
-                                        <li v-for="genre in genres" :key="genre.id">
-                                            <Link :href="genre.url" class="block px-4 py-2 hover:bg-gray-800">
-                                                {{ genre.name }}
-                                            </Link>
-                                        </li>
-                                        <li>
-                                            <Link
-                                                :href="baseUrl + '/genre/all'"
-                                                class="block px-4 py-2 hover:bg-gray-800"
-                                            >
-                                                See more
-                                            </Link>
-                                        </li>
-                                    </ul>
-                                </li>
-                                <li class="relative">
-                                    <button
-                                        class="flex items-center gap-1 hover:text-gray-300 cursor-pointer"
-                                        @click="toggleProviders"
-                                    >
-                                        Providers
-                                        <svg
-                                            class="w-4 h-4 transition-transform"
-                                            :class="{ 'rotate-180': isProvidersOpen }"
-                                            fill="currentColor"
-                                            viewBox="0 0 20 20"
-                                        >
-                                            <path d="M5.25 7.5L10 12.25L14.75 7.5H5.25Z" />
-                                        </svg>
-                                    </button>
-                                    <ul
-                                        v-if="isProvidersOpen"
-                                        class="absolute top-8 2xl:top-12 left-0 w-40 2xl:w-56 bg-black rounded shadow-lg text-sm 2xl:text-lg z-50"
-                                    >
-                                        <li v-for="provider in providers" :key="provider.id">
-                                            <Link :href="provider.url" class="block px-4 py-2 hover:bg-gray-800">
-                                                {{ provider.name }}
-                                            </Link>
-                                        </li>
-                                        <li>
-                                            <Link
-                                                :href="baseUrl + '/provider/all'"
-                                                class="block px-4 py-2 hover:bg-gray-800"
-                                            >
-                                                See more
-                                            </Link>
-                                        </li>
-                                    </ul>
-                                </li>
-                                <li>
-                                    <Link :href="baseUrl + '/tags'" class="hover:text-gray-300">Browse by Tags</Link>
-                                </li>
-                                <li>
-                                    <Link :href="baseUrl + '/languages'" class="hover:text-gray-300"
-                                        >Browse by Languages
-                                    </Link>
-                                </li>
-                                <li>
-                                    <Link :href="baseUrl + '/search-all'" class="hover:text-gray-300">Find more</Link>
-                                </li>
-                            </ul>
-                        </div>
-
-                        <!-- Right: Profile (desktop) + Hamburger (mobile) -->
-                        <div class="flex items-center gap-4">
-                            <div
-                                v-if="isAuthenticated"
-                                ref="settingRef"
-                                class="hidden md:block relative text-sm 2xl:text-lg"
-                                @click="toggleSetting"
-                            >
-                                <div class="flex items-center gap-2 cursor-pointer">
-                                    {{ user.name }}
-                                    <svg
-                                        class="w-4 h-4 2xl:w-6 2xl:h-6 fill-white transition-transform"
-                                        :class="{ 'rotate-180': isSettingOpen }"
-                                        viewBox="0 0 20 20"
-                                    >
-                                        <path d="M5.25 7.5L10 12.25L14.75 7.5H5.25Z" />
+            <header>
+                <nav class="navbar fixed top-0 z-[100] bg-black text-white shadow-md min-h-16 2xl:min-h-20 px-0">
+                    <div class="max-w-[2200px] w-full mx-auto px-4 2xl:px-8 flex items-center">
+                        <!-- Start: hamburger (mobile) + logo -->
+                        <div class="navbar-start gap-2">
+                            <div class="dropdown lg:hidden">
+                                <label tabindex="0" class="btn btn-ghost btn-circle text-white hover:bg-gray-800">
+                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path
+                                            stroke-linecap="round"
+                                            stroke-linejoin="round"
+                                            stroke-width="2"
+                                            d="M4 6h16M4 12h16M4 18h16"
+                                        />
                                     </svg>
-                                </div>
-                                <div
-                                    v-if="isSettingOpen"
-                                    class="absolute right-0 mt-2 w-40 2xl:w-56 bg-black text-sm 2xl:text-lg rounded shadow-lg z-50"
+                                </label>
+                                <ul
+                                    tabindex="0"
+                                    class="menu menu-sm dropdown-content mt-3 z-[100] p-2 shadow-lg bg-black border border-gray-800 rounded-box w-56 text-white"
                                 >
-                                    <span
-                                        class="block px-4 py-2 hover:bg-gray-800 cursor-pointer"
-                                        @click="toggleUploadModal"
-                                        >Upload Data</span
-                                    >
-                                    <a href="#" class="block px-4 py-2 hover:bg-gray-800">Logout</a>
-                                </div>
+                                    <li>
+                                        <details>
+                                            <summary>Genres</summary>
+                                            <ul>
+                                                <li v-for="genre in genres" :key="genre.id">
+                                                    <Link :href="genre.url">{{ genre.name }}</Link>
+                                                </li>
+                                                <li>
+                                                    <Link :href="baseUrl + '/genre/all'">See more</Link>
+                                                </li>
+                                            </ul>
+                                        </details>
+                                    </li>
+                                    <li>
+                                        <Link :href="baseUrl + '/tags'">Browse by Tags</Link>
+                                    </li>
+                                    <li>
+                                        <Link :href="baseUrl + '/languages'">Browse by Languages</Link>
+                                    </li>
+                                    <li>
+                                        <Link :href="baseUrl + '/search-all'">Find more</Link>
+                                    </li>
+                                    <template v-if="isAuthenticated">
+                                        <div class="divider my-1 border-gray-800"></div>
+                                        <li>
+                                            <Link href="/logout" method="post" as="button" class="w-full">Logout</Link>
+                                        </li>
+                                    </template>
+                                    <template v-else>
+                                        <div class="divider my-1 border-gray-800"></div>
+                                        <li>
+                                            <button class="w-full text-left" @click="openAuthModal('login')">
+                                                Login
+                                            </button>
+                                        </li>
+                                        <li>
+                                            <button class="w-full text-left" @click="openAuthModal('register')">
+                                                Register
+                                            </button>
+                                        </li>
+                                    </template>
+                                </ul>
                             </div>
 
-                            <!-- Hamburger button -->
-                            <button
-                                class="md:hidden p-2 rounded text-white hover:text-gray-300 cursor-pointer"
-                                aria-label="Toggle menu"
-                                @click="toggleMobileMenu"
-                            >
-                                <svg
-                                    v-if="!isMobileMenuOpen"
-                                    class="w-6 h-6"
-                                    fill="none"
-                                    stroke="currentColor"
-                                    viewBox="0 0 24 24"
-                                >
-                                    <path
-                                        stroke-linecap="round"
-                                        stroke-linejoin="round"
-                                        stroke-width="2"
-                                        d="M4 6h16M4 12h16M4 18h16"
-                                    />
-                                </svg>
-                                <svg v-else class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path
-                                        stroke-linecap="round"
-                                        stroke-linejoin="round"
-                                        stroke-width="2"
-                                        d="M6 18L18 6M6 6l12 12"
-                                    />
-                                </svg>
-                            </button>
+                            <Link :href="baseUrl" class="text-3xl 2xl:text-5xl font-bold text-madder">Chill</Link>
                         </div>
-                    </div>
 
-                    <!-- Mobile menu dropdown -->
-                    <div
-                        v-if="isMobileMenuOpen"
-                        class="md:hidden border-t border-gray-800 px-6 py-4 flex flex-col gap-4 text-sm max-w-[2200px] mx-auto"
-                    >
-                        <!-- Genres accordion -->
-                        <div>
-                            <button
-                                class="flex items-center gap-1 w-full hover:text-gray-300 cursor-pointer"
-                                @click="toggleGenres"
-                            >
-                                Genres
-                                <svg
-                                    class="w-4 h-4 transition-transform"
-                                    :class="{ 'rotate-180': isGenresOpen }"
-                                    fill="currentColor"
-                                    viewBox="0 0 20 20"
+                        <!-- Center: desktop nav links -->
+                        <div class="navbar-center hidden lg:flex">
+                            <div class="flex items-center gap-1 text-sm 2xl:text-lg">
+                                <div class="dropdown">
+                                    <label
+                                        tabindex="0"
+                                        class="btn btn-ghost btn-sm text-white hover:text-gray-300 gap-1 2xl:text-lg 2xl:h-10"
+                                    >
+                                        Genres
+                                        <svg class="w-4 h-4 fill-current" viewBox="0 0 20 20">
+                                            <path d="M5.25 7.5L10 12.25L14.75 7.5H5.25Z" />
+                                        </svg>
+                                    </label>
+                                    <ul
+                                        tabindex="0"
+                                        class="dropdown-content menu menu-sm mt-1 z-[100] p-0 shadow-lg bg-black border border-gray-800 rounded-box w-48 2xl:w-56 text-white"
+                                    >
+                                        <li v-for="genre in genres" :key="genre.id">
+                                            <Link :href="genre.url" class="hover:bg-gray-800 rounded-none"
+                                                >{{ genre.name }}
+                                            </Link>
+                                        </li>
+                                        <li>
+                                            <Link :href="baseUrl + '/genre/all'" class="hover:bg-gray-800 rounded-none"
+                                                >See more
+                                            </Link>
+                                        </li>
+                                    </ul>
+                                </div>
+                                <Link
+                                    :href="baseUrl + '/tags'"
+                                    class="btn btn-ghost btn-sm text-white hover:text-gray-300 2xl:text-lg 2xl:h-10"
                                 >
-                                    <path d="M5.25 7.5L10 12.25L14.75 7.5H5.25Z" />
-                                </svg>
-                            </button>
-                            <ul v-if="isGenresOpen" class="pl-4 mt-2 flex flex-col gap-1">
-                                <li v-for="genre in genres" :key="genre.id">
-                                    <Link
-                                        :href="genre.url"
-                                        class="block py-1 hover:text-gray-300"
-                                        @click="closeMobileMenu"
-                                        >{{ genre.name }}
-                                    </Link>
-                                </li>
-                                <li>
-                                    <Link
-                                        :href="baseUrl + '/genre/all'"
-                                        class="block py-1 hover:text-gray-300"
-                                        @click="closeMobileMenu"
-                                        >See more
-                                    </Link>
-                                </li>
-                            </ul>
-                        </div>
-                        <!-- Providers accordion -->
-                        <div>
-                            <button
-                                class="flex items-center gap-1 w-full hover:text-gray-300 cursor-pointer"
-                                @click="toggleProviders"
-                            >
-                                Providers
-                                <svg
-                                    class="w-4 h-4 transition-transform"
-                                    :class="{ 'rotate-180': isProvidersOpen }"
-                                    fill="currentColor"
-                                    viewBox="0 0 20 20"
+                                    Browse by Tags
+                                </Link>
+                                <Link
+                                    :href="baseUrl + '/languages'"
+                                    class="btn btn-ghost btn-sm text-white hover:text-gray-300 2xl:text-lg 2xl:h-10"
                                 >
-                                    <path d="M5.25 7.5L10 12.25L14.75 7.5H5.25Z" />
-                                </svg>
-                            </button>
-                            <ul v-if="isProvidersOpen" class="pl-4 mt-2 flex flex-col gap-1">
-                                <li v-for="provider in providers" :key="provider.id">
-                                    <Link
-                                        :href="provider.url"
-                                        class="block py-1 hover:text-gray-300"
-                                        @click="closeMobileMenu"
-                                        >{{ provider.name }}
-                                    </Link>
-                                </li>
-                                <li>
-                                    <Link
-                                        :href="baseUrl + '/provider/all'"
-                                        class="block py-1 hover:text-gray-300"
-                                        @click="closeMobileMenu"
-                                        >See more
-                                    </Link>
-                                </li>
-                            </ul>
+                                    Browse by Languages
+                                </Link>
+                                <Link
+                                    :href="baseUrl + '/search-all'"
+                                    class="btn btn-ghost btn-sm text-white hover:text-gray-300 2xl:text-lg 2xl:h-10"
+                                >
+                                    Find more
+                                </Link>
+                            </div>
                         </div>
-                        <Link :href="baseUrl + '/tags'" class="hover:text-gray-300" @click="closeMobileMenu"
-                            >Browse by Tags
-                        </Link>
-                        <Link :href="baseUrl + '/languages'" class="hover:text-gray-300" @click="closeMobileMenu"
-                            >Browse by Languages
-                        </Link>
-                        <Link :href="baseUrl + '/search-all'" class="hover:text-gray-300" @click="closeMobileMenu"
-                            >Find more
-                        </Link>
 
-                        <!-- Profile links on mobile -->
-                        <template v-if="isAuthenticated">
-                            <hr class="border-gray-800" />
-                            <span
-                                class="cursor-pointer hover:text-gray-300"
-                                @click="
-                                    () => {
-                                        toggleUploadModal()
-                                        closeMobileMenu()
-                                    }
-                                "
-                                >Upload Data</span
-                            >
-                            <a href="#" class="hover:text-gray-300">Logout</a>
-                        </template>
+                        <!-- End: auth / profile -->
+                        <div class="navbar-end gap-2">
+                            <template v-if="!isAuthenticated">
+                                <button
+                                    class="btn btn-ghost btn-sm text-white hidden lg:flex"
+                                    @click="openAuthModal('login')"
+                                >
+                                    Login
+                                </button>
+                                <button
+                                    class="btn btn-sm bg-madder text-white border-none hover:bg-red-800 hidden lg:flex"
+                                    @click="openAuthModal('register')"
+                                >
+                                    Register
+                                </button>
+                            </template>
+                            <div v-if="isAuthenticated" class="dropdown dropdown-end">
+                                <label tabindex="0" class="cursor-pointer">
+                                    <div class="avatar">
+                                        <div
+                                            class="w-9 2xl:w-11 rounded-full ring-2 ring-madder ring-offset-1 ring-offset-black"
+                                        >
+                                            <img :src="user.avatar_url" :alt="user.avatar_url" />
+                                        </div>
+                                    </div>
+                                </label>
+                                <ul
+                                    tabindex="0"
+                                    class="dropdown-content menu menu-sm mt-3 z-[100] p-2 shadow-lg bg-black border border-gray-800 rounded-box w-44 2xl:w-48 text-white"
+                                >
+                                    <li class="menu-title text-sm">@{{ user.username }}</li>
+                                    <li>
+                                        <button class="w-full hover:bg-gray-800" @click="isProfileModalOpen = true">
+                                            Update Profile
+                                        </button>
+                                    </li>
+                                    <li>
+                                        <Link href="/logout" method="post" as="button" class="w-full hover:bg-gray-800"
+                                            >Logout
+                                        </Link>
+                                    </li>
+                                </ul>
+                            </div>
+                        </div>
                     </div>
                 </nav>
             </header>
@@ -335,16 +195,9 @@ onBeforeUnmount(() => {
                 <slot />
             </div>
         </main>
+
+        <AuthModal :is-open="isAuthModalOpen" :initial-tab="authModalTab" @close="isAuthModalOpen = false" />
+        <ProfileModal :is-open="isProfileModalOpen" @close="isProfileModalOpen = false" />
+        <Toast />
     </div>
-    <footer class="fixed bottom-0 w-full bg-black/80 backdrop-blur-sm text-center text-xs text-gray-500 py-1.5 z-50">
-        Streaming data provided by
-        <a
-            href="https://www.justwatch.com"
-            target="_blank"
-            rel="noopener noreferrer"
-            class="underline hover:text-gray-300"
-            >JustWatch</a
-        >
-    </footer>
-    <CsvUploadModal :is-open="isUploadModalOpen" />
 </template>

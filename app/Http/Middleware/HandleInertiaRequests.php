@@ -3,9 +3,11 @@
 namespace App\Http\Middleware;
 
 use App\Domain\Enums\TitleType;
+use App\Models\Country;
 use App\Models\Genre;
 use App\Models\Provider;
 use App\Models\Title;
+use App\Services\AvatarService;
 use Cache;
 use Illuminate\Http\Request;
 use Inertia\Middleware;
@@ -44,6 +46,9 @@ class HandleInertiaRequests extends Middleware
             'genres' => Cache::remember('top-genres', 7200, static function () {
                 return Genre::orderByDesc('count')->take(7)->get();
             }),
+            'countries' => Cache::rememberForever('countries', static function () {
+                return Country::get();
+            }),
             'providers' => Cache::remember('top-providers', 7200, static function () {
                 return Provider::orderByDesc('count')->take(7)->get();
             }),
@@ -53,10 +58,14 @@ class HandleInertiaRequests extends Middleware
                 'logo' => config('services.tmdb.img_url').'original',
             ],
             'auth' => [
-                'user' => $request->user() ? [
+                'user' => fn () => $request->user()?->loadMissing('country') ? [
                     'id' => $request->user()->id,
                     'name' => $request->user()->name,
+                    'username' => $request->user()->username,
                     'email' => $request->user()->email,
+                    'avatar_url' => $request->user()->avatar_url,
+                    'avatar_style' => $request->user()->extra_attributes->get('avatar.style'),
+                    'country' => $request->user()->country?->iso2,
                 ] : null,
             ],
             'enums' => [
@@ -66,6 +75,7 @@ class HandleInertiaRequests extends Middleware
                 'message' => fn () => $request->session()->get('message'),
                 'error' => fn () => $request->session()->get('error'),
             ],
+            'avatarStyles' => Cache::rememberForever('avatar-styles', fn () => AvatarService::getStyles()),
         ]);
     }
 }

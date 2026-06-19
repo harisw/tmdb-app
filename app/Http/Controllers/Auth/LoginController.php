@@ -31,6 +31,15 @@ class LoginController extends Controller
 
         $request->session()->regenerate();
 
+        // Redirect unverified users to a notice page
+        if (! Auth::user()->hasVerifiedEmail()) {
+            Auth::logout();
+            $request->session()->invalidate();
+
+            return redirect()->route('login')
+                ->withErrors(['email' => 'Please verify your email before logging in.']);
+        }
+
         return redirect()->intended('/');
     }
 
@@ -41,6 +50,6 @@ class LoginController extends Controller
         $request->session()->invalidate();
         $request->session()->regenerateToken();
 
-        return redirect()->route('login');
+        return redirect('/');
     }
 }
