@@ -8,7 +8,7 @@ use App\Http\Controllers\ProviderController;
 use App\Http\Controllers\SearchController;
 use Illuminate\Support\Facades\Route;
 
-require __DIR__.'/auth.php';
+require __DIR__ . '/auth.php';
 
 Route::get('/', [HomeController::class, 'index']);
 Route::get('/genre/all', [GenreController::class, 'index'])->name('title-all-genres');
@@ -21,4 +21,4 @@ Route::middleware('throttle:40,1')->group(function () {
     Route::get('/search', [SearchController::class, 'search'])->name('search-title');
 });
 
-Route::get('/search-all', [HomeController::class, 'searchAll'])->name('search-all-title');
+Route::get('/search-all', [SearchController::class, 'searchAll'])->name('search-all-title');
