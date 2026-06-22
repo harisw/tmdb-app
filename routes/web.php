@@ -8,7 +8,7 @@ use App\Http\Controllers\ProviderController;
 use App\Http\Controllers\SearchController;
 use Illuminate\Support\Facades\Route;
 
-require __DIR__ . '/auth.php';
+require __DIR__.'/auth.php';
 
 Route::get('/', [HomeController::class, 'index']);
 Route::get('/genre/all', [GenreController::class, 'index'])->name('title-all-genres');
