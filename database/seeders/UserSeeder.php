@@ -12,12 +12,12 @@ class UserSeeder extends Seeder
      */
     public function run(): void
     {
-        // Horizon User
+        // Admin User
         User::firstOrCreate([
-            'name' => 'Horizon Admin',
-            'email' => 'horizonadmin@mail.com',
-            'username' => 'horizonAdmin',
-            'password' => bcrypt(env('HORIZON_ADMIN_PASSWORD')),
+            'name' => 'Admin',
+            'email' => 'admin@mail.com',
+            'username' => env('ADMIN_USERNAME'),
+            'password' => bcrypt(env('ADMIN_PASSWORD')),
             'email_verified_at' => now(),
         ]);
     }

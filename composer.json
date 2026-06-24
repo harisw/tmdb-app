@@ -16,6 +16,7 @@
         "io238/laravel-iso-countries": "^1.4",
         "laravel/framework": "^12.0",
         "laravel/horizon": "^5.47",
+        "laravel/pulse": "^1.7",
         "laravel/socialite": "^5.27",
         "laravel/tinker": "^2.10.1",
         "league/flysystem-aws-s3-v3": "^3.32",
