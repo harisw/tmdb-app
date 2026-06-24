@@ -51,7 +51,10 @@ class TitleService
                 $companies = $this->prepareRelations($row->production_companies, ProductionCompany::class);
                 $keywords = $row->keywords ? $this->prepareRelations($row->keywords, Keyword::class) : collect();
 
-                $title = Title::create($row->except('genres', 'production_companies', 'keywords', 'belongs_to_collection')->toArray());
+                $title = Title::firstOrCreate(
+                    ['slug' => $row->slug],
+                    $row->except('genres', 'production_companies', 'keywords', 'belongs_to_collection')->toArray()
+                );
                 $title->genres()->attach($genres->pluck('id')->toArray());
                 $title->companies()->attach($companies->pluck('id')->toArray());
                 $title->keywords()->attach($keywords->pluck('id')->toArray());
@@ -74,7 +77,7 @@ class TitleService
         $result = collect();
         foreach ($items as $item) {
             $relation = $this->relationCache[$class]->get($item->slug)
-                ?? $class::create(['slug' => $item->slug, 'name' => $item->name]);
+                ?? $class::firstOrCreate(['slug' => $item->slug], ['name' => $item->name]);
 
             $result->push($relation);
             $this->relationCache[$class]->put($item->slug, $relation);
