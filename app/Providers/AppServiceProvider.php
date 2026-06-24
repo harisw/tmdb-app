@@ -4,7 +4,9 @@ namespace App\Providers;
 
 use App\Services\TitleService;
 use App\Services\TmdbService;
+use Gate;
 use Illuminate\Support\ServiceProvider;
+use Laravel\Pulse\Facades\Pulse;
 use URL;
 
 class AppServiceProvider extends ServiceProvider
@@ -30,8 +32,17 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        //        if ($this->app->environment('production')) {
-        //            URL::forceScheme('https');
-        //        }
+        if ($this->app->environment('production')) {
+            URL::forceScheme('https');
+        }
+
+        Pulse::user(fn ($user) => [
+            'name' => $user->name,
+            'email' => $user->email,
+        ]);
+
+        Gate::define('viewPulse', function ($user) {
+            return $user->username === env('ADMIN_USERNAME');
+        });
     }
 }

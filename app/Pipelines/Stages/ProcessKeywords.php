@@ -14,7 +14,7 @@ class ProcessKeywords
 
     public function handle(EnrichmentContext $ctx, Closure $next): mixed
     {
-        $keywords = $this->tmdb->getKeywords($ctx->title->type, $ctx->title->tmdb_id)['keywords'];
+        $keywords = $this->getKeywordData($this->tmdb->getKeywords($ctx->title->type, $ctx->title->tmdb_id));
 
         $keywordIds = TmdbKeywordData::collect(collect($keywords)->unique('name'))
             ->toBase()
@@ -25,5 +25,10 @@ class ProcessKeywords
         $ctx->title->keywords()->sync($keywordIds);
 
         return $next($ctx);
+    }
+
+    private function getKeywordData($data): array
+    {
+        return $data['keywords'] ?? $data['results'] ?? [];
     }
 }

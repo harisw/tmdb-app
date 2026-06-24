@@ -18,6 +18,8 @@ class FetchTrendingTitlesJob implements ShouldQueue
 {
     use Queueable;
 
+    public int $timeout = 1800;
+
     private TimeWindow $timeWindow;
 
     private TitleType $titleType;
@@ -81,12 +83,12 @@ class FetchTrendingTitlesJob implements ShouldQueue
             'language_id' => $languageId,
             'type' => $this->titleType,
             ...($this->titleType === TitleType::TV
-            ? [
-                'extra_attributes' => [
-                    'number_of_episodes' => $titleDetail['number_of_episodes'] ?? 0,
-                    'number_of_seasons' => $titleDetail['number_of_seasons'] ?? 0,
-                ],
-            ]
+                ? [
+                    'extra_attributes' => [
+                        'number_of_episodes' => $titleDetail['number_of_episodes'] ?? 0,
+                        'number_of_seasons' => $titleDetail['number_of_seasons'] ?? 0,
+                    ],
+                ]
                 : []
             ),
         ]));
