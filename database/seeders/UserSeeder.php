@@ -3,6 +3,7 @@
 namespace Database\Seeders;
 
 use App\Models\User;
+use App\Services\AvatarService;
 use Illuminate\Database\Seeder;
 
 class UserSeeder extends Seeder
@@ -22,6 +23,12 @@ class UserSeeder extends Seeder
             'username' => env('ADMIN_USERNAME'),
             'password' => bcrypt(env('ADMIN_PASSWORD')),
             'email_verified_at' => now(),
+            'extra_attributes' => [
+                'avatar' => [
+                    'seed' => env('ADMIN_USERNAME'),
+                    'style' => AvatarService::getRandomStyle(),
+                ],
+            ],
         ]);
     }
 }
