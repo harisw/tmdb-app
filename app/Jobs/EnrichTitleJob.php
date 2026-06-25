@@ -16,14 +16,15 @@ class EnrichTitleJob implements ShouldQueue
 {
     use Queueable;
 
-    public $queue = 'enrichment';
-
     public function middleware(): array
     {
         return [new RateLimited('tmdb')];
     }
 
-    public function __construct(private readonly Title $title) {}
+    public function __construct(private readonly Title $title)
+    {
+        $this->onQueue('enrichment');
+    }
 
     public function handle(): void
     {
