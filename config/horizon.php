@@ -225,6 +225,15 @@ return [
                 'tries' => 3,
                 'timeout' => 60,
             ],
+            'supervisor-enrichment' => [
+                'connection' => 'redis',
+                'queue' => ['enrichment'],
+                'balance' => 'simple',
+                'minProcesses' => 1,
+                'maxProcesses' => 2,
+                'tries' => 3,
+                'timeout' => 60,
+            ],
         ],
 
         'local' => [
@@ -234,6 +243,14 @@ return [
                 'balance' => 'simple',
                 'processes' => 3,
                 'tries' => 3,
+            ],
+            'supervisor-enrichment' => [
+                'connection' => 'redis',
+                'queue' => ['enrichment'],
+                'balance' => 'simple',
+                'processes' => 1,
+                'tries' => 3,
+                'timeout' => 60,
             ],
         ],
     ],

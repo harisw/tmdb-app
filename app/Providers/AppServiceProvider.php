@@ -5,6 +5,8 @@ namespace App\Providers;
 use App\Services\TitleService;
 use App\Services\TmdbService;
 use Gate;
+use Illuminate\Cache\RateLimiting\Limit;
+use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\ServiceProvider;
 use Laravel\Pulse\Facades\Pulse;
 use URL;
@@ -44,5 +46,7 @@ class AppServiceProvider extends ServiceProvider
         Gate::define('viewPulse', function ($user) {
             return $user->username === env('ADMIN_USERNAME');
         });
+
+        RateLimiter::for('tmdb', fn () => Limit::perSecond(10));
     }
 }

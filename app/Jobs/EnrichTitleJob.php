@@ -8,12 +8,20 @@ use App\Pipelines\Stages\ProcessKeywords;
 use App\Pipelines\Stages\ProcessWatchProviders;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
+use Illuminate\Queue\Middleware\RateLimited;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Pipeline;
 
 class EnrichTitleJob implements ShouldQueue
 {
     use Queueable;
+
+    public $queue = 'enrichment';
+
+    public function middleware(): array
+    {
+        return [new RateLimited('tmdb')];
+    }
 
     public function __construct(private readonly Title $title) {}
 

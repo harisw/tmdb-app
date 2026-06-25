@@ -61,7 +61,10 @@ const resendForm = useForm({})
 
 const submitLogin = () => {
     loginForm.post('/login', {
-        onFinish: () => loginForm.reset('password'),
+        onFinish: () => {
+            loginForm.reset('password')
+            close()
+        },
     })
 }
 
