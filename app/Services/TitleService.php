@@ -8,7 +8,6 @@ use App\Models\Genre;
 use App\Models\Keyword;
 use App\Models\ProductionCompany;
 use App\Models\Title;
-use Artisan;
 use DB;
 use Illuminate\Support\Collection;
 use Spatie\LaravelData\DataCollection;
@@ -37,7 +36,6 @@ class TitleService
 
             $static->insertRow($titleData->toTmdbTitleData());
         }
-        Artisan::call('titles:refresh-searchable');
 
         return $static->insertedRowCount;
     }
@@ -55,9 +53,9 @@ class TitleService
                     ['slug' => $row->slug],
                     $row->except('genres', 'production_companies', 'keywords', 'belongs_to_collection')->toArray()
                 );
-                $title->genres()->attach($genres->pluck('id')->toArray());
-                $title->companies()->attach($companies->pluck('id')->toArray());
-                $title->keywords()->attach($keywords->pluck('id')->toArray());
+                $title->genres()->attach($genres->pluck('id')->unique()->toArray());
+                $title->companies()->attach($companies->pluck('id')->unique()->toArray());
+                $title->keywords()->attach($keywords->pluck('id')->unique()->toArray());
 
                 $this->titleDict->put($title->slug, $title->id);
                 $this->insertedRowCount++;
@@ -65,6 +63,7 @@ class TitleService
                 return $title;
             });
         } catch (\Exception $e) {
+            \Log::error('Row: '.json_encode($row, JSON_PRETTY_PRINT));
             report($e);
             $this->reloadRelationCache();
         }
