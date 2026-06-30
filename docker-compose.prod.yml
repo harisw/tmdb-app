@@ -13,6 +13,13 @@ services:
     restart: unless-stopped
     networks:
       - laravel-network
+    logging:
+      driver: awslogs
+      options:
+        awslogs-group: /tmdb/app
+        awslogs-region: ${AWS_DEFAULT_REGION:-ap-southeast-1}
+        awslogs-stream: app
+        awslogs-create-group: "true"
   redis:
     image: redis:7-alpine
     restart: unless-stopped
@@ -34,6 +41,13 @@ services:
       - laravel_logs:/var/www/storage/logs
     networks:
       - laravel-network
+    logging:
+      driver: awslogs
+      options:
+        awslogs-group: /tmdb/horizon
+        awslogs-region: ${AWS_DEFAULT_REGION:-ap-southeast-1}
+        awslogs-stream: horizon
+        awslogs-create-group: "true"
 
 volumes:
   redis-data:
