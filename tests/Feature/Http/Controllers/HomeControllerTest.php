@@ -106,13 +106,14 @@ class HomeControllerTest extends TestCase
 
     public function test_get_by_language_renders_language_page(): void
     {
-        Language::factory(3)->create();
-
+        Language::factory(2)->create();
+        $languageWithTitle = Language::factory(1)->create();
+        Title::factory()->create(['language_id' => $languageWithTitle->first()->id]);
         $this->get('/languages')
             ->assertOk()
             ->assertInertia(fn ($page) => $page
                 ->component('TitleByLanguage')
-                ->has('languages', 3)
+                ->has('languages', 1)
             );
     }
 

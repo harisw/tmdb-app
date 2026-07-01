@@ -56,8 +56,10 @@ onUnmounted(() => window.removeEventListener('keydown', handleKey))
                         <div class="p-5">
                             <h2 class="text-3xl font-bold mb-3">{{ item.name }}</h2>
                             <div class="flex justify-between gap-5">
-                                <div class="flex flex-col gap-2 text-slate-500">
-                                    <div><RatingBadge :rating="item.rating" size="sm" /></div>
+                                <div class="flex flex-col gap-1 text-slate-500">
+                                    <div class="flex">
+                                        <RatingBadge :rating="item.rating" size="sm" />
+                                    </div>
                                     <h3 class="text-lg font-semibold">
                                         {{ item.release_date }}
                                         {{ item.runtime }}
@@ -106,6 +108,7 @@ onUnmounted(() => window.removeEventListener('keydown', handleKey))
 .fade-leave-active {
     transition: opacity 0.5s ease;
 }
+
 .fade-enter-from,
 .fade-leave-to {
     opacity: 0;

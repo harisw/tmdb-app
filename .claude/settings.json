@@ -1,7 +1,8 @@
 {
   "permissions": {
     "allow": [
-      "Bash(node -e \"const p = require\\('/home/harimxn/tmdb-app/package.json'\\); console.log\\(p.dependencies.vue || p.devDependencies.vue\\)\")"
+      "Bash(node -e \"const p = require\\('/home/harimxn/tmdb-app/package.json'\\); console.log\\(p.dependencies.vue || p.devDependencies.vue\\)\")",
+      "Bash(git restore *)"
     ]
   }
 }

@@ -1,16 +1,14 @@
-import { ref, onMounted } from 'vue'
+import { ref } from 'vue'
+
+const country = ref(null)
+
+fetch('https://ipapi.co/json/')
+    .then((r) => r.json())
+    .then((data) => {
+        country.value = data.country_code
+    })
+    .catch(() => {})
 
 export function useGeoLocation() {
-    const country = ref(null)
-    const loading = ref(true)
-
-    onMounted(async () => {
-        try {
-            const data = await fetch('https://ipapi.co/json/').then((r) => r.json())
-            country.value = data.country_code
-        } finally {
-            loading.value = false
-        }
-    })
-    return { country, loading }
+    return { country }
 }

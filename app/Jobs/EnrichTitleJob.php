@@ -6,6 +6,7 @@ use App\Data\EnrichmentContext;
 use App\Models\Title;
 use App\Pipelines\Stages\ProcessKeywords;
 use App\Pipelines\Stages\ProcessWatchProviders;
+use Illuminate\Bus\Batchable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
 use Illuminate\Queue\Middleware\RateLimited;
@@ -14,7 +15,7 @@ use Illuminate\Support\Facades\Pipeline;
 
 class EnrichTitleJob implements ShouldQueue
 {
-    use Queueable;
+    use Batchable, Queueable;
 
     public function middleware(): array
     {
@@ -36,7 +37,9 @@ class EnrichTitleJob implements ShouldQueue
                 ProcessWatchProviders::class,
             ])
             ->thenReturn();
-
+        $this->title->update([
+            'enriched_at' => now(),
+        ]);
         Log::info('Finished enriching title: '.$this->title->slug);
     }
 }

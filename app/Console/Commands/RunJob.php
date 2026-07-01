@@ -3,6 +3,7 @@
 namespace App\Console\Commands;
 
 use App\Domain\Enums\TitleType;
+use App\Jobs\EnrichTitlesProviderBatchJob;
 use App\Jobs\FetchTrendingTitlesJob;
 use App\Utils\Enum\TimeWindow;
 use Illuminate\Console\Command;
@@ -30,11 +31,14 @@ class RunJob extends Command
     public function handle(): void
     {
         $jobClass = $this->choice('Which job class do you want to run?',
-            [FetchTrendingTitlesJob::class]
+            [FetchTrendingTitlesJob::class, EnrichTitlesProviderBatchJob::class],
         );
         switch ($jobClass) {
             case FetchTrendingTitlesJob::class:
                 $this->runFetchTrendingTitles();
+                break;
+            case EnrichTitlesProviderBatchJob::class:
+                $this->runEnrichTitlesProvider();
                 break;
             default:
                 $this->error('Unknown job class');
@@ -57,5 +61,11 @@ class RunJob extends Command
             'maxPage' => $maxPage,
         ]);
         FetchTrendingTitlesJob::dispatch($timeWindow, $titleType, $maxPage);
+    }
+
+    private function runEnrichTitlesProvider(): void
+    {
+        $limit = (int) $this->ask('Limit titles?');
+        EnrichTitlesProviderBatchJob::dispatch($limit);
     }
 }

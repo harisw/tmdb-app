@@ -5,6 +5,7 @@ namespace App\Models;
 use App\Casts\RoundFloat;
 use App\Domain\Enums\TitleType;
 use App\Helpers\DateTimeHelper;
+use App\Models\Scopes\TitleTypeScope;
 use Database\Factories\TitleFactory;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
@@ -79,6 +80,11 @@ class Title extends Model
     /** @use HasFactory<TitleFactory> */
     use HasFactory;
 
+    protected static function booted(): void
+    {
+        static::addGlobalScope(new TitleTypeScope);
+    }
+
     public const IMG_SMALL_URL = 'w300';
 
     public const IMG_MEDIUM_URL = 'w780';
@@ -105,6 +111,11 @@ class Title extends Model
         return $this->extra_attributes->modelScope();
     }
 
+    public function language(): BelongsTo
+    {
+        return $this->belongsTo(Language::class);
+    }
+
     public function genres(): BelongsToMany
     {
         return $this->belongsToMany(Genre::class);
@@ -127,7 +138,7 @@ class Title extends Model
 
     public function providers(): BelongsToMany
     {
-        return $this->belongsToMany(Provider::class, 'title_providers', 'title_providers.priority');
+        return $this->belongsToMany(Provider::class, 'title_providers', 'title_id', 'provider_id');
     }
 
     public function titleProviders(): HasMany

@@ -230,7 +230,7 @@ return [
                 'queue' => ['enrichment'],
                 'balance' => 'simple',
                 'minProcesses' => 1,
-                'maxProcesses' => 2,
+                'maxProcesses' => 5,
                 'tries' => 3,
                 'timeout' => 60,
             ],
