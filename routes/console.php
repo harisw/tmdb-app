@@ -1,6 +1,7 @@
 <?php
 
 use App\Domain\Enums\TitleType;
+use App\Jobs\EnrichTitlesProviderBatchJob;
 use App\Jobs\FetchTrendingTitlesJob;
 use App\Utils\Enum\TimeWindow;
 
@@ -23,3 +24,6 @@ Schedule::job(new FetchTrendingTitlesJob(TimeWindow::WEEK, TitleType::MOVIE))
 
 Schedule::job(new FetchTrendingTitlesJob(TimeWindow::WEEK, TitleType::TV))
     ->saturdays();
+
+Schedule::job(new EnrichTitlesProviderBatchJob)
+    ->hourly()->withoutOverlapping();

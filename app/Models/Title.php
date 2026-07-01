@@ -133,7 +133,7 @@ class Title extends Model
 
     public function providers(): BelongsToMany
     {
-        return $this->belongsToMany(Provider::class, 'title_providers', 'title_providers.priority');
+        return $this->belongsToMany(Provider::class, 'title_providers', 'title_id', 'provider_id');
     }
 
     public function titleProviders(): HasMany
