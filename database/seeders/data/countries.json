@@ -395,6 +395,11 @@
         "native_name": "French Guiana"
     },
     {
+        "iso2": "GG",
+        "english_name": "Guernsey",
+        "native_name": "Guernsey"
+    },
+    {
         "iso2": "GH",
         "english_name": "Ghana",
         "native_name": "Ghana"
