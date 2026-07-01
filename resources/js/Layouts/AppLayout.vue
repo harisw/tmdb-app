@@ -1,7 +1,9 @@
 <script setup>
-import { ref, computed } from 'vue'
-import { usePage, Link } from '@inertiajs/vue3'
+import { ref, computed, watch } from 'vue'
+import { usePage, Link, router } from '@inertiajs/vue3'
+import { Film, Tv } from 'lucide-vue-next'
 import useBaseUrl from '../Composables/useBaseUrl.js'
+import useTitleType from '../Composables/useTitleType.js'
 import AuthModal from '../Components/AuthModal.vue'
 import ProfileModal from '../Components/ProfileModal.vue'
 import Toast from '../Components/Toast.vue'
@@ -15,6 +17,9 @@ function openAuthModal(tab) {
     authModalTab.value = tab
     isAuthModalOpen.value = true
 }
+
+const { titleType } = useTitleType()
+watch(titleType, () => router.visit(window.location.pathname, { preserveState: false, preserveScroll: false }))
 
 const page = usePage()
 const genres = computed(() => page.props.genres)
@@ -60,6 +65,19 @@ const isAuthenticated = computed(() => !!user.value)
                                         </details>
                                     </li>
                                     <li>
+                                        <details>
+                                            <summary>Providers</summary>
+                                            <ul>
+                                                <li v-for="provider in providers" :key="provider.id">
+                                                    <Link :href="provider.url">{{ provider.name }}</Link>
+                                                </li>
+                                                <li>
+                                                    <Link :href="baseUrl + '/provider/all'">See more</Link>
+                                                </li>
+                                            </ul>
+                                        </details>
+                                    </li>
+                                    <li>
                                         <Link :href="baseUrl + '/tags'">Browse by Tags</Link>
                                     </li>
                                     <li>
@@ -91,6 +109,33 @@ const isAuthenticated = computed(() => !!user.value)
                             </div>
 
                             <Link :href="baseUrl" class="text-3xl 2xl:text-5xl font-bold text-madder">Chill</Link>
+
+                            <div class="join">
+                                <button
+                                    class="btn btn-xs join-item border-gray-700 text-white"
+                                    :class="titleType === '' ? 'bg-madder border-madder' : 'btn-ghost'"
+                                    @click="titleType = ''"
+                                >
+                                    <Film :size="12" />
+                                    <Tv :size="12" />
+                                </button>
+                                <button
+                                    class="btn btn-xs join-item border-gray-700 text-white"
+                                    :class="titleType === 'movie' ? 'bg-madder border-madder' : 'btn-ghost'"
+                                    @click="titleType = 'movie'"
+                                >
+                                    <Film :size="13" />
+                                    Movie
+                                </button>
+                                <button
+                                    class="btn btn-xs join-item border-gray-700 text-white"
+                                    :class="titleType === 'tv' ? 'bg-madder border-madder' : 'btn-ghost'"
+                                    @click="titleType = 'tv'"
+                                >
+                                    <Tv :size="13" />
+                                    TV
+                                </button>
+                            </div>
                         </div>
 
                         <!-- Center: desktop nav links -->
@@ -119,6 +164,34 @@ const isAuthenticated = computed(() => !!user.value)
                                             <Link :href="baseUrl + '/genre/all'" class="hover:bg-gray-800 rounded-none"
                                                 >See more
                                             </Link>
+                                        </li>
+                                    </ul>
+                                </div>
+                                <div class="dropdown">
+                                    <label
+                                        tabindex="0"
+                                        class="btn btn-ghost btn-sm text-white hover:text-gray-300 gap-1 2xl:text-lg 2xl:h-10"
+                                    >
+                                        Providers
+                                        <svg class="w-4 h-4 fill-current" viewBox="0 0 20 20">
+                                            <path d="M5.25 7.5L10 12.25L14.75 7.5H5.25Z" />
+                                        </svg>
+                                    </label>
+                                    <ul
+                                        tabindex="0"
+                                        class="dropdown-content menu menu-sm mt-1 z-[100] p-0 shadow-lg bg-black border border-gray-800 rounded-box w-48 2xl:w-56 text-white"
+                                    >
+                                        <li v-for="provider in providers" :key="provider.id">
+                                            <Link :href="provider.url" class="hover:bg-gray-800 rounded-none">{{
+                                                provider.name
+                                            }}</Link>
+                                        </li>
+                                        <li>
+                                            <Link
+                                                :href="baseUrl + '/provider/all'"
+                                                class="hover:bg-gray-800 rounded-none"
+                                                >See more</Link
+                                            >
                                         </li>
                                     </ul>
                                 </div>

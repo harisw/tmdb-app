@@ -5,6 +5,7 @@ namespace App\Models;
 use App\Casts\RoundFloat;
 use App\Domain\Enums\TitleType;
 use App\Helpers\DateTimeHelper;
+use App\Models\Scopes\TitleTypeScope;
 use Database\Factories\TitleFactory;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
@@ -78,6 +79,11 @@ class Title extends Model
 {
     /** @use HasFactory<TitleFactory> */
     use HasFactory;
+
+    protected static function booted(): void
+    {
+        static::addGlobalScope(new TitleTypeScope);
+    }
 
     public const IMG_SMALL_URL = 'w300';
 
