@@ -111,6 +111,11 @@ class Title extends Model
         return $this->extra_attributes->modelScope();
     }
 
+    public function language(): BelongsTo
+    {
+        return $this->belongsTo(Language::class);
+    }
+
     public function genres(): BelongsToMany
     {
         return $this->belongsToMany(Genre::class);

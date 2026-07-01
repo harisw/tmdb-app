@@ -17,7 +17,7 @@ class LanguageController extends Controller
         $language = $lang ? Language::whereCode($lang)->first() : null;
 
         return Inertia::render('TitleByLanguage', [
-            'languages' => Language::orderByDesc('count')->where('count', '>', 0)->get(),
+            'languages' => Language::orderByDesc('count')->whereHas('titles')->get(),
             'titles' => $language ? $language->titles()->with(['genres', 'keywords'])->latest()->paginate(self::PAGINATE_SIZE)
                 : null,
         ]);
