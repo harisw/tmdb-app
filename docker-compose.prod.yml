@@ -49,6 +49,22 @@ services:
         awslogs-stream: horizon
         awslogs-create-group: "true"
 
+  fluent-bit:
+    image: amazon/aws-for-fluent-bit:2.32.2
+    restart: unless-stopped
+    environment:
+      - AWS_DEFAULT_REGION=${AWS_DEFAULT_REGION:-ap-southeast-1}
+    volumes:
+      # read-only: this container only ever tails the files app/horizon write
+      - laravel_logs:/var/www/storage/logs:ro
+      - ./docker/fluent-bit/fluent-bit.conf:/fluent-bit/etc/fluent-bit.conf:ro
+      - ./docker/fluent-bit/parsers.conf:/fluent-bit/etc/parsers.conf:ro
+    networks:
+      - laravel-network
+    # keeps memory bounded on a resource-constrained host; Fluent Bit itself
+    # typically sits well under this at idle
+    mem_limit: 64m
+
 volumes:
   redis-data:
   laravel_logs:
