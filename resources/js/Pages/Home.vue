@@ -9,7 +9,7 @@
                         :interval="3500"
                         :duration="750"
                         tag="h1"
-                        text-class="text-3xl md:text-5xl 2xl:text-7xl font-bold text-madder"
+                        text-class="font-bold text-madder"
                     />
                 </div>
                 <SearchInput
