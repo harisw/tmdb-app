@@ -3,7 +3,7 @@
     <AppLayout>
         <div>
             <div class="flex flex-col justify-center items-center gap-5 mt-6 mb-12 md:mt-20 md:mb-36">
-                <div class="min-h-36">
+                <div class="min-h-36 w-full">
                     <RotatingHeader
                         :texts="headlines"
                         :interval="3500"

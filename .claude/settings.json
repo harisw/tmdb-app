@@ -2,7 +2,11 @@
   "permissions": {
     "allow": [
       "Bash(node -e \"const p = require\\('/home/harimxn/tmdb-app/package.json'\\); console.log\\(p.dependencies.vue || p.devDependencies.vue\\)\")",
-      "Bash(git restore *)"
+      "Bash(git restore *)",
+      "Bash(npm run *)",
+      "Skill(run)",
+      "Skill(run:*)",
+      "Bash(curl -sf -o /dev/null -w \"%{http_code}\\\\n\" http://127.0.0.1:8000/)"
     ]
   }
 }
