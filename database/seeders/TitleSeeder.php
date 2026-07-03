@@ -23,18 +23,19 @@ class TitleSeeder extends Seeder
 
         $header = null;
         $batch = [];
-        $batchSize = 50_000;
+        $batchSize = 10_000;
         $totalProcessed = 0;
         $totalInserted = 0;
-
+        $i = 0;
         try {
             while (($row = fgetcsv(stream: $handle, separator: '|', escape: '\\')) !== false) {
+                $i++;
                 if (! $header) {
                     $header = $row;
 
                     continue;
                 }
-
+                echo "Processing row $i\n";
                 if (count($header) !== count($row)) {
                     var_dump('Broken row: '.json_encode($row));
 
