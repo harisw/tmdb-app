@@ -42,7 +42,7 @@ const base_url = computed(() => page.props.base_url)
                             v-if="item.type === 'movie'"
                             class="p-1 gap-1 badge rounded-md text-white text-xs font-medium bg-black/80"
                         >
-                            <FilmIcon size="14" /> Movie
+                            <FilmIcon size="14" /> Film
                         </span>
                         <span v-else class="p-1 gap-1 badge rounded-md text-white text-xs font-medium bg-blue-900/80">
                             <TvIcon size="14" /> TV
