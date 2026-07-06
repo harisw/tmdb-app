@@ -56,7 +56,7 @@ class Genre extends Model
     protected function url(): Attribute
     {
         return Attribute::make(
-            get: fn (mixed $value, array $attributes) => route('title-by-genre', $attributes['slug'])
+            get: fn (mixed $value, array $attributes) => route('titles-by-genre', $attributes['slug'])
         );
     }
 }

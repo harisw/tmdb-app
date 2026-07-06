@@ -146,7 +146,7 @@ class HomeControllerTest extends TestCase
         $this->get('/tags')
             ->assertOk()
             ->assertInertia(fn ($page) => $page
-                ->component('TitleByKeyword')
+                ->component('AllKeywords')
                 ->has('tags')
             );
     }
@@ -155,7 +155,7 @@ class HomeControllerTest extends TestCase
     {
         $this->get('/tags')
             ->assertInertia(fn ($page) => $page
-                ->component('TitleByKeyword')
+                ->component('AllKeywords')
                 ->where('titles', null)
             );
     }
@@ -169,7 +169,7 @@ class HomeControllerTest extends TestCase
 
         $this->get('/tags?tag=space-opera')
             ->assertInertia(fn ($page) => $page
-                ->component('TitleByKeyword')
+                ->component('AllKeywords')
                 ->has('titles.data', 3)
             );
     }

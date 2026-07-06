@@ -11,12 +11,13 @@ use Illuminate\Support\Facades\Route;
 require __DIR__.'/auth.php';
 
 Route::get('/', [HomeController::class, 'index']);
-Route::get('/genre/all', [GenreController::class, 'index'])->name('title-all-genres');
-Route::get('/genre/{genre}', [GenreController::class, 'show'])->name('title-by-genre');
-Route::get('/languages', [LanguageController::class, 'index'])->name('title-by-language');
-Route::get('/provider/all', [ProviderController::class, 'index'])->name('provider-all');
-Route::get('/provider/{provider}', [ProviderController::class, 'show'])->name('title-by-provider');
-Route::get('/tags', [KeywordController::class, 'index'])->name('title-by-tag');
+Route::get('/genre/all', [GenreController::class, 'index'])->name('all-genres');
+Route::get('/genre/{genre}', [GenreController::class, 'show'])->name('titles-by-genre');
+Route::get('/languages', [LanguageController::class, 'index'])->name('titles-by-language');
+Route::get('/provider/all', [ProviderController::class, 'index'])->name('all-providers');
+Route::get('/provider/{provider}', [ProviderController::class, 'show'])->name('titles-by-provider');
+Route::get('/tags', [KeywordController::class, 'index'])->name('all-tags');
+Route::get('/tag/{keyword}', [KeywordController::class, 'show'])->name('titles-by-keyword');
 Route::middleware('throttle:40,1')->group(function () {
     Route::get('/search', [SearchController::class, 'search'])->name('search-title');
 });

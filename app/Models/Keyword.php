@@ -50,7 +50,12 @@ class Keyword extends Model
     protected function url(): Attribute
     {
         return Attribute::make(
-            get: fn (mixed $value, array $attributes) => route('title-by-tag', ['tag' => $attributes['slug']]),
+            get: fn (mixed $value, array $attributes) => route('titles-by-keyword', ['keyword' => $attributes['slug']]),
         );
+    }
+
+    public function getRouteKeyName(): string
+    {
+        return 'slug';
     }
 }
