@@ -1,6 +1,6 @@
 <script setup>
 import { onMounted, onUnmounted } from 'vue'
-import { usePage } from '@inertiajs/vue3'
+import { usePage, Link } from '@inertiajs/vue3'
 import { X, Clock, Calendar } from 'lucide-vue-next'
 import RatingBadge from './RatingBadge.vue'
 import ProvidersBadge from './ProvidersBadge.vue'
@@ -92,13 +92,11 @@ onUnmounted(() => window.removeEventListener('keydown', handleKey))
                             <div v-if="item.keywords?.length" class="space-y-2">
                                 <h3 class="text-xs font-semibold uppercase tracking-wide text-gray-400">Tags</h3>
                                 <div class="flex flex-wrap gap-1.5">
-                                    <span
-                                        v-for="keyword in item.keywords"
-                                        :key="keyword.id"
-                                        class="badge badge-outline badge-sm px-2 bg-gray/20 text-gray-300"
-                                    >
-                                        {{ keyword.name }}
-                                    </span>
+                                    <Link v-for="keyword in item.keywords" :key="keyword.id" :href="keyword.url">
+                                        <span class="badge badge-outline badge-sm px-2 bg-gray/20 text-gray-300">
+                                            {{ keyword.name }}
+                                        </span>
+                                    </Link>
                                 </div>
                             </div>
                         </div>
