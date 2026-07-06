@@ -5,6 +5,7 @@ namespace App\Console\Commands;
 use App\Domain\Enums\TitleType;
 use App\Jobs\EnrichTitlesProviderBatchJob;
 use App\Jobs\FetchTrendingTitlesJob;
+use App\Jobs\TitlesBatchInsertJob;
 use App\Utils\Enum\TimeWindow;
 use Illuminate\Console\Command;
 use Log;
@@ -31,7 +32,7 @@ class RunJob extends Command
     public function handle(): void
     {
         $jobClass = $this->choice('Which job class do you want to run?',
-            [FetchTrendingTitlesJob::class, EnrichTitlesProviderBatchJob::class],
+            [FetchTrendingTitlesJob::class, EnrichTitlesProviderBatchJob::class, TitlesBatchInsertJob::class],
         );
         switch ($jobClass) {
             case FetchTrendingTitlesJob::class:
@@ -39,6 +40,9 @@ class RunJob extends Command
                 break;
             case EnrichTitlesProviderBatchJob::class:
                 $this->runEnrichTitlesProvider();
+                break;
+            case TitlesBatchInsertJob::class:
+                $this->runTitleBatchInsert();
                 break;
             default:
                 $this->error('Unknown job class');
@@ -67,5 +71,11 @@ class RunJob extends Command
     {
         $limit = (int) $this->ask('Limit titles?');
         EnrichTitlesProviderBatchJob::dispatch($limit);
+    }
+
+    private function runTitleBatchInsert(): void
+    {
+        $batchSize = (int) $this->ask('Size of batch?', 10_000);
+        TitlesBatchInsertJob::dispatch($batchSize);
     }
 }
