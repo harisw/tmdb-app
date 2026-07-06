@@ -8,6 +8,6 @@ enum TitleType: string
 {
     use EnumValues;
 
-    case MOVIE = 'movie';
+    case MOVIE = 'movie';       // Displayed as Film
     case TV = 'tv';
 }

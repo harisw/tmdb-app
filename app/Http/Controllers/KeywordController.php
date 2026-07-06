@@ -17,14 +17,24 @@ class KeywordController extends Controller
         $tagOffset = $request->query('tagOffset', 0);
         $key = $keyQuery ? Keyword::whereSlug($keyQuery)->first() : null;
 
-        $tags = Keyword::orderByDesc('count')->offset($tagOffset)
+        $tags = Keyword::where('count', '>', 0)->orderByDesc('count')->offset($tagOffset)
             ->take($tagOffset ? 35 : 50)
             ->get();
 
-        return Inertia::render('TitleByKeyword', [
+        return Inertia::render('AllKeywords', [
             'tags' => $tags,
             'titles' => $key ? $key->titles()->with(['genres', 'keywords'])->latest()->paginate(self::PAGINATE_SIZE)
                 : null,
+        ]);
+    }
+
+    public function show(Keyword $keyword): Response
+    {
+        return Inertia::render('TitleByKeyword', [
+            'keyword' => $keyword,
+            'titles' => $keyword->titles()->with(['genres', 'keywords', 'titleProviders' => function ($q) {
+                $q->with('provider')->uniqueByProvider();
+            }])->latest()->paginate(self::PAGINATE_SIZE),
         ]);
     }
 }

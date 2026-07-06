@@ -17,9 +17,11 @@ const img = computed(() => usePage().props.base_url)
             :alt="title"
             class="h-8 w-auto object-contain rounded"
         />
-        <h1 class="text-2xl 2xl:text-4xl font-bold text-madder">{{ title }}</h1>
+        <h1 class="text-2xl 2xl:text-4xl font-bold text-madder [text-shadow:0_1px_2px_rgb(0_0_0/0.4)]">
+            {{ title }}
+        </h1>
     </div>
-    <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-10 auto-rows-[450px] 2xl:auto-rows-[520px]">
+    <div class="grid grid-cols-2 md:grid-cols-4 xl:grid-cols-5 gap-3 sm:gap-6 xl:gap-8">
         <slot />
     </div>
 </template>

@@ -69,7 +69,7 @@ class Provider extends Model
     protected function url(): Attribute
     {
         return Attribute::make(
-            get: fn (mixed $value, array $attributes) => route('title-by-provider', $attributes['slug'])
+            get: fn (mixed $value, array $attributes) => route('titles-by-provider', $attributes['slug'])
         );
     }
 

@@ -9,7 +9,8 @@ const { titleType } = useTitleType()
 
 router.on('before', (event) => {
     if (event.detail.visit.method === 'get') {
-        event.detail.visit.url.searchParams.set('title_type', titleType.value)
+        const p = event.detail.visit.url.searchParams
+        titleType.value ? p.set('title_type', titleType.value) : p.delete('title_type')
     }
 })
 

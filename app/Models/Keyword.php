@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Database\Factories\KeywordFactory;
+use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -39,8 +40,22 @@ class Keyword extends Model
 
     protected $guarded = [];
 
+    protected $appends = ['url'];
+
     public function titles(): BelongsToMany
     {
         return $this->belongsToMany(Title::class);
+    }
+
+    protected function url(): Attribute
+    {
+        return Attribute::make(
+            get: fn (mixed $value, array $attributes) => route('titles-by-keyword', ['keyword' => $attributes['slug']]),
+        );
+    }
+
+    public function getRouteKeyName(): string
+    {
+        return 'slug';
     }
 }

@@ -168,4 +168,83 @@ class TitleProviderTest extends TestCase
 
         $this->assertCount(2, $tp->providerLanguages);
     }
+
+    // --- Cascade deletes ---
+
+    public function test_deleting_title_cascades_to_title_provider(): void
+    {
+        $title = Title::factory()->create();
+        $tp = $this->makeTitleProvider(['title_id' => $title->id]);
+
+        $title->delete();
+
+        $this->assertDatabaseMissing('title_providers', ['id' => $tp->id]);
+    }
+
+    public function test_deleting_country_cascades_to_title_provider(): void
+    {
+        $country = Country::factory()->create();
+        $provider = Provider::factory()->create();
+        $countryProvider = CountryProvider::factory()->create([
+            'country_id' => $country->id,
+            'provider_id' => $provider->id,
+        ]);
+        $tp = TitleProvider::factory()->create([
+            'country_provider_id' => $countryProvider->id,
+            'country_id' => $country->id,
+            'provider_id' => $provider->id,
+        ]);
+
+        $country->delete();
+
+        $this->assertDatabaseMissing('title_providers', ['id' => $tp->id]);
+    }
+
+    public function test_deleting_provider_cascades_to_title_provider(): void
+    {
+        $country = Country::factory()->create();
+        $provider = Provider::factory()->create();
+        $countryProvider = CountryProvider::factory()->create([
+            'country_id' => $country->id,
+            'provider_id' => $provider->id,
+        ]);
+        $tp = TitleProvider::factory()->create([
+            'country_provider_id' => $countryProvider->id,
+            'country_id' => $country->id,
+            'provider_id' => $provider->id,
+        ]);
+
+        $provider->delete();
+
+        $this->assertDatabaseMissing('title_providers', ['id' => $tp->id]);
+    }
+
+    public function test_deleting_country_provider_cascades_to_title_provider(): void
+    {
+        $country = Country::factory()->create();
+        $provider = Provider::factory()->create();
+        $countryProvider = CountryProvider::factory()->create([
+            'country_id' => $country->id,
+            'provider_id' => $provider->id,
+        ]);
+        $tp = TitleProvider::factory()->create([
+            'country_provider_id' => $countryProvider->id,
+            'country_id' => $country->id,
+            'provider_id' => $provider->id,
+        ]);
+
+        $countryProvider->delete();
+
+        $this->assertDatabaseMissing('title_providers', ['id' => $tp->id]);
+    }
+
+    public function test_deleting_title_provider_cascades_to_provider_languages(): void
+    {
+        $tp = $this->makeTitleProvider();
+        $tpl = TitleProviderLanguage::factory()->create(['title_provider_id' => $tp->id]);
+
+        $tp->delete();
+
+        $this->assertDatabaseMissing('title_provider_languages', ['id' => $tpl->id]);
+    }
 }

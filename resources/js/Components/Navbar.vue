@@ -22,7 +22,7 @@ watch(titleType, () => router.visit(window.location.pathname, { preserveState: f
 
 const typeOptions = [
     { value: '', label: 'All' },
-    { value: 'movie', label: 'Movie' },
+    { value: 'movie', label: 'Film' },
     { value: 'tv', label: 'TV' },
 ]
 const pillIndex = computed(() => typeOptions.findIndex((o) => o.value === titleType.value))

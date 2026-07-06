@@ -3,32 +3,35 @@ import { ArrowBigLeft, ArrowBigRight } from 'lucide-vue-next'
 import { ref } from 'vue'
 
 const carousel = ref(null)
-const scrollLeft = () => {
-    carousel.value.scrollBy({ left: -150, behavior: 'smooth' })
-}
 
-const scrollRight = () => {
-    carousel.value.scrollBy({ left: 400, behavior: 'smooth' })
+const scrollByDir = (dir) => {
+    const amount = carousel.value.clientWidth * 0.8
+    carousel.value.scrollBy({ left: dir * amount, behavior: 'smooth' })
 }
 </script>
 
 <template>
-    <div class="relative w-full">
-        <div ref="carousel" class="flex space-x-8 gap-10 overflow-x-auto scroll-smooth no-scrollbar">
+    <div class="relative w-full group/carousel">
+        <div
+            ref="carousel"
+            class="flex gap-4 md:gap-6 overflow-x-auto scroll-smooth no-scrollbar snap-x snap-mandatory [&>*]:snap-start [&>*]:shrink-0 pb-2"
+        >
             <slot />
         </div>
         <!-- Controls -->
         <button
-            class="cursor-pointer absolute left-0 top-1/2 -translate-x-5/6 -translate-y-1/2 bg-black/50 text-white p-2 rounded-full hover:bg-black/70"
-            @click="scrollLeft"
+            class="btn btn-circle btn-neutral shadow-lg hidden md:flex absolute left-0 top-1/2 -translate-y-1/2 -translate-x-1/2 opacity-0 group-hover/carousel:opacity-100 transition-opacity"
+            aria-label="Scroll left"
+            @click="scrollByDir(-1)"
         >
-            <ArrowBigLeft size="46" />
+            <ArrowBigLeft :size="26" />
         </button>
         <button
-            class="cursor-pointer absolute right-0 top-1/2 translate-x-5/6 -translate-y-1/2 bg-black/50 text-white p-2 rounded-full hover:bg-black/70"
-            @click="scrollRight"
+            class="btn btn-circle btn-neutral shadow-lg hidden md:flex absolute right-0 top-1/2 -translate-y-1/2 translate-x-1/2 opacity-0 group-hover/carousel:opacity-100 transition-opacity"
+            aria-label="Scroll right"
+            @click="scrollByDir(1)"
         >
-            <ArrowBigRight size="46" />
+            <ArrowBigRight :size="26" />
         </button>
     </div>
 </template>

@@ -28,7 +28,7 @@
                 <TitleCard v-for="item in items" :key="item.id" :on-click="openModal" :item="item" />
             </TitleGrid>
             <div ref="sentinel" class="flex justify-center items-center py-4 text-white">
-                <LoadingSpinner v-if="loading" text="Loading more" size="8" color="white" />
+                <LoadingSpinner v-if="loading" text="Loading more" size="{8}" color="white" />
                 <span v-else-if="!hasMore">No more results</span>
             </div>
         </div>

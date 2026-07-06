@@ -6,6 +6,7 @@ import TitleModal from '../Components/TitleModal.vue'
 import Carousel from '../Components/Carousel.vue'
 import TitleCard from '../Components/TitleCard.vue'
 import useModal from '../Composables/useModal.js'
+import SectionHeader from '../Components/SectionHeader.vue'
 
 defineProps({
     allProviders: { type: Array },
@@ -20,15 +21,10 @@ const { openModal, closeModal, selectedItem, showModal } = useModal()
     <AppLayout>
         <div class="w-full">
             <div v-for="provider in allProviders" :key="provider.id" class="mb-15">
-                <div class="flex items-center gap-3 mb-6">
-                    <img
-                        v-if="provider.img_logo"
-                        :src="`${img.logo}/${provider.img_logo}`"
-                        :alt="provider.name"
-                        class="h-8 w-auto object-contain rounded"
-                    />
-                    <h1 class="text-2xl 2xl:text-4xl font-bold text-madder">{{ provider.name }}</h1>
-                </div>
+                <SectionHeader
+                    :title="provider.name"
+                    :logo="provider.img_logo ? `${img.logo}/${provider.img_logo}` : ''"
+                />
                 <Carousel>
                     <TitleCard
                         v-for="item in provider.titles"
@@ -36,7 +32,7 @@ const { openModal, closeModal, selectedItem, showModal } = useModal()
                         :on-click="openModal"
                         :item="item"
                         :show-genres="false"
-                        size="w-3xs"
+                        size="w-36 sm:w-44 lg:w-3xs"
                     />
                 </Carousel>
             </div>
