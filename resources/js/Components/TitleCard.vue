@@ -4,6 +4,7 @@ import RatingBadge from './RatingBadge.vue'
 import { FilmIcon, TvIcon } from 'lucide-vue-next'
 import { computed } from 'vue'
 import ProvidersBadge from './ProvidersBadge.vue'
+import GenreBadges from './GenreBadges.vue'
 
 const props = defineProps({
     onClick: { type: Function },
@@ -69,13 +70,7 @@ const base_url = computed(() => page.props.base_url)
                     </span>
 
                     <div v-if="showGenres" class="mt-1.5 flex flex-wrap gap-1.5">
-                        <span
-                            v-for="genre in item.genres.slice(0, 3)"
-                            :key="genre.id"
-                            class="px-2 badge badge-soft badge-secondary badge-sm"
-                        >
-                            {{ genre.name }}
-                        </span>
+                        <GenreBadges :genres="item.genres.slice(0, 3)" />
                     </div>
                 </div>
             </div>

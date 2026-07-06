@@ -1,8 +1,10 @@
 <script setup>
 import { onMounted, onUnmounted } from 'vue'
 import { usePage } from '@inertiajs/vue3'
-import { X } from 'lucide-vue-next'
+import { X, Clock, Calendar } from 'lucide-vue-next'
 import RatingBadge from './RatingBadge.vue'
+import ProvidersBadge from './ProvidersBadge.vue'
+import GenreBadges from './GenreBadges.vue'
 
 const props = defineProps({
     show: { type: Boolean, required: true },
@@ -10,7 +12,6 @@ const props = defineProps({
 })
 
 const page = usePage()
-const titleType = page.props.enums.TitleType
 const emits = defineEmits(['close'])
 
 function close() {
@@ -30,69 +31,74 @@ onUnmounted(() => window.removeEventListener('keydown', handleKey))
         <transition name="fade">
             <div
                 v-if="show"
-                class="fixed inset-0 z-50 flex items-start justify-center bg-black/80 overflow-y-auto mt-8"
+                class="fixed inset-0 z-50 flex items-start justify-center bg-black/80 overflow-y-auto p-4"
                 @click.self="close"
             >
                 <div
-                    class="relative bg-zinc-900 text-white rounded-xl shadow-2xl max-w-3xl w-full my-10 overflow-hidden"
+                    class="relative bg-licorice text-white rounded-2xl shadow-2xl ring-1 ring-white/10 max-w-3xl w-full my-10 overflow-hidden"
                 >
                     <button
-                        class="absolute top-2 right-2 hover:cursor-pointer rounded-full bg-gray-700 p-0.5"
+                        class="btn btn-sm btn-circle btn-neutral absolute top-3 right-3 z-10 bg-black/50 border-0 hover:bg-black/70"
+                        aria-label="Close"
                         @click="close"
                     >
-                        <X color="#ffffff" :stroke-width="2.5" absolute-stroke-width />
+                        <X :size="18" :stroke-width="2.5" />
                     </button>
 
-                    <!--                    Modal contents-->
                     <div v-if="item">
-                        <!-- Large image -->
-                        <div class="w-full h-72 md:h-96 bg-black">
+                        <!-- Backdrop with scrim + overlaid title/meta -->
+                        <div class="relative">
                             <img
                                 :src="page.props.base_url.backdrop + item.backdrop_path"
-                                alt="Poster"
-                                class="w-full h-full object-cover"
+                                :alt="`${item.name} backdrop`"
+                                class="w-full h-64 md:h-96 object-cover"
                             />
-                        </div>
-                        <div class="p-5">
-                            <h2 class="text-3xl font-bold mb-3">{{ item.name }}</h2>
-                            <div class="flex justify-between gap-5">
-                                <div class="flex flex-col gap-1 text-slate-500">
-                                    <div class="flex">
-                                        <RatingBadge :rating="item.rating" size="sm" />
-                                    </div>
-                                    <h3 class="text-lg font-semibold">
-                                        {{ item.release_date }}
-                                        {{ item.runtime }}
-                                    </h3>
-                                    <p class="text-gray-300 leading-relaxed">
-                                        {{ item.overview }}
-                                    </p>
+                            <div
+                                class="absolute inset-0 bg-gradient-to-t from-licorice via-licorice/40 to-transparent"
+                            ></div>
+
+                            <div class="absolute bottom-0 inset-x-0 p-5">
+                                <h2 class="text-2xl md:text-4xl font-bold drop-shadow-lg">{{ item.name }}</h2>
+                                <div class="mt-2 flex flex-wrap items-center gap-3 text-sm text-white/80">
+                                    <RatingBadge :rating="item.rating" />
+                                    <span v-if="item.release_date" class="flex items-center gap-1">
+                                        <Calendar :size="15" /> {{ item.release_date }}
+                                    </span>
+                                    <span v-if="item.runtime" class="flex items-center gap-1">
+                                        <Clock :size="15" /> {{ item.runtime }}
+                                    </span>
                                 </div>
+                            </div>
+                        </div>
 
-                                <!--                                Genres-->
-                                <div class="flex flex-col gap-2 text-sm">
-                                    <p>
-                                        <span class="text-slate-500">Genres: </span>
-                                        <span
-                                            v-for="(genre, i) in item.genres"
-                                            :key="i"
-                                            class="mx-0.5 hover:underline hover:cursor-pointer"
-                                        >
-                                            {{ genre.name }}<span v-if="i < item.genres.length - 1">, </span>
-                                        </span>
-                                    </p>
+                        <!-- Body -->
+                        <div class="p-5 space-y-5">
+                            <p v-if="item.overview" class="text-gray-300 leading-relaxed">
+                                {{ item.overview }}
+                            </p>
 
-                                    <!-- Tags-->
-                                    <p>
-                                        <span class="text-slate-500">Tags: </span>
-                                        <span
-                                            v-for="(keyword, i) in item.keywords"
-                                            :key="i"
-                                            class="mx-0.5 hover:underline hover:cursor-pointer"
-                                        >
-                                            {{ keyword.name }}<span v-if="i < item.keywords.length - 1">, </span>
-                                        </span>
-                                    </p>
+                            <div v-if="item.title_providers?.length" class="space-y-2">
+                                <h3 class="text-xs font-semibold uppercase tracking-wide text-gray-400">
+                                    Where to watch
+                                </h3>
+                                <ProvidersBadge :title-providers="item.title_providers" />
+                            </div>
+
+                            <div v-if="item.genres?.length" class="space-y-2">
+                                <h3 class="text-xs font-semibold uppercase tracking-wide text-gray-400">Genres</h3>
+                                <GenreBadges :genres="item.genres" />
+                            </div>
+
+                            <div v-if="item.keywords?.length" class="space-y-2">
+                                <h3 class="text-xs font-semibold uppercase tracking-wide text-gray-400">Tags</h3>
+                                <div class="flex flex-wrap gap-1.5">
+                                    <span
+                                        v-for="keyword in item.keywords"
+                                        :key="keyword.id"
+                                        class="badge badge-outline badge-sm px-2 bg-gray/20 text-gray-300"
+                                    >
+                                        {{ keyword.name }}
+                                    </span>
                                 </div>
                             </div>
                         </div>
@@ -106,7 +112,7 @@ onUnmounted(() => window.removeEventListener('keydown', handleKey))
 <style scoped>
 .fade-enter-active,
 .fade-leave-active {
-    transition: opacity 0.5s ease;
+    transition: opacity 0.3s ease;
 }
 
 .fade-enter-from,
