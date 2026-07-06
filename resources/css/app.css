@@ -1,9 +1,8 @@
 @import 'tailwindcss';
 @import 'flag-icons/css/flag-icons.min.css';
 
-@plugin "daisyui";
-
 @theme {
+    /* Tailwind and app theme*/
     --font-sans: 'Instrument Sans', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji',
     'Segoe UI Symbol', 'Noto Color Emoji';
     --color-licorice: #181115;
@@ -12,7 +11,45 @@
     --color-tea-green: #c2eabd;
 }
 
+@plugin "daisyui" {
+    themes: false;
+}
+
+@plugin "daisyui/theme" {
+    name: "tmdb";
+    default: true;
+    prefersdark: true;
+    color-scheme: dark;
+
+    --color-base-100: var(--color-licorice);   /* licorice — card / surface */
+    --color-base-200: #211a1e;
+    --color-base-300: #2b2327;
+    --color-base-content: #f4f4f5;
+
+    --color-primary: var(--color-madder);    /* madder */
+    --color-primary-content: #ffffff;
+
+    --color-secondary: var(--color-tea-green);  /* tea-green */
+    --color-secondary-content: #14361a;
+
+    --color-neutral: #000000;
+    --color-neutral-content: #ffffff;
+
+    --radius-box: 0.75rem;
+    --radius-field: 0.5rem;
+    --radius-selector: 999rem;
+}
+
 @source '../../vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php';
 @source '../../storage/framework/views/*.php';
 @source '../**/*.blade.php';
 @source '../**/*.js';
+
+.no-scrollbar::-webkit-scrollbar {
+    display: none;
+}
+
+.no-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+}
