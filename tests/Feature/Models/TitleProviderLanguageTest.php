@@ -51,4 +51,26 @@ class TitleProviderLanguageTest extends TestCase
         $this->assertInstanceOf(Language::class, $tpl->language);
         $this->assertSame($language->id, $tpl->language->id);
     }
+
+    // --- Cascade deletes ---
+
+    public function test_deleting_title_provider_cascades_to_title_provider_language(): void
+    {
+        $tp = TitleProvider::factory()->create();
+        $tpl = TitleProviderLanguage::factory()->create(['title_provider_id' => $tp->id]);
+
+        $tp->delete();
+
+        $this->assertDatabaseMissing('title_provider_languages', ['id' => $tpl->id]);
+    }
+
+    public function test_deleting_language_cascades_to_title_provider_language(): void
+    {
+        $language = Language::factory()->create();
+        $tpl = TitleProviderLanguage::factory()->create(['language_id' => $language->id]);
+
+        $language->delete();
+
+        $this->assertDatabaseMissing('title_provider_languages', ['id' => $tpl->id]);
+    }
 }
