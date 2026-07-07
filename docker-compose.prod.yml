@@ -27,7 +27,7 @@ services:
       - redis-data:/data
     networks:
       - laravel-network
-    command: redis-server --maxmemory 256mb --maxmemory-policy allkeys-lru
+    command: redis-server --maxmemory 256mb --maxmemory-policy volatile-lru
 
   horizon:
     image: ${ECR_URI}/tmdb-app:latest
