@@ -14,6 +14,10 @@ class TitlesBatchInsertJob implements ShouldQueue
 {
     use Queueable;
 
+    public int $timeout = 3600;
+
+    public int $tries = 1;
+
     private array $batch = [];
 
     private int $totalProcessed = 0;

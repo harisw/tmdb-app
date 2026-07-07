@@ -183,7 +183,7 @@ return [
     |
     */
 
-    'memory_limit' => 64,
+    'memory_limit' => 256,
 
     /*
     |--------------------------------------------------------------------------
@@ -207,7 +207,7 @@ return [
             'maxJobs' => 0,
             'memory' => 128,
             'tries' => 1,
-            'timeout' => 60,
+            'timeout' => 3600,
             'nice' => 0,
         ],
     ],
@@ -223,7 +223,7 @@ return [
                 'balanceMaxShift' => 1,
                 'balanceCooldown' => 3,
                 'tries' => 3,
-                'timeout' => 60,
+                'timeout' => 3600,
             ],
             'supervisor-enrichment' => [
                 'connection' => 'redis',
