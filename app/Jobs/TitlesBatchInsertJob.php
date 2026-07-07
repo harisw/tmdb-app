@@ -4,6 +4,7 @@ namespace App\Jobs;
 
 use App\Services\TitleService;
 use Artisan;
+use Exception;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
 use Illuminate\Support\Facades\Log;
@@ -13,10 +14,23 @@ class TitlesBatchInsertJob implements ShouldQueue
 {
     use Queueable;
 
+    private array $batch = [];
+
+    private int $totalProcessed = 0;
+
+    private int $totalInserted = 0;
+
+    private TitleService $titleService;
+
     public function __construct(private readonly int $batchSize = 10_000) {}
 
     public function handle(): void
     {
+        // Instantiate once so the in-memory caches (existing slugs + relations)
+        // are built a single time and reused across every batch, instead of
+        // reloading every title/genre/company/keyword from the DB per batch.
+        $this->titleService = new TitleService;
+
         $handle = $this->openCsvHandle();
 
         if (! $handle) {
@@ -24,45 +38,49 @@ class TitlesBatchInsertJob implements ShouldQueue
         }
 
         $header = null;
-        $batch = [];
-        $totalProcessed = 0;
-        $totalInserted = 0;
-        $i = 0;
         try {
             Log::info('Start processing batch');
             while (($row = fgetcsv(stream: $handle, separator: '|', escape: '\\')) !== false) {
-                $i++;
-                if (! $header) {
-                    $header = $row;
-
-                    continue;
-                }
-                Log::info("Processing row $i\n");
-                if (count($header) !== count($row)) {
-                    Log::error('Broken row: '.json_encode($row));
-
-                    continue;
-                }
-
-                $batch[] = $row;
-                $totalProcessed++;
-
-                if (count($batch) >= $this->batchSize) {
-                    $totalInserted += TitleService::insertBulk($batch, $header);
-                    $batch = [];
-                    Log::info("Processed {$totalProcessed} rows, inserted {$totalInserted}\r\n");
+                try {
+                    $this->processRow($row, $header);
+                } catch (Exception $e) {
+                    Log::error('Error row: '.json_encode($row, JSON_PRETTY_PRINT));
+                    report($e);
                 }
             }
 
-            if (! empty($batch)) {
-                $totalInserted += TitleService::insertBulk($batch, $header);
+            if (! empty($this->batch)) {
+                $this->totalInserted += $this->titleService->insert($this->batch, $header);
             }
         } finally {
             fclose($handle);
         }
 
-        echo "Finished TitleBatchInsertJob Processed {$totalProcessed} rows, inserted {$totalInserted}\r\n";
+        Log::info("Finished TitleBatchInsertJob Processed {$this->totalProcessed} rows, inserted {$this->totalInserted}\r\n");
         Artisan::call('titles:refresh-searchable');
+    }
+
+    private function processRow($row, &$header): void
+    {
+        if (! $header) {
+            $header = $row;
+
+            return;
+        }
+        if (count($header) !== count($row)) {
+            Log::error('Broken row: '.json_encode($row));
+
+            return;
+        }
+
+        $this->batch[] = $row;
+        $this->totalProcessed++;
+
+        if (count($this->batch) >= $this->batchSize) {
+            $this->totalInserted += $this->titleService->insert($this->batch, $header);
+            $this->batch = [];
+            Log::info("Processed {$this->totalProcessed} rows, inserted {$this->totalInserted}\r\n");
+        }
     }
 
     private function openCsvHandle(): mixed

@@ -27,17 +27,27 @@ class TitleService
 
     public static function insertBulk($data, $headers): int
     {
-        $static = new self;
+        return (new self)->insert($data, $headers);
+    }
+
+    /**
+     * Insert a batch of rows, reusing the in-memory caches held by this
+     * instance. Returns the number of rows inserted by this call only, so it
+     * can be called repeatedly (e.g. once per batch) without reloading caches.
+     */
+    public function insert(array $data, array $headers): int
+    {
+        $before = $this->insertedRowCount;
         foreach ($data as $row) {
             $titleData = TitleData::from(array_combine($headers, $row));
-            if ($static->titleDict->has($titleData->slug)) {
+            if ($this->titleDict->has($titleData->slug)) {
                 continue;
             }
 
-            $static->insertRow($titleData->toTmdbTitleData());
+            $this->insertRow($titleData->toTmdbTitleData());
         }
 
-        return $static->insertedRowCount;
+        return $this->insertedRowCount - $before;
     }
 
     public function insertRow(TmdbTitleData $row): ?Title
@@ -45,17 +55,17 @@ class TitleService
         try {
             // NOTE: Transaction here is important for testing critical behavior to safely rollback for error
             return DB::transaction(function () use ($row) {
-                $genres = $this->prepareRelations($row->genres, Genre::class);
-                $companies = $this->prepareRelations($row->production_companies, ProductionCompany::class);
-                $keywords = $row->keywords ? $this->prepareRelations($row->keywords, Keyword::class) : collect();
+                $genres = $this->prepareRelationIds($row->genres, Genre::class);
+                $companies = $this->prepareRelationIds($row->production_companies, ProductionCompany::class);
+                $keywords = $row->keywords ? $this->prepareRelationIds($row->keywords, Keyword::class) : [];
 
                 $title = Title::firstOrCreate(
                     ['slug' => $row->slug],
                     $row->except('genres', 'production_companies', 'keywords', 'belongs_to_collection')->toArray()
                 );
-                $title->genres()->attach($genres->pluck('id')->unique()->toArray());
-                $title->companies()->attach($companies->pluck('id')->unique()->toArray());
-                $title->keywords()->attach($keywords->pluck('id')->unique()->toArray());
+                $title->genres()->attach($genres);
+                $title->companies()->attach($companies);
+                $title->keywords()->attach($keywords);
 
                 $this->titleDict->put($title->slug, $title->id);
                 $this->insertedRowCount++;
@@ -71,18 +81,25 @@ class TitleService
         return null;
     }
 
-    private function prepareRelations(DataCollection $items, $class): Collection
+    /**
+     * Resolve the given related items to their ids, creating any that don't
+     * exist yet. The cache holds slug => id (not full models) to keep memory
+     * bounded across large imports. Returns a de-duplicated list of ids.
+     */
+    private function prepareRelationIds(DataCollection $items, $class): array
     {
-        $result = collect();
+        $ids = [];
         foreach ($items as $item) {
-            $relation = $this->relationCache[$class]->get($item->slug)
-                ?? $class::firstOrCreate(['slug' => $item->slug], ['name' => $item->name]);
+            $id = $this->relationCache[$class]->get($item->slug);
+            if (! $id) {
+                $id = $class::firstOrCreate(['slug' => $item->slug], ['name' => $item->name])->id;
+                $this->relationCache[$class]->put($item->slug, $id);
+            }
 
-            $result->push($relation);
-            $this->relationCache[$class]->put($item->slug, $relation);
+            $ids[] = $id;
         }
 
-        return $result;
+        return array_values(array_unique($ids));
     }
 
     private function loadCaches(): void
@@ -94,7 +111,7 @@ class TitleService
     private function reloadRelationCache(): void
     {
         foreach ([Genre::class, ProductionCompany::class, Keyword::class] as $class) {
-            $this->relationCache[$class] = $class::all()->keyBy('slug');
+            $this->relationCache[$class] = $class::query()->pluck('id', 'slug');
         }
     }
 }
