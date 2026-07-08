@@ -17,6 +17,7 @@ yarn-error.log
 storage/logs
 tests
 docker
+!docker/php/zz-app.ini
 pipeline
 docs
 .github
