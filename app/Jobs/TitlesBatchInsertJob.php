@@ -26,13 +26,11 @@ class TitlesBatchInsertJob implements ShouldQueue
 
     private TitleService $titleService;
 
-    public function __construct(private readonly int $batchSize = 10_000) {}
+    public function __construct(private readonly int $batchSize = 5000) {}
 
     public function handle(): void
     {
-        // Instantiate once so the in-memory caches (existing slugs + relations)
-        // are built a single time and reused across every batch, instead of
-        // reloading every title/genre/company/keyword from the DB per batch.
+        ini_set('memory_limit', '256M');
         $this->titleService = new TitleService;
 
         $handle = $this->openCsvHandle();

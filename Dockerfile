@@ -56,6 +56,9 @@ RUN apk add --no-cache libpq libzip oniguruma
 COPY --from=builder /usr/local/lib/php/extensions/ /usr/local/lib/php/extensions/
 COPY --from=builder /usr/local/etc/php/conf.d/ /usr/local/etc/php/conf.d/
 
+# App PHP overrides (memory_limit, upload sizes, timeouts) — FPM + CLI/Horizon
+COPY docker/php/zz-app.ini /usr/local/etc/php/conf.d/zz-app.ini
+
 COPY --from=builder /var/www/vendor vendor
 COPY . .
 COPY --from=frontend /app/public/build public/build
