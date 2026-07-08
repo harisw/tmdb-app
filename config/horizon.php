@@ -183,7 +183,7 @@ return [
     |
     */
 
-    'memory_limit' => 256,
+    'memory_limit' => 512,
 
     /*
     |--------------------------------------------------------------------------
@@ -223,6 +223,7 @@ return [
                 'balanceMaxShift' => 1,
                 'balanceCooldown' => 3,
                 'tries' => 3,
+                'memory' => 512,
                 'timeout' => 3600,
             ],
             'supervisor-enrichment' => [
