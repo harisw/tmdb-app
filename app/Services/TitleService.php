@@ -63,9 +63,9 @@ class TitleService
                     ['slug' => $row->slug],
                     $row->except('genres', 'production_companies', 'keywords', 'belongs_to_collection')->toArray()
                 );
-                $title->genres()->attach($genres);
-                $title->companies()->attach($companies);
-                $title->keywords()->attach($keywords);
+                $title->genres()->syncWithoutDetaching($genres);
+                $title->companies()->syncWithoutDetaching($companies);
+                $title->keywords()->syncWithoutDetaching($keywords);
 
                 $this->titleDict->put($title->slug, $title->id);
                 $this->insertedRowCount++;
