@@ -21,6 +21,14 @@
     prefersdark: true;
     color-scheme: dark;
 
+    /* Base sizing/border tokens — required by all components (toggle, input, select…).
+       Omitting these leaves --border undefined and collapses component sizing. */
+    --size-selector: 0.25rem;
+    --size-field: 0.25rem;
+    --border: 1px;
+    --depth: 1;
+    --noise: 0;
+
     --color-base-100: var(--color-licorice);   /* licorice — card / surface */
     --color-base-200: #211a1e;
     --color-base-300: #2b2327;
