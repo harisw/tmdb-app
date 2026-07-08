@@ -1,6 +1,15 @@
 <script setup>
+import { storeToRefs } from 'pinia'
 import Navbar from '../Components/Navbar.vue'
 import Toast from '../Components/Toast.vue'
+import AuthModal from '../Components/AuthModal.vue'
+import ProfileModal from '../Components/ProfileModal.vue'
+import { useUiStore } from '../stores/ui.js'
+
+// Modals are hosted once here (not in Navbar) so any component can open them
+// through the ui store. Navbar just calls ui.openAuthModal() / openProfileModal().
+const ui = useUiStore()
+const { authModalOpen, authModalTab, profileModalOpen } = storeToRefs(ui)
 </script>
 
 <template>
@@ -12,5 +21,8 @@ import Toast from '../Components/Toast.vue'
             </div>
         </main>
         <Toast />
+
+        <AuthModal :is-open="authModalOpen" :initial-tab="authModalTab" @close="ui.closeAuthModal" />
+        <ProfileModal :is-open="profileModalOpen" @close="ui.closeProfileModal" />
     </div>
 </template>

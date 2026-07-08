@@ -101,3 +101,33 @@ on:
 ```
 
 Trade-off: `paths-ignore` is broader (affects everyone, all commits touching only those paths) but you lose per-commit control, and if these checks are ever made "required" for PR merges, a skipped run can block merges. For occasional docs commits, `[skip ci]` is usually the better tool.
+
+---
+
+## Frontend state management (Inertia + Vue + Pinia)
+
+### `router.reload()` doesn't update a list ⚠️
+
+**Symptom:** toggling the adult-content filter in the profile modal called `router.reload()`, the server re-queried `titles` with the new filter, but the on-screen grid didn't change.
+
+**Cause:** `useInfiniteScroll` snapshotted the `titles` prop into a local `items` ref **once** at setup and never reacted to the prop being replaced. Every list page renders `items`, not `props.titles` — so a reload updated the prop while the grid kept the stale snapshot. This is the classic hazard of **mirroring server state into local client state**: you now own two copies and have to reconcile them by hand.
+
+**Fix:** callers pass a reactive getter (`useInfiniteScroll({ titles: () => props.titles })`) and the composable `watch`es it, rebuilding the list when Inertia replaces the prop. A `syncedResource` identity check distinguishes the composable's **own** pagination fetches (which append) from **external** prop replacements like a reload (which reset) — without it, loading page 2 would wipe pages 1–2 down to just page 2.
+
+### Which tool owns which state
+
+The mess above comes from putting state in the wrong place. The convention:
+
+| Kind of state | Owner | Examples |
+|---|---|---|
+| **Server data** | Inertia props — never mirror into a store | `titles`, `auth.user`, `genres`, pagination |
+| **Global client state** | **Pinia** (`resources/js/stores/`) | title-type filter (`titleType`), which modal is open (`ui`) |
+| **Per-page ephemeral state** | composable, scoped to the component | the accumulating list in `useInfiniteScroll`, `useModal` |
+
+- Reach a Pinia store from **outside** a component (e.g. the `router.on('before')` hook in `app.js`) by passing the instance explicitly: `useTitleTypeStore(pinia)`.
+- When destructuring store **state**, wrap in `storeToRefs()` to keep reactivity; **actions** can be destructured directly.
+- Don't put the infinite-scroll list in a Pinia store — a store is a singleton, so per-page list state leaks between pages. A composable is scoped to the page component and is the right tool.
+
+### Cleaner long-term fix: Inertia v2 merge props
+
+We're on Inertia v2, which has first-class **merge props** + the **`WhenVisible`** component for infinite scroll. Server-side `Inertia::merge(...)` tells Inertia to *append* paginated data instead of replacing it, so the client stops maintaining its own `items` array — deleting the whole `syncedResource` guard and this class of stale-snapshot bug. Prefer this over hand-rolled accumulation when touching `useInfiniteScroll` next.
