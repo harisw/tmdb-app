@@ -1,10 +1,17 @@
 import { ref, onMounted, onUnmounted, watch } from 'vue'
 import { router } from '@inertiajs/vue3'
 
-export default function useInfiniteScroll(initialData, options = {}) {
+export default function useInfiniteScroll(source, options = {}) {
     // Detect the key dynamically (products, users, posts, etc.)
-    const propKey = options.key || Object.keys(initialData)[0] || 'data'
-    const resource = initialData[propKey] || initialData
+    const propKey = options.key || Object.keys(source)[0] || 'data'
+    // The value may be a reactive getter (`() => props.titles`) or a plain
+    // snapshot. Only the getter form reacts to the prop being replaced by
+    // Inertia (e.g. router.reload() after a filter change).
+    const getResource = () => {
+        const value = source[propKey] ?? source
+        return typeof value === 'function' ? value() : value
+    }
+    const resource = getResource()
 
     const observer = ref(null)
     const sentinel = ref(null)
@@ -15,6 +22,11 @@ export default function useInfiniteScroll(initialData, options = {}) {
     const query = ref({})
     // const nextPageUrl = ref(resource.next_page_url);
     const loading = ref(false)
+
+    // Track the resource object currently reflected in `items` so we can tell
+    // our own pagination fetches (handled in fetchItems) apart from external
+    // prop replacements that should reset the list.
+    let syncedResource = resource
 
     const setupObserver = () => {
         if (observer.value) observer.value.disconnect()
@@ -46,11 +58,15 @@ export default function useInfiniteScroll(initialData, options = {}) {
             preserveState: true,
             replace: !reset, // keep history cleaner
             onSuccess: (page) => {
-                const data = page.props.titles.data
-                if (!page.props.titles || !data) return
+                const res = page.props[propKey]
+                const data = res?.data
+                if (!res || !data) return
                 if (reset) items.value = data
                 else items.value.push(...data)
-                hasMore.value = !!page.props.titles.next_page_url
+                hasMore.value = !!res.next_page_url
+                // Mark this resource as already applied so the reset watcher
+                // below ignores the prop change from our own pagination.
+                syncedResource = res
             },
             onFinish: () => (loading.value = false),
         })
@@ -109,6 +125,16 @@ export default function useInfiniteScroll(initialData, options = {}) {
 
     watch(sentinel, (newVal) => {
         if (newVal && observer.value) observer.value.observe(newVal)
+    })
+
+    // When Inertia replaces the prop from outside our own pagination (e.g.
+    // router.reload() after toggling the adult filter), rebuild the list.
+    watch(getResource, (res) => {
+        if (!res || res === syncedResource) return
+        items.value = res.data || []
+        page.value = 1
+        hasMore.value = !!res.next_page_url
+        syncedResource = res
     })
 
     return {

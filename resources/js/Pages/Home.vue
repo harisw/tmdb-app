@@ -53,7 +53,7 @@ const props = defineProps({
     titles: { type: Object },
 })
 
-const { items, loading, sentinel, _, hasMore } = useInfiniteScroll({ titles: props.titles })
+const { items, loading, sentinel, _, hasMore } = useInfiniteScroll({ titles: () => props.titles })
 const { openModal, closeModal, selectedItem, showModal } = useModal()
 
 const headlines = [

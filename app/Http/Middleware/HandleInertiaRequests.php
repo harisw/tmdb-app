@@ -2,6 +2,7 @@
 
 namespace App\Http\Middleware;
 
+use App\Data\DTOs\UserData;
 use App\Domain\Enums\TitleType;
 use App\Models\Country;
 use App\Models\Genre;
@@ -58,15 +59,9 @@ class HandleInertiaRequests extends Middleware
                 'logo' => config('services.tmdb.img_url').'original',
             ],
             'auth' => [
-                'user' => fn () => $request->user()?->loadMissing('country') ? [
-                    'id' => $request->user()->id,
-                    'name' => $request->user()->name,
-                    'username' => $request->user()->username,
-                    'email' => $request->user()->email,
-                    'avatar_url' => $request->user()->avatar_url,
-                    'avatar_style' => $request->user()->extra_attributes->get('avatar.style'),
-                    'country' => $request->user()->country?->iso2,
-                ] : null,
+                'user' => fn () => $request->user()
+                    ? UserData::fromModel($request->user()->loadMissing('country'))
+                    : null,
             ],
             'enums' => [
                 'TitleType' => collect(TitleType::cases())->map(fn ($c) => $c->value),

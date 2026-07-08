@@ -15,7 +15,7 @@ const props = defineProps({
 })
 
 const img = computed(() => usePage().props.base_url)
-const { items, loading, sentinel, hasMore } = useInfiniteScroll({ titles: props.titles })
+const { items, loading, sentinel, hasMore } = useInfiniteScroll({ titles: () => props.titles })
 const { openModal, closeModal, selectedItem, showModal } = useModal()
 </script>
 

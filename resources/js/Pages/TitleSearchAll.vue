@@ -95,7 +95,7 @@ const props = defineProps({
     tags: Object,
     titles: Object,
 })
-const { items, loading, sentinel, fetchItems, hasMore, query } = useInfiniteScroll({ titles: props.titles })
+const { items, loading, sentinel, fetchItems, hasMore, query } = useInfiniteScroll({ titles: () => props.titles })
 const { openModal, closeModal, selectedItem, showModal } = useModal()
 
 const selectedLanguages = ref([])
