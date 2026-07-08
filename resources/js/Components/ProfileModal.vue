@@ -16,6 +16,7 @@ const form = useForm({
     username: '',
     country: '',
     avatar_style: '',
+    hide_adult: true,
 })
 
 watch(
@@ -25,6 +26,7 @@ watch(
             form.username = user.value?.username ?? ''
             form.country = user.value?.country ?? ''
             form.avatar_style = user.value?.avatar_style ?? ''
+            form.hide_adult = user.value?.hide_adult ?? true
             form.clearErrors()
         }
     }
@@ -127,7 +129,12 @@ onBeforeUnmount(() => document.removeEventListener('keydown', handleKeydown))
                         <CountrySelect v-model="form.country" />
                         <p v-if="form.errors.country" class="text-red-400 text-xs mt-1">{{ form.errors.country }}</p>
                     </div>
-
+                    <div>
+                        <label class="flex gap-3 text-sm text-gray-400 mb-1 cursor-pointer">
+                            <input v-model="form.hide_adult" type="checkbox" class="toggle toggle-sm" />
+                            {{ form.hide_adult ? 'Hide' : 'Show' }} adult contents
+                        </label>
+                    </div>
                     <button
                         type="submit"
                         :disabled="form.processing"
@@ -146,6 +153,7 @@ onBeforeUnmount(() => document.removeEventListener('keydown', handleKeydown))
 .fade-leave-active {
     transition: opacity 0.15s ease;
 }
+
 .fade-enter-from,
 .fade-leave-to {
     opacity: 0;

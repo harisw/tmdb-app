@@ -7,6 +7,7 @@ use App\Data\DTOs\TmdbApi\TmdbTitleData;
 use App\Models\Genre;
 use App\Models\Keyword;
 use App\Models\ProductionCompany;
+use App\Models\Scopes\AdultContentScope;
 use App\Models\Title;
 use DB;
 use Illuminate\Support\Collection;
@@ -59,7 +60,10 @@ class TitleService
                 $companies = $this->prepareRelationIds($row->production_companies, ProductionCompany::class);
                 $keywords = $row->keywords ? $this->prepareRelationIds($row->keywords, Keyword::class) : [];
 
-                $title = Title::firstOrCreate(
+                // Import must see every title regardless of the viewer-facing
+                // adult filter, otherwise re-importing an existing adult title
+                // is hidden by AdultContentScope and hits the unique(slug) index.
+                $title = Title::withoutGlobalScope(AdultContentScope::class)->firstOrCreate(
                     ['slug' => $row->slug],
                     $row->except('genres', 'production_companies', 'keywords', 'belongs_to_collection')->toArray()
                 );

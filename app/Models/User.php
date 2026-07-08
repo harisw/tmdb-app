@@ -61,6 +61,7 @@ class User extends Authenticatable implements MustVerifyEmail
         'google_token',
         'image',
         'country_id',
+        'hide_adult',
         'extra_attributes',
     ];
 
@@ -86,6 +87,7 @@ class User extends Authenticatable implements MustVerifyEmail
         return [
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
+            'hide_adult' => 'boolean',
             'extra_attributes' => SchemalessAttributes::class,
         ];
     }

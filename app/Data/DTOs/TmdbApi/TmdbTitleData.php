@@ -31,6 +31,9 @@ class TmdbTitleData extends Data
         public readonly ?string $release_date,
         public readonly ?int $revenue,
         public readonly ?int $runtime,
+        // TMDB input key is `adult`; property/column is `is_adult`.
+        #[MapInputName('adult')]
+        public readonly ?bool $is_adult,
         public readonly ?string $backdrop_path,
         public readonly ?string $imdb_id,
         public readonly ?string $overview,

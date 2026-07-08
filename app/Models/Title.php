@@ -5,6 +5,7 @@ namespace App\Models;
 use App\Casts\RoundFloat;
 use App\Domain\Enums\TitleType;
 use App\Helpers\DateTimeHelper;
+use App\Models\Scopes\AdultContentScope;
 use App\Models\Scopes\TitleTypeScope;
 use Database\Factories\TitleFactory;
 use Illuminate\Database\Eloquent\Builder;
@@ -83,6 +84,7 @@ class Title extends Model
     protected static function booted(): void
     {
         static::addGlobalScope(new TitleTypeScope);
+        static::addGlobalScope(new AdultContentScope);
     }
 
     public const IMG_SMALL_URL = 'w300';
@@ -98,6 +100,7 @@ class Title extends Model
         'release_date' => 'datetime:Y',
         'rating' => RoundFloat::class,
         'type' => TitleType::class,
+        'is_adult' => 'boolean',
         'extra_attributes' => SchemalessAttributes::class,
     ];
 

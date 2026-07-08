@@ -34,6 +34,7 @@ class TitleFactory extends Factory
             'popularity' => fake()->randomFloat(2, 0, 100),
             'tagline' => fake()->sentence(),
             'language_id' => Language::factory(),
+            'is_adult' => false,
         ];
     }
 }

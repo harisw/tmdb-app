@@ -5,6 +5,7 @@ namespace App\Data\DTOs;
 use App\Data\DTOs\TmdbApi\TmdbTitleData;
 use Spatie\LaravelData\Attributes\Computed;
 use Spatie\LaravelData\Attributes\MapInputName;
+use Spatie\LaravelData\Attributes\MapOutputName;
 use Spatie\LaravelData\Data;
 use Str;
 
@@ -23,6 +24,9 @@ class TitleData extends Data
         public readonly ?string $release_date,
         public readonly int $revenue,
         public readonly ?int $runtime,
+        // TMDB sends `adult`; the titles column is `is_adult`.
+        #[MapOutputName('adult')]
+        public readonly ?bool $is_adult,
         public readonly ?string $backdrop_path,
         public readonly ?string $imdb_id,
         public readonly ?string $overview,
@@ -50,6 +54,7 @@ class TitleData extends Data
             'release_date' => trim($this->release_date) ?: null,
             'revenue' => $this->revenue,
             'runtime' => $this->runtime,
+            'adult' => $this->is_adult ?? false,
             'backdrop_path' => $this->backdrop_path,
             'imdb_id' => $this->imdb_id,
             'overview' => $this->overview,
