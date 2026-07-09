@@ -1,5 +1,5 @@
 <script setup>
-import { onMounted, onUnmounted } from 'vue'
+import { computed, onMounted, onUnmounted } from 'vue'
 import { usePage, Link } from '@inertiajs/vue3'
 import { X, Clock, Calendar } from 'lucide-vue-next'
 import RatingBadge from './RatingBadge.vue'
@@ -13,6 +13,17 @@ const props = defineProps({
 
 const page = usePage()
 const emits = defineEmits(['close'])
+
+const BACKDROP_PLACEHOLDER = '/backdrop-placeholder.svg'
+
+const backdropSrc = computed(() =>
+    props.item?.backdrop_path ? page.props.base_url.backdrop + props.item.backdrop_path : BACKDROP_PLACEHOLDER
+)
+
+function onBackdropError(e) {
+    if (e.target.src.endsWith(BACKDROP_PLACEHOLDER)) return
+    e.target.src = BACKDROP_PLACEHOLDER
+}
 
 function close() {
     emits('close')
@@ -49,9 +60,10 @@ onUnmounted(() => window.removeEventListener('keydown', handleKey))
                         <!-- Backdrop with scrim + overlaid title/meta -->
                         <div class="relative">
                             <img
-                                :src="page.props.base_url.backdrop + item.backdrop_path"
+                                :src="backdropSrc"
                                 :alt="`${item.name} backdrop`"
                                 class="w-full h-64 md:h-96 object-cover"
+                                @error="onBackdropError"
                             />
                             <div
                                 class="absolute inset-0 bg-gradient-to-t from-licorice via-licorice/40 to-transparent"

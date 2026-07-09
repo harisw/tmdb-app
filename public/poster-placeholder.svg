@@ -1,0 +1,43 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 600" width="400" height="600">
+  <defs>
+    <radialGradient id="bgm" cx="50%" cy="40%" r="75%">
+      <stop offset="0%" stop-color="#1b1f1c"></stop>
+      <stop offset="100%" stop-color="#0c0f0d"></stop>
+    </radialGradient>
+  </defs>
+  <rect width="400" height="600" rx="20" fill="url(#bgm)"></rect>
+
+  
+  <g transform="translate(30,34)">
+    <polygon points="0,0 0,16 14,8" fill="#5fce8b"></polygon>
+    <text x="22" y="13" font-family="Helvetica, Arial, sans-serif" font-size="16" font-weight="700" letter-spacing="1" fill="#e8ebe9" opacity="0.85">Chill</text>
+  </g>
+
+  
+  <g stroke="#5fce8b" stroke-width="2.5" stroke-linecap="round" opacity="0.8">
+    <path d="M296,178 L296,190 M290,184 L302,184"></path>
+    <path d="M118,340 L118,349 M113.5,344.5 L122.5,344.5"></path>
+  </g>
+
+  
+  <g>
+    <circle cx="200" cy="276" r="72" fill="#12181a" stroke="#5fce8b" stroke-width="6"></circle>
+    
+    <circle cx="174" cy="260" r="7" fill="#e8ebe9"></circle>
+    
+    <path d="M212,262 Q222,254 232,262" fill="none" stroke="#e8ebe9" stroke-width="4" stroke-linecap="round"></path>
+    
+    <path d="M168,296 Q200,326 232,296" fill="none" stroke="#e8ebe9" stroke-width="5" stroke-linecap="round"></path>
+    
+    <circle cx="158" cy="288" r="8" fill="#5fce8b" opacity="0.35"></circle>
+  </g>
+
+  
+  <g fill="#5fce8b" opacity="0.6">
+    <circle cx="200" cy="376" r="4"></circle>
+    <circle cx="184" cy="386" r="3"></circle>
+    <circle cx="216" cy="386" r="3"></circle>
+  </g>
+
+  <text x="200" y="452" text-anchor="middle" font-family="&#39;Arial Rounded MT Bold&#39;, Verdana, Helvetica, Arial, sans-serif" font-size="24" font-weight="700" fill="#e8ebe9">Oops, no poster yet!</text>
+</svg>

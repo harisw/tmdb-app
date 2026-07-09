@@ -1,0 +1,47 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 900" width="1600" height="900">
+  <defs>
+    <radialGradient id="bgb" cx="50%" cy="38%" r="80%">
+      <stop offset="0%" stop-color="#1b1f1c"></stop>
+      <stop offset="100%" stop-color="#0a0c0b"></stop>
+    </radialGradient>
+    <linearGradient id="fadeb" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="55%" stop-color="#000000" stop-opacity="0"></stop>
+      <stop offset="100%" stop-color="#000000" stop-opacity="0.55"></stop>
+    </linearGradient>
+  </defs>
+
+  <rect width="1600" height="900" fill="url(#bgb)"></rect>
+
+  
+  <g transform="translate(48,54)">
+    <polygon points="0,0 0,21 18,10.5" fill="#5fce8b"></polygon>
+    <text x="28" y="17" font-family="Helvetica, Arial, sans-serif" font-size="20" font-weight="700" letter-spacing="1" fill="#e8ebe9" opacity="0.85">Chill</text>
+  </g>
+
+  
+  <g stroke="#5fce8b" stroke-width="3" stroke-linecap="round" opacity="0.8">
+    <path d="M946,222 L946,240 M937,231 L955,231"></path>
+    <path d="M672,470 L672,483 M665.5,476.5 L678.5,476.5"></path>
+  </g>
+
+  
+  <g>
+    <circle cx="800" cy="380" r="110" fill="#12181a" stroke="#5fce8b" stroke-width="8"></circle>
+    <circle cx="770" cy="352" r="11" fill="#e8ebe9"></circle>
+    <path d="M828,356 Q844,340 860,356" fill="none" stroke="#e8ebe9" stroke-width="6" stroke-linecap="round"></path>
+    <path d="M750,410 Q800,460 850,410" fill="none" stroke="#e8ebe9" stroke-width="7" stroke-linecap="round"></path>
+    <circle cx="742" cy="398" r="13" fill="#5fce8b" opacity="0.35"></circle>
+  </g>
+
+  
+  <g fill="#5fce8b" opacity="0.6">
+    <circle cx="800" cy="533" r="6"></circle>
+    <circle cx="776" cy="548" r="4.5"></circle>
+    <circle cx="824" cy="548" r="4.5"></circle>
+  </g>
+
+  <text x="800" y="638" text-anchor="middle" font-family="&#39;Arial Rounded MT Bold&#39;, Verdana, Helvetica, Arial, sans-serif" font-size="36" font-weight="700" fill="#e8ebe9">Oops, no backdrop yet!</text>
+
+  
+  <rect width="1600" height="900" fill="url(#fadeb)"></rect>
+</svg>
