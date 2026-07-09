@@ -122,7 +122,7 @@ class HomeControllerTest extends TestCase
         $this->get('/languages')
             ->assertInertia(fn ($page) => $page
                 ->component('TitleByLanguage')
-                ->where('titles', null)
+                ->where('titles', [])
             );
     }
 
@@ -156,7 +156,7 @@ class HomeControllerTest extends TestCase
         $this->get('/tags')
             ->assertInertia(fn ($page) => $page
                 ->component('AllKeywords')
-                ->where('titles', null)
+                ->where('titles', [])
             );
     }
 
