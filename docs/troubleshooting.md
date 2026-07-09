@@ -112,7 +112,9 @@ Trade-off: `paths-ignore` is broader (affects everyone, all commits touching onl
 
 **Cause:** `useInfiniteScroll` snapshotted the `titles` prop into a local `items` ref **once** at setup and never reacted to the prop being replaced. Every list page renders `items`, not `props.titles` — so a reload updated the prop while the grid kept the stale snapshot. This is the classic hazard of **mirroring server state into local client state**: you now own two copies and have to reconcile them by hand.
 
-**Fix:** callers pass a reactive getter (`useInfiniteScroll({ titles: () => props.titles })`) and the composable `watch`es it, rebuilding the list when Inertia replaces the prop. A `syncedResource` identity check distinguishes the composable's **own** pagination fetches (which append) from **external** prop replacements like a reload (which reset) — without it, loading page 2 would wipe pages 1–2 down to just page 2.
+**Fix:** callers pass a reactive getter (`useInfiniteScroll({ titles: () => props.titles })`) and the composable `watch`es it, rebuilding the list when Inertia replaces the prop. The watcher must distinguish the composable's **own** pagination fetches (which append) from **external** prop replacements like a reload (which reset) — otherwise loading page 2 would immediately wipe pages 1–2 down to just page 2 (a visible "snap").
+
+> ⚠️ First attempt used an object-identity check (`res === syncedResource`) to spot our own fetches. That was **unreliable and caused the snap**: the watcher reads the reactive `props.titles` proxy on the *next tick*, which isn't identity-equal to the raw `page.props.titles` captured synchronously in `onSuccess`. The working version sets an `internalUpdate` flag right before our own `router.get`, and the watcher skips (and clears) it — no cross-boundary identity comparison. Also: on pages that start with `titles: null` (`/languages`, `/tags` before a pick), every resource read must be null-safe or setup throws.
 
 ### Which tool owns which state
 
@@ -130,4 +132,36 @@ The mess above comes from putting state in the wrong place. The convention:
 
 ### Cleaner long-term fix: Inertia v2 merge props
 
-We're on Inertia v2, which has first-class **merge props** + the **`WhenVisible`** component for infinite scroll. Server-side `Inertia::merge(...)` tells Inertia to *append* paginated data instead of replacing it, so the client stops maintaining its own `items` array — deleting the whole `syncedResource` guard and this class of stale-snapshot bug. Prefer this over hand-rolled accumulation when touching `useInfiniteScroll` next.
+We're on Inertia v2, which has first-class **merge props** + the **`WhenVisible`** component for infinite scroll. Server-side `Inertia::merge(...)` tells Inertia to *append* paginated data instead of replacing it, so the client stops maintaining its own `items` array — deleting the whole internal-vs-external guard and this class of stale-snapshot bug. Prefer this over hand-rolled accumulation when touching `useInfiniteScroll` next.
+
+---
+
+## Tailwind: never build class names dynamically ⚠️
+
+**Symptom:** `LoadingSpinner` rendered as a thin spinning bar instead of a ring — no width, no height, no border color. Looked like a broken daisyUI theme; it wasn't.
+
+**Cause:** the component built its classes at runtime from props:
+
+```html
+<!-- BROKEN -->
+<div :class="`h-${size} w-${size} border-${color}`"></div>
+<p :class="`text-${color}`">…</p>
+```
+
+Tailwind has no runtime — it generates CSS at build time by **scanning source files for complete, literal class strings**. It never sees `h-8`, `w-8`, `border-white`, or `text-white` (they only exist after JS interpolation), so that CSS is never emitted. The element is left with only the statically-written classes (here `border-b-2`) → a thin bar. This is a **purge/JIT** issue, unrelated to daisyUI or the theme.
+
+> The give-away: the class works when hard-coded but vanishes when interpolated, and it's always a *dynamic* segment (`${...}`) inside the class string.
+
+**Rules:**
+
+- A Tailwind class must appear **verbatim** somewhere in source. `` `text-${color}` `` will never work.
+- If a value is dynamic, either:
+  - **drive it with inline `:style`** (best for truly free values like size/color — what `LoadingSpinner` now does: `:style="spinnerStyle"` with `width`/`height`/`borderColor`), or
+  - **map to full literal class strings** so the scanner sees them:
+    ```js
+    const colorClass = { white: 'border-white text-white', madder: 'border-madder text-madder' }[color]
+    ```
+  - or, as a last resort, add the class to Tailwind's `safelist`.
+- Bonus gotcha from the same bug: `size="{8}"` in a template passes the **string** `"{8}"`, not the number `8`. Binding a non-string prop needs `:size="8"`.
+
+**How to catch it yourself:** if a utility "does nothing," grep the *compiled* CSS for it — `grep -o 'h-8' public/build/assets/*.css`. If it's missing there but present in your `.vue` source only as an interpolation, that's this bug.

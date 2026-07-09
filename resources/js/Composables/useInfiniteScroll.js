@@ -4,29 +4,35 @@ import { router } from '@inertiajs/vue3'
 export default function useInfiniteScroll(source, options = {}) {
     // Detect the key dynamically (products, users, posts, etc.)
     const propKey = options.key || Object.keys(source)[0] || 'data'
-    // The value may be a reactive getter (`() => props.titles`) or a plain
-    // snapshot. Only the getter form reacts to the prop being replaced by
-    // Inertia (e.g. router.reload() after a filter change).
+    // The value is a reactive getter (`() => props.titles`), so reading it
+    // tracks the prop and reacts when Inertia replaces it (e.g. router.reload()
+    // after a filter change). It may be null (pages that only load titles once
+    // a language/tag is picked), so every read must be null-safe.
     const getResource = () => {
-        const value = source[propKey] ?? source
-        return typeof value === 'function' ? value() : value
+        const value = source[propKey]
+        const resolved = typeof value === 'function' ? value() : value
+        return resolved ?? null
     }
     const resource = getResource()
 
     const observer = ref(null)
     const sentinel = ref(null)
 
-    const items = ref(resource.data || [])
+    const items = ref(resource?.data || [])
     const page = ref(1)
     const hasMore = ref(true)
     const query = ref({})
     // const nextPageUrl = ref(resource.next_page_url);
     const loading = ref(false)
 
-    // Track the resource object currently reflected in `items` so we can tell
-    // our own pagination fetches (handled in fetchItems) apart from external
-    // prop replacements that should reset the list.
-    let syncedResource = resource
+    // The reset watcher below reacts to the prop changing. But *our own*
+    // pagination fetches also change the prop, and those are already applied by
+    // hand in fetchItems (append). This flag marks a prop change as ours so the
+    // watcher skips it — otherwise appending page 2 would immediately be reset
+    // back to just page 2's rows (a visible "snap"). Object-identity checks are
+    // unreliable here because the watcher sees the reactive props proxy on the
+    // next tick, not the object captured synchronously in onSuccess.
+    let internalUpdate = false
 
     const setupObserver = () => {
         if (observer.value) observer.value.disconnect()
@@ -53,6 +59,10 @@ export default function useInfiniteScroll(source, options = {}) {
             params = { ...params, ...query.value }
         }
 
+        // This navigation replaces the prop; tell the watcher the resulting
+        // change is ours so it doesn't reset the list we're about to update.
+        internalUpdate = true
+
         router.get(window.location.pathname, params, {
             preserveScroll: true,
             preserveState: true,
@@ -64,9 +74,6 @@ export default function useInfiniteScroll(source, options = {}) {
                 if (reset) items.value = data
                 else items.value.push(...data)
                 hasMore.value = !!res.next_page_url
-                // Mark this resource as already applied so the reset watcher
-                // below ignores the prop change from our own pagination.
-                syncedResource = res
             },
             onFinish: () => (loading.value = false),
         })
@@ -127,14 +134,17 @@ export default function useInfiniteScroll(source, options = {}) {
         if (newVal && observer.value) observer.value.observe(newVal)
     })
 
-    // When Inertia replaces the prop from outside our own pagination (e.g.
-    // router.reload() after toggling the adult filter), rebuild the list.
+    // When Inertia replaces the prop, rebuild the list — but only if the change
+    // came from outside our own pagination (e.g. router.reload() after toggling
+    // the adult filter). Our own fetches set internalUpdate and are skipped.
     watch(getResource, (res) => {
-        if (!res || res === syncedResource) return
-        items.value = res.data || []
+        if (internalUpdate) {
+            internalUpdate = false
+            return
+        }
+        items.value = res?.data || []
         page.value = 1
-        hasMore.value = !!res.next_page_url
-        syncedResource = res
+        hasMore.value = !!res?.next_page_url
     })
 
     return {
