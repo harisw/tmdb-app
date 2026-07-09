@@ -15,6 +15,17 @@ const props = defineProps({
 
 const page = usePage()
 const base_url = computed(() => page.props.base_url)
+
+const POSTER_PLACEHOLDER = '/poster-placeholder.svg'
+
+const posterSrc = computed(() =>
+    props.item.poster_path ? base_url.value.poster + props.item.poster_path : POSTER_PLACEHOLDER
+)
+
+function onPosterError(e) {
+    if (e.target.src.endsWith(POSTER_PLACEHOLDER)) return
+    e.target.src = POSTER_PLACEHOLDER
+}
 </script>
 
 <template>
@@ -31,9 +42,10 @@ const base_url = computed(() => page.props.base_url)
                 <!-- #3: poster + overlays wrapped in one relative container -->
                 <div class="relative">
                     <img
-                        :src="page.props.base_url.poster + item.poster_path"
+                        :src="posterSrc"
                         :alt="`${item.name} Poster`"
                         class="w-full aspect-[2/3] object-cover rounded-t-xl"
+                        @error="onPosterError"
                     />
 
                     <!-- top row: type badge + rating -->

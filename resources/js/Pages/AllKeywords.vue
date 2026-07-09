@@ -16,7 +16,7 @@
             <div v-if="hasMoreTags" class="flex justify-center items-center py-4 text-white">
                 <LoadingSpinner v-if="loadingTags" text="Loading more" />
                 <button
-                    v-else
+                    v-else-if="hasMoreTags"
                     class="bg-madder px-4 py-2 2xl:px-6 2xl:py-3 rounded-lg hover:cursor-pointer text-xs 2xl:text-base"
                     @click="loadMoreTags"
                 >
@@ -93,7 +93,7 @@ function loadMoreTags() {
     )
 }
 
-const { items, loading, sentinel, fetchItems, hasMore, query } = useInfiniteScroll({ titles: props.titles })
+const { items, loading, sentinel, fetchItems, hasMore, query } = useInfiniteScroll({ titles: () => props.titles })
 const { openModal, closeModal, selectedItem, showModal } = useModal()
 
 watch(query, (newVal) => {

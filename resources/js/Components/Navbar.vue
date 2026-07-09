@@ -1,23 +1,22 @@
 <script setup>
-import { ref, computed, watch } from 'vue'
+import { computed, watch } from 'vue'
+import { storeToRefs } from 'pinia'
 import { usePage, Link, router } from '@inertiajs/vue3'
 import { Play } from 'lucide-vue-next'
 import useBaseUrl from '../Composables/useBaseUrl.js'
-import useTitleType from '../Composables/useTitleType.js'
-import AuthModal from './AuthModal.vue'
-import ProfileModal from './ProfileModal.vue'
+import { useTitleTypeStore } from '../stores/titleType.js'
+import { useUiStore } from '../stores/ui.js'
 
-const isAuthModalOpen = ref(false)
-const authModalTab = ref('login')
-const isProfileModalOpen = ref(false)
 const baseUrl = useBaseUrl()
 
-function openAuthModal(tab) {
-    authModalTab.value = tab
-    isAuthModalOpen.value = true
-}
+// Global modal state now lives in the ui store; the modals themselves are
+// hosted in AppLayout, so Navbar only needs the "open" actions.
+const ui = useUiStore()
 
-const { titleType } = useTitleType()
+// `storeToRefs` keeps state reactive when destructured; actions are taken
+// straight off the store (they don't need it).
+const titleTypeStore = useTitleTypeStore()
+const { titleType } = storeToRefs(titleTypeStore)
 watch(titleType, () => router.visit(window.location.pathname, { preserveState: false, preserveScroll: false }))
 
 const typeOptions = [
@@ -99,10 +98,10 @@ const isAuthenticated = computed(() => !!user.value)
                             <template v-else>
                                 <div class="divider my-1 border-gray-800"></div>
                                 <li>
-                                    <button class="w-full text-left" @click="openAuthModal('login')">Login</button>
+                                    <button class="w-full text-left" @click="ui.openAuthModal('login')">Login</button>
                                 </li>
                                 <li>
-                                    <button class="w-full text-left" @click="openAuthModal('register')">
+                                    <button class="w-full text-left" @click="ui.openAuthModal('register')">
                                         Register
                                     </button>
                                 </li>
@@ -126,7 +125,7 @@ const isAuthenticated = computed(() => !!user.value)
                             :key="opt.value"
                             class="relative z-10 flex-1 px-3 py-0.5 text-xs 2xl:text-sm font-medium transition-colors duration-200 cursor-pointer"
                             :class="titleType === opt.value ? 'text-white' : 'text-white/60 hover:text-white/90'"
-                            @click="titleType = opt.value"
+                            @click="titleTypeStore.setTitleType(opt.value)"
                         >
                             {{ opt.label }}
                         </button>
@@ -212,12 +211,15 @@ const isAuthenticated = computed(() => !!user.value)
                 <!-- End: auth / profile -->
                 <div class="navbar-end gap-2">
                     <template v-if="!isAuthenticated">
-                        <button class="btn btn-ghost btn-sm text-white hidden lg:flex" @click="openAuthModal('login')">
+                        <button
+                            class="btn btn-ghost btn-sm text-white hidden lg:flex"
+                            @click="ui.openAuthModal('login')"
+                        >
                             Login
                         </button>
                         <button
                             class="btn btn-sm bg-madder text-white border-none hover:bg-red-800 hidden lg:flex"
-                            @click="openAuthModal('register')"
+                            @click="ui.openAuthModal('register')"
                         >
                             Register
                         </button>
@@ -238,7 +240,7 @@ const isAuthenticated = computed(() => !!user.value)
                         >
                             <li class="menu-title text-sm">@{{ user.username }}</li>
                             <li>
-                                <button class="w-full hover:bg-gray-800" @click="isProfileModalOpen = true">
+                                <button class="w-full hover:bg-gray-800" @click="ui.openProfileModal()">
                                     Update Profile
                                 </button>
                             </li>
@@ -253,7 +255,4 @@ const isAuthenticated = computed(() => !!user.value)
             </div>
         </nav>
     </header>
-
-    <AuthModal :is-open="isAuthModalOpen" :initial-tab="authModalTab" @close="isAuthModalOpen = false" />
-    <ProfileModal :is-open="isProfileModalOpen" @close="isProfileModalOpen = false" />
 </template>

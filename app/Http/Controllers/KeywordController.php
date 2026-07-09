@@ -24,7 +24,7 @@ class KeywordController extends Controller
         return Inertia::render('AllKeywords', [
             'tags' => $tags,
             'titles' => $key ? $key->titles()->with(['genres', 'keywords'])->latest()->paginate(self::PAGINATE_SIZE)
-                : null,
+                : collect(),
         ]);
     }
 

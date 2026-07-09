@@ -1,6 +1,6 @@
 <script setup>
 import { computed, watch, onMounted, onBeforeUnmount } from 'vue'
-import { useForm, usePage } from '@inertiajs/vue3'
+import { router, useForm, usePage } from '@inertiajs/vue3'
 import CountrySelect from './CountrySelect.vue'
 
 const props = defineProps({
@@ -50,6 +50,21 @@ function randomizeAvatar() {
 
 const close = () => emit('close')
 
+const submit = () => {
+    // hide_adult drives a global title filter, so re-fetch the current page's
+    // data when it changes — otherwise the visible lists keep the old filter.
+    const adultChanged = form.hide_adult !== (user.value?.hide_adult ?? true)
+    form.patch('/profile', {
+        preserveScroll: true,
+        onSuccess: () => {
+            close()
+            if (adultChanged) {
+                router.reload()
+            }
+        },
+    })
+}
+
 const handleKeydown = (e) => {
     if (e.key === 'Escape') close()
 }
@@ -80,10 +95,7 @@ onBeforeUnmount(() => document.removeEventListener('keydown', handleKeydown))
                     </button>
                 </div>
 
-                <form
-                    class="px-6 pb-6 space-y-4"
-                    @submit.prevent="form.patch('/profile', { preserveScroll: true, onSuccess: close })"
-                >
+                <form class="px-6 pb-6 space-y-4" @submit.prevent="submit">
                     <!-- Avatar preview + randomize -->
                     <div class="flex flex-col items-center gap-2 py-2">
                         <img
