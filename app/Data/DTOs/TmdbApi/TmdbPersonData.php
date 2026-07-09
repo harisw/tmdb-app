@@ -2,11 +2,11 @@
 
 namespace App\Data\DTOs\TmdbApi;
 
+use App\Domain\Transformers\GenderTransformer;
 use Spatie\LaravelData\Attributes\Computed;
-use Spatie\LaravelData\Attributes\DataCollectionOf;
 use Spatie\LaravelData\Attributes\MapInputName;
+use Spatie\LaravelData\Attributes\WithTransformer;
 use Spatie\LaravelData\Data;
-use Spatie\LaravelData\DataCollection;
 use Str;
 
 class TmdbPersonData extends Data
@@ -18,28 +18,32 @@ class TmdbPersonData extends Data
         #[MapInputName('id')]
         public readonly int $tmdb_id,
         public readonly string $name,
+        #[WithTransformer(GenderTransformer::class)]
+        public readonly string $gender,
         #[MapInputName('adult')]
         public readonly ?bool $is_adult,
-        public readonly ?string $profile_path,
-        public readonly ?string $imdb_id,
-        public readonly ?string $overview,
         public readonly float $popularity,
-        public readonly ?string $poster_path,
-        public readonly ?string $tagline,
-        public readonly int $language_id,
-        public readonly ?string $homepage,
-        #[DataCollectionOf(TmdbGenreData::class)]
-        public readonly DataCollection $genres,
-        DataCollection $production_companies,
-        public readonly ?TmdbCollectionData $belongs_to_collection,
-        #[DataCollectionOf(TmdbKeywordData::class)]
-        public readonly ?DataCollection $keywords = null,
+        public readonly ?string $profile_path,
         public readonly ?array $extra_attributes = [],
     ) {
-        $this->slug = Str::slug($this->name);
-        $this->production_companies = new DataCollection(
-            TmdbProductionCompanyData::class,
-            $production_companies->toCollection()->unique('slug')->values()->all()
-        );
+        $this->slug = Str::slug($this->name).'-'.$this->tmdb_id;
+    }
+
+    /**
+     * Map the DTO to a `people` table row for bulk upserts.
+     */
+    public function toUpsertArray(): array
+    {
+        $data = $this->toArray();
+
+        return [
+            'tmdb_id' => $data['tmdb_id'],
+            'name' => $data['name'],
+            'slug' => $data['slug'],
+            'gender' => $data['gender'],
+            'is_adult' => $data['is_adult'] ?? false,
+            'popularity' => $data['popularity'],
+            'profile_path' => $data['profile_path'],
+        ];
     }
 }

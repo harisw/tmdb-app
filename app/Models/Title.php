@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Casts\RoundFloat;
+use App\Domain\Enums\CreditRole;
 use App\Domain\Enums\TitleType;
 use App\Helpers\DateTimeHelper;
 use App\Models\Scopes\AdultContentScope;
@@ -47,6 +48,10 @@ use Spatie\SchemalessAttributes\Casts\SchemalessAttributes;
  * @property-read int|null $genres_count
  * @property-read Collection<int, Keyword> $keywords
  * @property-read int|null $keywords_count
+ * @property-read Collection<int, Person> $people
+ * @property-read int|null $people_count
+ * @property-read Collection<int, TitlePerson> $credits
+ * @property-read int|null $credits_count
  *
  * @method static \Database\Factories\TitleFactory factory($count = null, $state = [])
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Title newModelQuery()
@@ -147,5 +152,28 @@ class Title extends Model
     public function titleProviders(): HasMany
     {
         return $this->hasMany(TitleProvider::class);
+    }
+
+    public function people(): BelongsToMany
+    {
+        return $this->belongsToMany(Person::class, 'title_person')
+            ->using(TitlePerson::class)
+            ->withPivot(['role', 'character', 'order'])
+            ->withTimestamps();
+    }
+
+    public function credits(): HasMany
+    {
+        return $this->hasMany(TitlePerson::class);
+    }
+
+    public function cast(): HasMany
+    {
+        return $this->credits()->where('role', CreditRole::CAST)->orderBy('order');
+    }
+
+    public function crew(): HasMany
+    {
+        return $this->credits()->where('role', CreditRole::CREW);
     }
 }

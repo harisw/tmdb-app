@@ -10,7 +10,7 @@ class GenderTransformer implements Transformer
 {
     public function transform(DataProperty $property, mixed $value, TransformationContext $context): mixed
     {
-        return match ($value) {
+        return match ((int) $value) {
             1 => 'female',
             2 => 'male',
             default => 'unknown',
