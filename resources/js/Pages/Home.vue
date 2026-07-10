@@ -24,7 +24,7 @@
                 />
             </div>
 
-            <TitleGrid title="Hottest Titles">
+            <TitleGrid title="Latest Titles">
                 <TitleCard v-for="item in items" :key="item.id" :on-click="openModal" :item="item" />
             </TitleGrid>
             <div ref="sentinel" class="flex justify-center items-center py-4 text-white">
