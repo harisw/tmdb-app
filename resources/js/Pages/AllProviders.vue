@@ -24,6 +24,7 @@ const { openModal, closeModal, selectedItem, showModal } = useModal()
                 <SectionHeader
                     :title="provider.name"
                     :logo="provider.img_logo ? `${img.logo}/${provider.img_logo}` : ''"
+                    :href="provider.url"
                 />
                 <Carousel>
                     <TitleCard

@@ -1,5 +1,6 @@
 <script setup>
 import { storeToRefs } from 'pinia'
+import AmbientBackground from '../Components/AmbientBackground.vue'
 import Navbar from '../Components/Navbar.vue'
 import Toast from '../Components/Toast.vue'
 import AuthModal from '../Components/AuthModal.vue'
@@ -14,9 +15,16 @@ const { authModalOpen, authModalTab, profileModalOpen } = storeToRefs(ui)
 
 <template>
     <div class="min-h-screen bg-licorice">
-        <main class="bg-licorice">
+        <!-- `relative` (never `relative z-*`) so AmbientBackground can pin to the
+             full page box without isolating the grain from the licorice backdrop.
+             `min-h-screen` keeps short pages (e.g. /languages) from leaving a
+             bare licorice strip under the background layer. -->
+        <main class="relative min-h-screen bg-licorice">
+            <AmbientBackground />
             <Navbar />
-            <div class="max-w-[2200px] mx-auto px-4 pt-24 pb-14 md:px-10 md:pt-28 lg:px-20 2xl:px-28 2xl:pt-36">
+            <div
+                class="relative z-10 max-w-[2200px] mx-auto px-4 pt-24 pb-14 md:px-10 md:pt-28 lg:px-20 2xl:px-28 2xl:pt-36"
+            >
                 <slot />
             </div>
         </main>

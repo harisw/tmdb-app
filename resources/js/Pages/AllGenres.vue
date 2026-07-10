@@ -18,7 +18,7 @@ const { openModal, closeModal, selectedItem, showModal } = useModal()
     <AppLayout>
         <div class="w-full">
             <div v-for="genre in allGenres" :key="genre.id" class="mb-15">
-                <SectionHeader :title="genre.name" />
+                <SectionHeader :title="genre.name" :href="genre.url" />
                 <Carousel>
                     <TitleCard
                         v-for="item in genre.titles"
