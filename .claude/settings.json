@@ -8,5 +8,8 @@
       "Skill(run:*)",
       "Bash(curl -sf -o /dev/null -w \"%{http_code}\\\\n\" http://127.0.0.1:8000/)"
     ]
+  },
+  "enabledPlugins": {
+    "frontend-design@claude-plugins-official": true
   }
 }

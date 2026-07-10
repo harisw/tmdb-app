@@ -2,35 +2,29 @@
     <Head title="Home" />
     <AppLayout>
         <div>
-            <!-- Padding, not margin: the section box has to enclose the hero so
-                 HeroBackground can pin to it. The background stops here — the
-                 grid below stays on the flat licorice background. -->
-            <section class="relative pt-6 pb-12 md:pt-20 md:pb-36">
-                <HeroBackground />
-                <div class="relative z-10 flex flex-col justify-center items-center gap-5">
-                    <div class="min-h-36 w-full">
-                        <RotatingHeader
-                            :texts="headlines"
-                            :interval="3500"
-                            :duration="750"
-                            tag="h1"
-                            text-class="font-bold text-madder"
-                        />
-                    </div>
-                    <SearchInput
-                        v-model="q"
-                        :debounce="400"
-                        :min-length="2"
-                        placeholder="Search titles..."
-                        :preserve-state="true"
-                        :replace="false"
-                        route="search"
-                        @result-on-click="openModal"
+            <div class="flex flex-col justify-center items-center gap-5 mt-6 mb-12 md:mt-20 md:mb-36">
+                <div class="min-h-36 w-full">
+                    <RotatingHeader
+                        :texts="headlines"
+                        :interval="3500"
+                        :duration="750"
+                        tag="h1"
+                        text-class="font-bold text-madder"
                     />
                 </div>
-            </section>
+                <SearchInput
+                    v-model="q"
+                    :debounce="400"
+                    :min-length="2"
+                    placeholder="Search titles..."
+                    :preserve-state="true"
+                    :replace="false"
+                    route="search"
+                    @result-on-click="openModal"
+                />
+            </div>
 
-            <TitleGrid title="Hottest Titles">
+            <TitleGrid title="Latest Titles">
                 <TitleCard v-for="item in items" :key="item.id" :on-click="openModal" :item="item" />
             </TitleGrid>
             <div ref="sentinel" class="flex justify-center items-center py-4 text-white">
@@ -51,7 +45,6 @@ import TitleCard from '../Components/TitleCard.vue'
 import LoadingSpinner from '../Components/LoadingSpinner.vue'
 import RotatingHeader from '../Components/RotatingHeader.vue'
 import SearchInput from '../Components/SearchInput.vue'
-import HeroBackground from '../Components/HeroBackground.vue'
 import useInfiniteScroll from '../Composables/useInfiniteScroll.js'
 import useModal from '../Composables/useModal.js'
 import TitleGrid from '../Components/TitleGrid.vue'

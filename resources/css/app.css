@@ -10,7 +10,7 @@
     --color-madder: #a31621;
     --color-tea-green: #c2eabd;
 
-    /* Hero background: ambient grain + drifting colour blooms.
+    /* Ambient background: grain + drifting colour blooms + side lights.
        Glow colours are the approved mock's values, which run brighter than
        --color-madder so the bloom survives blur(140px) at 32% opacity. */
     --color-glow-red: #e21f2c;
@@ -19,6 +19,8 @@
     --animate-grain-shift: grainShift 1.2s steps(2) infinite;
     --animate-glow-drift-a: glowDriftA 14s ease-in-out infinite;
     --animate-glow-drift-b: glowDriftB 18s ease-in-out infinite;
+    --animate-side-glow-a: sideGlowA 20s ease-in-out infinite;
+    --animate-side-glow-b: sideGlowB 26s ease-in-out infinite;
 
     @keyframes grainShift {
         0% {
@@ -59,6 +61,34 @@
         }
         100% {
             transform: translate(30px, 0) scale(1.1);
+        }
+    }
+
+    /* The side lights breathe on opacity, so these keyframes override the
+       elements' opacity utility. That utility is the motion-reduce resting
+       value — keep the two in step. Periods are coprime-ish (20s / 26s) so the
+       two edges don't visibly pulse together. */
+    @keyframes sideGlowA {
+        0%,
+        100% {
+            opacity: 0.1;
+            transform: translateX(-6%);
+        }
+        50% {
+            opacity: 0.18;
+            transform: translateX(0);
+        }
+    }
+
+    @keyframes sideGlowB {
+        0%,
+        100% {
+            opacity: 0.08;
+            transform: translateX(6%);
+        }
+        50% {
+            opacity: 0.15;
+            transform: translateX(0);
         }
     }
 }
