@@ -46,4 +46,14 @@ class TmdbService
         return $this->client->get("3/{$type->value}/{$tmdbId}/watch/providers")
             ->json();
     }
+
+    public function getCredits(TitleType $type, int $tmdbId)
+    {
+        $url = "3/{$type->value}/{$tmdbId}/".match($type) {
+            TitleType::MOVIE => 'credits',
+                TitleType::TV => 'aggregate_credits'
+            };
+        return $this->client->get($url)
+            ->json();
+    }
 }
