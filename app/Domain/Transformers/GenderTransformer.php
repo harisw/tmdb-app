@@ -13,7 +13,7 @@ class GenderTransformer implements Transformer
         return match ((int) $value) {
             1 => 'female',
             2 => 'male',
-            default => 'unknown',
+            default => 'not_specified',
         };
     }
 }

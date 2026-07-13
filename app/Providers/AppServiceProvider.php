@@ -2,8 +2,12 @@
 
 namespace App\Providers;
 
+use App\Repositories\Contracts\PersonRepository;
+use App\Repositories\Contracts\TitlePersonRepository;
+use App\Repositories\EloquentPersonRepository;
+use App\Repositories\EloquentTitlePersonRepository;
 use App\Services\TitleService;
-use App\Services\TmdbService;
+use App\Services\TmdbApiService;
 use Gate;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Support\Facades\RateLimiter;
@@ -18,8 +22,11 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
-        $this->app->singleton(TmdbService::class, function () {
-            return new TmdbService(
+        $this->app->bind(PersonRepository::class, EloquentPersonRepository::class);
+        $this->app->bind(TitlePersonRepository::class, EloquentTitlePersonRepository::class);
+
+        $this->app->singleton(TmdbApiService::class, function () {
+            return new TmdbApiService(
                 apiKey: config('services.tmdb.api_key'),
                 baseUrl: config('services.tmdb.base_url')
             );

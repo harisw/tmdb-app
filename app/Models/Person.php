@@ -75,7 +75,7 @@ class Person extends Model
     {
         return $this->belongsToMany(Title::class, 'title_person')
             ->using(TitlePerson::class)
-            ->withPivot(['role', 'character', 'order'])
+            ->withPivot(['job', 'character', 'order', 'episode_count'])
             ->withTimestamps();
     }
 

@@ -2,24 +2,18 @@
 
 namespace App\Jobs;
 
-use App\Data\EnrichmentContext;
 use App\Models\Title;
-use App\Pipelines\Stages\ProcessKeywords;
-use App\Pipelines\Stages\ProcessWatchProviders;
-use App\Services\TmdbService;
-use Illuminate\Bus\Batchable;
+use App\Services\TmdbApiService;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
-use Illuminate\Queue\Middleware\RateLimited;
 use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\Pipeline;
 
 class FetchTitlesCreditsJob implements ShouldQueue
 {
     use Queueable;
 
-    public function __construct(private readonly int $limit = 50,
-    private TmdbService $tmdbService) {}
+    public function __construct(private readonly int $limit,
+        private TmdbApiService $tmdbService) {}
 
     public function handle(): void
     {
@@ -44,7 +38,6 @@ class FetchTitlesCreditsJob implements ShouldQueue
     private function fillCredits(Title $title)
     {
         $credits = $this->tmdbService->getCredits($title->type, $title->tmdb_id);
-
 
     }
 }

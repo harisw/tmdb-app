@@ -5,12 +5,12 @@ namespace App\Pipelines\Stages;
 use App\Data\DTOs\TmdbApi\TmdbKeywordData;
 use App\Data\EnrichmentContext;
 use App\Models\Keyword;
-use App\Services\TmdbService;
+use App\Services\TmdbApiService;
 use Closure;
 
 class ProcessKeywords
 {
-    public function __construct(private readonly TmdbService $tmdb) {}
+    public function __construct(private readonly TmdbApiService $tmdb) {}
 
     public function handle(EnrichmentContext $ctx, Closure $next): mixed
     {

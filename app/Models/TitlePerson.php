@@ -2,7 +2,7 @@
 
 namespace App\Models;
 
-use App\Domain\Enums\CreditRole;
+use App\Domain\Enums\CreditJob;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\Pivot;
@@ -12,7 +12,7 @@ use Illuminate\Support\Carbon;
  * @property int $id
  * @property int $title_id
  * @property int $person_id
- * @property CreditRole $role
+ * @property CreditJob $role
  * @property string|null $character
  * @property int $order
  * @property Carbon|null $created_at
@@ -39,9 +39,19 @@ class TitlePerson extends Pivot
 
     protected $guarded = [];
 
+    protected $fillable = [
+        'title_id',
+        'person_id',
+        'job',
+        'character',
+        'order',
+        'episode_count',
+    ];
+
     protected $casts = [
-        'role' => CreditRole::class,
+        'job' => CreditJob::class,
         'order' => 'integer',
+        'episode_count' => 'integer',
     ];
 
     public function title(): BelongsTo
@@ -52,16 +62,6 @@ class TitlePerson extends Pivot
     public function person(): BelongsTo
     {
         return $this->belongsTo(Person::class);
-    }
-
-    public function scopeCast(Builder $query): Builder
-    {
-        return $query->where('role', CreditRole::CAST);
-    }
-
-    public function scopeCrew(Builder $query): Builder
-    {
-        return $query->where('role', CreditRole::CREW);
     }
 
     public function scopeOrdered(Builder $query): Builder

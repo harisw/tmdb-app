@@ -7,7 +7,7 @@ use App\Utils\Enum\TimeWindow;
 use Illuminate\Http\Client\PendingRequest;
 use Illuminate\Support\Facades\Http;
 
-class TmdbService
+class TmdbApiService
 {
     private PendingRequest $client;
 
@@ -49,10 +49,11 @@ class TmdbService
 
     public function getCredits(TitleType $type, int $tmdbId)
     {
-        $url = "3/{$type->value}/{$tmdbId}/".match($type) {
+        $url = "3/{$type->value}/{$tmdbId}/".match ($type) {
             TitleType::MOVIE => 'credits',
-                TitleType::TV => 'aggregate_credits'
-            };
+            TitleType::TV => 'aggregate_credits'
+        };
+
         return $this->client->get($url)
             ->json();
     }

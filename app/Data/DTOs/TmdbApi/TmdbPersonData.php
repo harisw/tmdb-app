@@ -7,8 +7,10 @@ use Spatie\LaravelData\Attributes\Computed;
 use Spatie\LaravelData\Attributes\MapInputName;
 use Spatie\LaravelData\Attributes\WithTransformer;
 use Spatie\LaravelData\Data;
+use Spatie\LaravelData\Mappers\SnakeCaseMapper;
 use Str;
 
+#[MapInputName(SnakeCaseMapper::class)]
 class TmdbPersonData extends Data
 {
     #[Computed]
@@ -16,15 +18,15 @@ class TmdbPersonData extends Data
 
     public function __construct(
         #[MapInputName('id')]
-        public readonly int $tmdb_id,
+        public readonly int $tmdbId,
         public readonly string $name,
         #[WithTransformer(GenderTransformer::class)]
         public readonly string $gender,
         #[MapInputName('adult')]
-        public readonly ?bool $is_adult,
+        public readonly ?bool $isAdult,
         public readonly float $popularity,
-        public readonly ?string $profile_path,
-        public readonly ?array $extra_attributes = [],
+        public readonly ?string $profilePath,
+        public ?string $knownForDepartment,
     ) {
         $this->slug = Str::slug($this->name).'-'.$this->tmdb_id;
     }

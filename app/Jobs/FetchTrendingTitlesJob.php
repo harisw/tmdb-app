@@ -7,7 +7,7 @@ use App\Domain\Enums\TitleType;
 use App\Models\Language;
 use App\Models\Title;
 use App\Services\TitleService;
-use App\Services\TmdbService;
+use App\Services\TmdbApiService;
 use App\Utils\Enum\TimeWindow;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
@@ -41,7 +41,7 @@ class FetchTrendingTitlesJob implements ShouldQueue
     /**
      * Execute the job.
      */
-    public function handle(TmdbService $tmdbService, TitleService $titleService): void
+    public function handle(TmdbApiService $tmdbService, TitleService $titleService): void
     {
         $this->titleIdDict = Title::where('type', $this->titleType->value)
             ->whereNotNull('tmdb_id')
@@ -55,7 +55,7 @@ class FetchTrendingTitlesJob implements ShouldQueue
         } while ($page < $this->maxPage && $page <= $response['total_pages']);
     }
 
-    private function processPage(TmdbService $tmdbService, TitleService $titleService, ?array $results): void
+    private function processPage(TmdbApiService $tmdbService, TitleService $titleService, ?array $results): void
     {
         foreach ($results ?? [] as $title) {
             $tmdbId = $title['id'];

@@ -3,7 +3,7 @@
 namespace App\Models;
 
 use App\Casts\RoundFloat;
-use App\Domain\Enums\CreditRole;
+use App\Domain\Enums\CreditJob;
 use App\Domain\Enums\TitleType;
 use App\Helpers\DateTimeHelper;
 use App\Models\Scopes\AdultContentScope;
@@ -169,11 +169,11 @@ class Title extends Model
 
     public function cast(): HasMany
     {
-        return $this->credits()->where('role', CreditRole::CAST)->orderBy('order');
+        return $this->credits()->where('role', CreditJob::CAST)->orderBy('order');
     }
 
     public function crew(): HasMany
     {
-        return $this->credits()->where('role', CreditRole::CREW);
+        return $this->credits()->where('role', CreditJob::CREW);
     }
 }

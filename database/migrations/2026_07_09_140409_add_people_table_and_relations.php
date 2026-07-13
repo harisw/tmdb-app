@@ -28,10 +28,13 @@ return new class extends Migration
             $table->id();
             $table->foreignId('title_id')->constrained()->cascadeOnDelete();
             $table->foreignId('person_id')->constrained('people')->cascadeOnDelete();
-            $table->string('role');
+            $table->string('job');
             $table->string('character')->nullable();
             $table->unsignedSmallInteger('order')->default(0);
+            $table->unsignedInteger('episode_count')->nullable()->after('order');
             $table->timestamps();
+
+            $table->unique(['title_id', 'person_id', 'job'], 'title_person_unique_title_person_job');
         });
     }
 

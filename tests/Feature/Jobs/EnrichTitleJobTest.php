@@ -5,7 +5,7 @@ namespace Tests\Feature\Jobs;
 use App\Jobs\EnrichTitleJob;
 use App\Models\Country;
 use App\Models\Title;
-use App\Services\TmdbService;
+use App\Services\TmdbApiService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use RuntimeException;
 use Tests\TestCase;
@@ -18,7 +18,7 @@ class EnrichTitleJobTest extends TestCase
     {
         $title = Title::factory()->create(['tmdb_id' => 123]);
 
-        $this->mock(TmdbService::class)
+        $this->mock(TmdbApiService::class)
             ->shouldReceive('getKeywords')
             ->andThrow(new RuntimeException('TMDB unavailable'));
 
@@ -33,7 +33,7 @@ class EnrichTitleJobTest extends TestCase
         $title = Title::factory()->create(['tmdb_id' => 456]);
         Country::factory()->create(['iso2' => 'US']);
 
-        $tmdb = $this->mock(TmdbService::class);
+        $tmdb = $this->mock(TmdbApiService::class);
         $tmdb->shouldReceive('getKeywords')
             ->andReturn(['keywords' => []]);
         $tmdb->shouldReceive('getWatchProviders')
