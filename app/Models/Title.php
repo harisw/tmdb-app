@@ -158,7 +158,7 @@ class Title extends Model
     {
         return $this->belongsToMany(Person::class, 'title_person')
             ->using(TitlePerson::class)
-            ->withPivot(['role', 'character', 'order'])
+            ->withPivot(['job', 'character', 'order', 'episode_count'])
             ->withTimestamps();
     }
 
@@ -169,11 +169,15 @@ class Title extends Model
 
     public function cast(): HasMany
     {
-        return $this->credits()->where('role', CreditJob::CAST)->orderBy('order');
+        return $this->credits()->where('job', CreditJob::CAST)->orderBy('order');
     }
 
+    /**
+     * Crew is defined by exclusion — CreditJob has no CREW case, it has the
+     * specific jobs we model (director, writer, composer...).
+     */
     public function crew(): HasMany
     {
-        return $this->credits()->where('role', CreditJob::CREW);
+        return $this->credits()->whereNot('job', CreditJob::CAST);
     }
 }

@@ -4,8 +4,8 @@ namespace App\Services\TmdbCredits;
 
 /**
  * Flattens TMDB's two credit response shapes into the array shape
- * App\Data\CreditData::from() expects (a nested `person` key plus flat
- * credit fields — see CreditData's docblock).
+ * TmdbCreditData::from() expects (a nested `person` key plus flat credit
+ * fields — see TmdbCreditData).
  *
  * - /movie/{id}/credits and /tv/{id}/season/{s}/episode/{e}/credits:
  *   cast[].character is a single string, crew[].job is a single string.
@@ -86,8 +86,10 @@ class TmdbCreditNormalizer
 
     /**
      * One TMDB `person` node (cast or crew) + one resolved job -> one row
-     * shaped for CreditData::from(). The nested `person` array is
-     * auto-hydrated into PersonData by Spatie Data.
+     * shaped for TmdbCreditData::from(). The person node is passed through
+     * as-is: TmdbPersonData's input contract is raw TMDB (`id`, `adult`,
+     * integer `gender`), so re-keying it here would only break hydration.
+     * The nested array is auto-hydrated into TmdbPersonData by Spatie Data.
      */
     private static function row(
         array $person,
@@ -99,16 +101,7 @@ class TmdbCreditNormalizer
         ?string $creditId,
     ): array {
         return [
-            'person' => [
-                'tmdb_id' => $person['id'],
-                'name' => $person['name'],
-                'original_name' => $person['original_name'] ?? null,
-                'gender' => $person['gender'] ?? 0,
-                'is_adult' => $person['adult'] ?? false,
-                'profile_path' => $person['profile_path'] ?? null,
-                'popularity' => $person['popularity'] ?? 0.0,
-                'known_for_department' => $person['known_for_department'] ?? null,
-            ],
+            'person' => $person,
             'job' => $job,
             'raw_job' => $rawJob,
             'character' => $character,

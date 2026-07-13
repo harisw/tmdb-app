@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Domain\Enums\Gender;
 use Database\Factories\PersonFactory;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
@@ -16,7 +17,7 @@ use Spatie\SchemalessAttributes\Casts\SchemalessAttributes;
  * @property int $id
  * @property string $name
  * @property string $slug
- * @property string $gender
+ * @property Gender $gender
  * @property bool $is_adult
  * @property string|null $profile_path
  * @property float $popularity
@@ -56,6 +57,7 @@ class Person extends Model
     protected $guarded = [];
 
     protected $casts = [
+        'gender' => Gender::class,
         'is_adult' => 'boolean',
         'popularity' => 'float',
         'extra_attributes' => SchemalessAttributes::class,

@@ -2,14 +2,25 @@
 
 namespace App\Data\DTOs\TmdbApi;
 
-use App\Domain\Transformers\GenderTransformer;
+use App\Domain\Casts\TmdbGenderCast;
+use App\Domain\Enums\Gender;
+use Illuminate\Support\Str;
 use Spatie\LaravelData\Attributes\Computed;
 use Spatie\LaravelData\Attributes\MapInputName;
-use Spatie\LaravelData\Attributes\WithTransformer;
+use Spatie\LaravelData\Attributes\WithCast;
 use Spatie\LaravelData\Data;
 use Spatie\LaravelData\Mappers\SnakeCaseMapper;
-use Str;
 
+/**
+ * A TMDB person node, in the shape TMDB actually sends it — `id`, `adult`, and
+ * an integer `gender`. Both producers (the /person seed dump and the credits
+ * normalizer) hand this class raw TMDB keys, so the input contract stays
+ * TMDB-shaped and the translation into our vocabulary happens here instead of
+ * being re-invented at each call site.
+ *
+ * original_name and known_for_department are absent from the seed dump and only
+ * appear on credit payloads, hence the defaults.
+ */
 #[MapInputName(SnakeCaseMapper::class)]
 class TmdbPersonData extends Data
 {
@@ -19,16 +30,24 @@ class TmdbPersonData extends Data
     public function __construct(
         #[MapInputName('id')]
         public readonly int $tmdbId,
+
         public readonly string $name,
-        #[WithTransformer(GenderTransformer::class)]
-        public readonly string $gender,
+
+        #[WithCast(TmdbGenderCast::class)]
+        public readonly Gender $gender,
+
         #[MapInputName('adult')]
         public readonly ?bool $isAdult,
+
         public readonly float $popularity,
+
         public readonly ?string $profilePath,
-        public ?string $knownForDepartment,
+
+        public readonly ?string $originalName = null,
+
+        public readonly ?string $knownForDepartment = null,
     ) {
-        $this->slug = Str::slug($this->name).'-'.$this->tmdb_id;
+        $this->slug = Str::slug($this->name).'-'.$this->tmdbId;
     }
 
     /**
@@ -36,16 +55,14 @@ class TmdbPersonData extends Data
      */
     public function toUpsertArray(): array
     {
-        $data = $this->toArray();
-
         return [
-            'tmdb_id' => $data['tmdb_id'],
-            'name' => $data['name'],
-            'slug' => $data['slug'],
-            'gender' => $data['gender'],
-            'is_adult' => $data['is_adult'] ?? false,
-            'popularity' => $data['popularity'],
-            'profile_path' => $data['profile_path'],
+            'tmdb_id' => $this->tmdbId,
+            'name' => $this->name,
+            'slug' => $this->slug,
+            'gender' => $this->gender->value,
+            'is_adult' => $this->isAdult ?? false,
+            'popularity' => $this->popularity,
+            'profile_path' => $this->profilePath,
         ];
     }
 }

@@ -12,7 +12,14 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('titles', static function (Blueprint $table) {
-            $table->timestamp('credits_filled_at')->after('enriched_at')->default(null);
+            // Nullable, not default(null): on Postgres timestamp() is NOT NULL
+            // unless declared otherwise, and the backfill query selects on
+            // credits_filled_at IS NULL.
+            $table->timestamp('credits_filled_at')->after('enriched_at')->nullable();
+
+            // FetchTitlesCreditsJob sorts the whole table by popularity to pick
+            // its next slice; without this it's a seq scan + sort every run.
+            $table->index(['popularity', 'credits_filled_at'], 'titles_credits_backfill_index');
         });
     }
 
@@ -22,6 +29,7 @@ return new class extends Migration
     public function down(): void
     {
         Schema::table('titles', static function (Blueprint $table) {
+            $table->dropIndex('titles_credits_backfill_index');
             $table->dropColumn('credits_filled_at');
         });
     }

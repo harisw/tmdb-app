@@ -29,7 +29,9 @@ return new class extends Migration
             $table->foreignId('title_id')->constrained()->cascadeOnDelete();
             $table->foreignId('person_id')->constrained('people')->cascadeOnDelete();
             $table->string('job');
-            $table->string('character')->nullable();
+            // text, not string: aggregate_credits joins every role a person
+            // played, which overruns varchar(255) on long-running series.
+            $table->text('character')->nullable();
             $table->unsignedSmallInteger('order')->default(0);
             $table->unsignedInteger('episode_count')->nullable()->after('order');
             $table->timestamps();

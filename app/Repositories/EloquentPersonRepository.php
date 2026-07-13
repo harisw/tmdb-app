@@ -6,17 +6,9 @@ use App\Data\DTOs\TmdbApi\TmdbPersonData;
 use App\Models\Person;
 use App\Repositories\Contracts\PersonRepository as PersonRepositoryContract;
 use Illuminate\Support\Collection;
-use Illuminate\Support\Str;
 
 class EloquentPersonRepository implements PersonRepositoryContract
 {
-    private const GENDER_MAP = [
-        0 => 'not_specified',
-        1 => 'female',
-        2 => 'male',
-        3 => 'non_binary',
-    ];
-
     public function upsertMany(Collection $people): Collection
     {
         $unique = $people->unique(fn (TmdbPersonData $p) => $p->tmdbId)->values();
@@ -29,17 +21,11 @@ class EloquentPersonRepository implements PersonRepositoryContract
 
         $rows = $unique
             ->map(fn (TmdbPersonData $p) => [
-                'name' => $p->name,
-                'slug' => Str::slug($p->name).'-'.$p->tmdbId,
-                'gender' => self::GENDER_MAP[$p->gender] ?? 'not_specified',
-                'is_adult' => $p->isAdult,
-                'profile_path' => $p->profilePath,
-                'popularity' => $p->popularity,
-                'tmdb_id' => $p->tmdbId,
-                'extra_attributes' => json_encode([
+                ...$p->toUpsertArray(),
+                'extra_attributes' => json_encode(array_filter([
                     'known_for_department' => $p->knownForDepartment,
                     'original_name' => $p->originalName,
-                ]),
+                ])),
                 'created_at' => $now,
                 'updated_at' => $now,
             ])

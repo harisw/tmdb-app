@@ -2,6 +2,7 @@
 
 namespace Database\Factories;
 
+use App\Domain\Enums\Gender;
 use App\Models\Person;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Support\Str;
@@ -20,7 +21,7 @@ class PersonFactory extends Factory
             'tmdb_id' => $tmdbId,
             'name' => $name,
             'slug' => Str::slug($name).'-'.$tmdbId,
-            'gender' => fake()->randomElement(['female', 'male', 'unknown']),
+            'gender' => fake()->randomElement(Gender::values()),
             'is_adult' => false,
             'profile_path' => '/'.fake()->regexify('[A-Za-z0-9]{27}').'.jpg',
             'popularity' => fake()->randomFloat(4, 0, 100),
