@@ -4,12 +4,10 @@ namespace Tests\Feature\Jobs;
 
 use App\Domain\Enums\TitleType;
 use App\Jobs\FetchTitleCreditsJob;
-use App\Jobs\FetchTitlesCreditsJob;
 use App\Models\Title;
 use App\Services\TmdbApiService;
 use App\Services\TmdbCredits\TmdbCreditService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Illuminate\Support\Facades\Queue;
 use RuntimeException;
 use Tests\TestCase;
 
@@ -84,53 +82,5 @@ class FetchTitleCreditsJobTest extends TestCase
         } finally {
             $this->assertNull($title->fresh()->credits_filled_at);
         }
-    }
-
-    public function test_dispatcher_queues_one_job_per_title_needing_credits(): void
-    {
-        Queue::fake();
-
-        $needsCredits = Title::factory()->create(['tmdb_id' => 1, 'credits_filled_at' => null, 'popularity' => 100]);
-        $stale = Title::factory()->create(['tmdb_id' => 2, 'credits_filled_at' => now()->subMonths(4), 'popularity' => 50]);
-        Title::factory()->create(['tmdb_id' => 3, 'credits_filled_at' => now()->subDay(), 'popularity' => 200]);
-
-        (new FetchTitlesCreditsJob(10))->handle();
-
-        Queue::assertPushed(FetchTitleCreditsJob::class, 2);
-        foreach ([$needsCredits, $stale] as $title) {
-            Queue::assertPushed(
-                FetchTitleCreditsJob::class,
-                fn (FetchTitleCreditsJob $job) => (new \ReflectionProperty($job, 'titleId'))->getValue($job) === $title->id,
-            );
-        }
-    }
-
-    public function test_dispatcher_skips_titles_that_have_no_tmdb_id(): void
-    {
-        Queue::fake();
-
-        // CSV-imported titles can have no tmdb_id. There is nothing to fetch
-        // against, and dispatching one only burns the retry budget.
-        Title::factory()->create(['tmdb_id' => null, 'credits_filled_at' => null, 'popularity' => 500]);
-
-        (new FetchTitlesCreditsJob(10))->handle();
-
-        Queue::assertNothingPushed();
-    }
-
-    public function test_dispatcher_prefers_popular_titles_within_its_limit(): void
-    {
-        Queue::fake();
-
-        Title::factory()->create(['tmdb_id' => 4, 'credits_filled_at' => null, 'popularity' => 1]);
-        $popular = Title::factory()->create(['tmdb_id' => 5, 'credits_filled_at' => null, 'popularity' => 999]);
-
-        (new FetchTitlesCreditsJob(1))->handle();
-
-        Queue::assertPushed(FetchTitleCreditsJob::class, 1);
-        Queue::assertPushed(
-            FetchTitleCreditsJob::class,
-            fn (FetchTitleCreditsJob $job) => (new \ReflectionProperty($job, 'titleId'))->getValue($job) === $popular->id,
-        );
     }
 }

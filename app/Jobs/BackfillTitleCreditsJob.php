@@ -9,18 +9,20 @@ use Illuminate\Support\Facades\Log;
 
 /**
  * Picks the next slice of titles needing credits and fans out one
- * FetchTitleCreditsJob per title.
+ * FetchTitleCreditsJob per title. Fetches nothing itself.
  *
  * The fan-out is the point: a single job doing N sequential TMDB calls means
  * one failed request retries the whole batch, and a slow batch holds a worker
  * for minutes. Per-title jobs give each HTTP call its own retry budget and let
  * the queue spread them across workers under the shared 'tmdb' rate limiter.
  */
-class FetchTitlesCreditsJob implements ShouldQueue
+class BackfillTitleCreditsJob implements ShouldQueue
 {
     use Queueable;
 
-    public function __construct(private readonly int $limit = 100)
+    private const RETRY_MONTHS_THRESHOLD = 6;
+
+    public function __construct(private readonly int $limit = 50)
     {
         $this->onQueue('enrichment');
     }
@@ -37,7 +39,7 @@ class FetchTitlesCreditsJob implements ShouldQueue
             ->whereNotNull('tmdb_id')
             ->where(function ($query) {
                 $query->whereNull('credits_filled_at')
-                    ->orWhere('credits_filled_at', '<', now()->subMonths(3));
+                    ->orWhere('credits_filled_at', '<', now()->subMonths(self::RETRY_MONTHS_THRESHOLD));
             })
             ->orderByDesc('popularity')
             ->limit($this->limit)

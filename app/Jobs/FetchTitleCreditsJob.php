@@ -21,9 +21,9 @@ class FetchTitleCreditsJob implements ShouldQueue
 {
     use Queueable;
 
-    public int $tries = 3;
+    public int $tries = 1;
 
-    public array $backoff = [10, 60, 300];
+    //    public array $backoff = [10, 60, 300];
 
     public function __construct(private readonly int $titleId)
     {
@@ -39,8 +39,6 @@ class FetchTitleCreditsJob implements ShouldQueue
     {
         $title = Title::find($this->titleId);
 
-        // Deleted since dispatch, or has no tmdb_id to fetch against. Neither
-        // is retryable, so fall out quietly rather than burning the retries.
         if (! $title || ! $title->tmdb_id) {
             return;
         }
