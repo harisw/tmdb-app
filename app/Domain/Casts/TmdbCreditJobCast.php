@@ -69,6 +69,26 @@ class TmdbCreditJobCast implements Cast
         'Cameo' => CreditJob::CAST,
     ];
 
+    private const PRIMARY_TIER = 0;
+
+    /**
+     * Raw jobs that are subordinate to the primary holder of the same
+     * CreditJob. crew[] carries no billing order, so this is what lets the
+     * selector keep the actual Producer over the fifth Executive Producer
+     * when it caps a job — see TmdbCreditSelector::selectCrew().
+     *
+     * Only jobs whose subordination is unambiguous belong here. Writing and
+     * art credits are deliberately left flat: a "Novel" or "Story" credit is
+     * a weaker claim on the film than "Screenplay", but it is often the
+     * stronger similarity edge (people follow the novelist), so ranking those
+     * by popularity alone is the intended behavior.
+     */
+    private const JOB_TIER = [
+        'Executive Producer' => 1,
+        'Co-Director' => 1,
+        'Series Director' => 1,
+    ];
+
     public function cast(DataProperty $property, mixed $value, array $properties, CreationContext $context): mixed
     {
         if ($value instanceof CreditJob) {
@@ -106,5 +126,25 @@ class TmdbCreditJobCast implements Cast
     public static function map(): array
     {
         return self::JOB_MAP;
+    }
+
+    /**
+     * Lower is more senior. Unknown and unlisted jobs are primary, so a job
+     * only ever loses a tie by being explicitly demoted in JOB_TIER.
+     *
+     * Accepts the comma-joined rawJob that TmdbCreditSelector produces when
+     * one person holds several raw jobs mapping to the same CreditJob
+     * ("Director, Co-Director"). Holding any primary credit makes the person
+     * primary, hence the min rather than a straight lookup.
+     */
+    public static function tier(?string $rawJob): int
+    {
+        if ($rawJob === null || $rawJob === '') {
+            return self::PRIMARY_TIER;
+        }
+
+        return collect(explode(',', $rawJob))
+            ->map(fn (string $job) => self::JOB_TIER[trim($job)] ?? self::PRIMARY_TIER)
+            ->min();
     }
 }

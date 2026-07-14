@@ -3,13 +3,15 @@
 namespace App\Services\TmdbCredits;
 
 use App\Data\DTOs\TmdbApi\TmdbCreditData;
+use App\Domain\Casts\TmdbCreditJobCast;
 use App\Domain\Enums\CastRanking;
 use App\Domain\Enums\CreditJob;
 use Illuminate\Support\Collection;
 
 /**
  * Applies the importance rules that decide which normalized credits are
- * worth writing to the graph: cap + rank cast, collapse duplicate credits.
+ * worth writing to the graph: cap + rank cast, cap + rank crew per job,
+ * collapse duplicate credits.
  * Pure and I/O-free by design — no Eloquent, no container — so it's
  * unit-testable against a plain array fixture without a database.
  *
@@ -24,6 +26,20 @@ use Illuminate\Support\Collection;
 class TmdbCreditSelector
 {
     /**
+     * Top-N per crew job, applied after tier/popularity ranking.
+     *
+     * Directors are capped tighter than the rest: a legitimate directing duo
+     * (the Coens, the Russos) is two people, and a third name on a film is
+     * almost always a second-unit or episode director TMDB has flattened into
+     * the same job.
+     */
+    private const CREW_LIMITS = [
+        CreditJob::DIRECTOR->value => 2,
+    ];
+
+    private const DEFAULT_CREW_LIMIT = 3;
+
+    /**
      * @param  Collection<int, TmdbCreditData>  $credits
      * @return Collection<int, TmdbCreditData>
      */
@@ -36,7 +52,7 @@ class TmdbCreditSelector
             $minEpisodesForCast,
         );
 
-        $crew = $this->collapseDuplicateJobs(
+        $crew = $this->selectCrew(
             $credits->reject(fn (TmdbCreditData $c) => $c->job === CreditJob::CAST)
         );
 
@@ -94,10 +110,43 @@ class TmdbCreditSelector
     }
 
     /**
+     * TMDB's crew[] carries no billing order — unlike cast[], which has
+     * `order` — so a cap needs a ranking of its own. Rank by credit tier
+     * first (a Producer outranks an Executive Producer, a Director outranks a
+     * Co-Director), then by person popularity within a tier, then keep the
+     * top N per job.
+     *
+     * The cap matters: a studio film can list a dozen executive producers and
+     * TV lists an art director per season/unit. Writing every one of them
+     * spends a person row and a graph edge on a credit nobody picks a title
+     * for, and dilutes the edges that do carry signal.
+     *
+     * @param  Collection<int, TmdbCreditData>  $crew
+     * @return Collection<int, TmdbCreditData>
+     */
+    private function selectCrew(Collection $crew): Collection
+    {
+        return $this->collapseDuplicateJobs($crew)
+            ->sortBy([
+                fn (TmdbCreditData $a, TmdbCreditData $b) => TmdbCreditJobCast::tier($a->rawJob) <=> TmdbCreditJobCast::tier($b->rawJob),
+                fn (TmdbCreditData $a, TmdbCreditData $b) => $b->person->popularity <=> $a->person->popularity,
+            ])
+            ->groupBy(fn (TmdbCreditData $c) => $c->job->value)
+            ->flatMap(fn (Collection $group, string $job) => $group->take(self::CREW_LIMITS[$job] ?? self::DEFAULT_CREW_LIMIT))
+            ->values();
+    }
+
+    /**
      * A person can pick up the same mapped CreditJob from two different raw
      * TMDB jobs (e.g. "Director" and "Co-Director" both -> DIRECTOR). Collapse
      * those into one row and sum episode counts rather than letting the second
      * one collide with the first.
+     *
+     * Grouped on (person, job), not job alone: every distinct person holding a
+     * job is a credit we want. Grouping on the job by itself would fold all
+     * three of a film's producers into whichever one TMDB happened to list
+     * first, and stamp them with a rawJob ("Producer, Executive Producer")
+     * that no one person actually held.
      *
      * @param  Collection<int, TmdbCreditData>  $crew
      * @return Collection<int, TmdbCreditData>
