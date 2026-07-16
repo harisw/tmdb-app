@@ -3,7 +3,7 @@
 namespace Tests\Feature\Jobs;
 
 use App\Domain\Enums\TitleType;
-use App\Jobs\FetchTitleCreditsJob;
+use App\Jobs\EnrichTitleCreditsJob;
 use App\Models\Title;
 use App\Services\TmdbApiService;
 use App\Services\TmdbCredits\TmdbCreditService;
@@ -11,13 +11,13 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 use RuntimeException;
 use Tests\TestCase;
 
-class FetchTitleCreditsJobTest extends TestCase
+class EnrichTitleCreditsJobTest extends TestCase
 {
     use RefreshDatabase;
 
     private function runJob(Title $title): void
     {
-        (new FetchTitleCreditsJob($title->id))->handle(
+        (new EnrichTitleCreditsJob($title->id))->handle(
             app(TmdbApiService::class),
             app(TmdbCreditService::class),
         );

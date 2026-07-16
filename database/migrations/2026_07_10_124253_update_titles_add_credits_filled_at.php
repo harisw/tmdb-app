@@ -17,7 +17,7 @@ return new class extends Migration
             // credits_filled_at IS NULL.
             $table->timestamp('credits_filled_at')->after('enriched_at')->nullable();
 
-            // BackfillTitleCreditsJob sorts the whole table by popularity to pick
+            // EnrichTitleCreditsBatchJob sorts the whole table by popularity to pick
             // its next slice; without this it's a seq scan + sort every run.
             $table->index(['popularity', 'credits_filled_at'], 'titles_credits_backfill_index');
         });

@@ -17,7 +17,7 @@ use Illuminate\Support\Facades\Log;
  * args, and a job that sits in the queue for minutes should read the row as it
  * is when it runs, not as it was when it was dispatched.
  */
-class FetchTitleCreditsJob implements ShouldQueue
+class EnrichTitleCreditsJob implements ShouldQueue
 {
     use Queueable;
 

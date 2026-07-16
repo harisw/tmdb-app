@@ -3,8 +3,8 @@
 namespace App\Console\Commands;
 
 use App\Domain\Enums\TitleType;
-use App\Jobs\BackfillTitleCreditsJob;
-use App\Jobs\EnrichTitlesProviderBatchJob;
+use App\Jobs\EnrichTitleCreditsBatchJob;
+use App\Jobs\EnrichTitleProvidersBatchJob;
 use App\Jobs\FetchTrendingTitlesJob;
 use App\Jobs\TitlesBatchInsertJob;
 use App\Utils\Enum\TimeWindow;
@@ -33,20 +33,20 @@ class RunJob extends Command
     public function handle(): void
     {
         $jobClass = $this->choice('Which job class do you want to run?',
-            [FetchTrendingTitlesJob::class, EnrichTitlesProviderBatchJob::class, TitlesBatchInsertJob::class, BackfillTitleCreditsJob::class],
+            [FetchTrendingTitlesJob::class, EnrichTitleProvidersBatchJob::class, TitlesBatchInsertJob::class, EnrichTitleCreditsBatchJob::class],
         );
         switch ($jobClass) {
             case FetchTrendingTitlesJob::class:
                 $this->runFetchTrendingTitles();
                 break;
-            case EnrichTitlesProviderBatchJob::class:
+            case EnrichTitleProvidersBatchJob::class:
                 $this->runEnrichTitlesProvider();
                 break;
             case TitlesBatchInsertJob::class:
                 $this->runTitleBatchInsert();
                 break;
-            case BackfillTitleCreditsJob::class:
-                $this->runBackfillTitleCredits();
+            case EnrichTitleCreditsBatchJob::class:
+                $this->runEnrichTitleCredits();
                 break;
             default:
                 $this->error('Unknown job class');
@@ -74,7 +74,7 @@ class RunJob extends Command
     private function runEnrichTitlesProvider(): void
     {
         $limit = (int) $this->ask('Limit titles?');
-        EnrichTitlesProviderBatchJob::dispatch($limit);
+        EnrichTitleProvidersBatchJob::dispatch($limit);
     }
 
     private function runTitleBatchInsert(): void
@@ -83,9 +83,9 @@ class RunJob extends Command
         TitlesBatchInsertJob::dispatch($batchSize);
     }
 
-    private function runBackfillTitleCredits(): void
+    private function runEnrichTitleCredits(): void
     {
         $limit = (int) $this->ask('Limit titles?', 10);
-        BackfillTitleCreditsJob::dispatch($limit);
+        EnrichTitleCreditsBatchJob::dispatch($limit);
     }
 }

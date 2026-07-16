@@ -2,22 +2,22 @@
 
 namespace Tests\Feature\Jobs;
 
-use App\Jobs\BackfillTitleCreditsJob;
-use App\Jobs\FetchTitleCreditsJob;
+use App\Jobs\EnrichTitleCreditsBatchJob;
+use App\Jobs\EnrichTitleCreditsJob;
 use App\Models\Title;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Queue;
 use Tests\TestCase;
 
-class BackfillTitleCreditsJobTest extends TestCase
+class EnrichTitleCreditsBatchJobTest extends TestCase
 {
     use RefreshDatabase;
 
     private function assertQueuedFor(Title $title): void
     {
         Queue::assertPushed(
-            FetchTitleCreditsJob::class,
-            fn (FetchTitleCreditsJob $job) => (new \ReflectionProperty($job, 'titleId'))->getValue($job) === $title->id,
+            EnrichTitleCreditsJob::class,
+            fn (EnrichTitleCreditsJob $job) => (new \ReflectionProperty($job, 'titleId'))->getValue($job) === $title->id,
         );
     }
 
@@ -32,9 +32,9 @@ class BackfillTitleCreditsJobTest extends TestCase
         // Boundary: inside the window, so not due for a re-fetch despite being old.
         Title::factory()->create(['tmdb_id' => 4, 'credits_filled_at' => now()->subMonths(5), 'popularity' => 300]);
 
-        (new BackfillTitleCreditsJob(10))->handle();
+        (new EnrichTitleCreditsBatchJob(10))->handle();
 
-        Queue::assertPushed(FetchTitleCreditsJob::class, 2);
+        Queue::assertPushed(EnrichTitleCreditsJob::class, 2);
         $this->assertQueuedFor($needsCredits);
         $this->assertQueuedFor($stale);
     }
@@ -47,7 +47,7 @@ class BackfillTitleCreditsJobTest extends TestCase
         // against, and dispatching one only burns the retry budget.
         Title::factory()->create(['tmdb_id' => null, 'credits_filled_at' => null, 'popularity' => 500]);
 
-        (new BackfillTitleCreditsJob(10))->handle();
+        (new EnrichTitleCreditsBatchJob(10))->handle();
 
         Queue::assertNothingPushed();
     }
@@ -59,9 +59,9 @@ class BackfillTitleCreditsJobTest extends TestCase
         Title::factory()->create(['tmdb_id' => 4, 'credits_filled_at' => null, 'popularity' => 1]);
         $popular = Title::factory()->create(['tmdb_id' => 5, 'credits_filled_at' => null, 'popularity' => 999]);
 
-        (new BackfillTitleCreditsJob(1))->handle();
+        (new EnrichTitleCreditsBatchJob(1))->handle();
 
-        Queue::assertPushed(FetchTitleCreditsJob::class, 1);
+        Queue::assertPushed(EnrichTitleCreditsJob::class, 1);
         $this->assertQueuedFor($popular);
     }
 }

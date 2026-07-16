@@ -8,7 +8,7 @@ use Illuminate\Foundation\Queue\Queueable;
 use Illuminate\Support\Facades\Bus;
 use Illuminate\Support\Facades\Log;
 
-class EnrichTitlesProviderBatchJob implements ShouldQueue
+class EnrichTitleProvidersBatchJob implements ShouldQueue
 {
     use Queueable;
 

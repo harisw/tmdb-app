@@ -9,14 +9,14 @@ use Illuminate\Support\Facades\Log;
 
 /**
  * Picks the next slice of titles needing credits and fans out one
- * FetchTitleCreditsJob per title. Fetches nothing itself.
+ * EnrichTitleCreditsJob per title. Fetches nothing itself.
  *
  * The fan-out is the point: a single job doing N sequential TMDB calls means
  * one failed request retries the whole batch, and a slow batch holds a worker
  * for minutes. Per-title jobs give each HTTP call its own retry budget and let
  * the queue spread them across workers under the shared 'tmdb' rate limiter.
  */
-class BackfillTitleCreditsJob implements ShouldQueue
+class EnrichTitleCreditsBatchJob implements ShouldQueue
 {
     use Queueable;
 
@@ -47,6 +47,6 @@ class BackfillTitleCreditsJob implements ShouldQueue
 
         Log::info("Dispatching credit fetch for {$titleIds->count()} titles");
 
-        $titleIds->each(fn (int $id) => FetchTitleCreditsJob::dispatch($id));
+        $titleIds->each(fn (int $id) => EnrichTitleCreditsJob::dispatch($id));
     }
 }
