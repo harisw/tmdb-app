@@ -24,6 +24,7 @@ class EnrichTitleKnowledgeGraphsJob implements ShouldQueue
     public function handle(): void
     {
         $titleIds = Title::whereNull('embedding')
+            ->whereHas('credits')       // Prevent enriching titles with empty credits
             ->limit($this->limit)
             ->pluck('id');
 

@@ -1,6 +1,7 @@
 <?php
 
 use App\Domain\Enums\TitleType;
+use App\Jobs\EnrichTitleCreditsBatchJob;
 use App\Jobs\EnrichTitleKnowledgeGraphsJob;
 use App\Jobs\EnrichTitleProvidersBatchJob;
 use App\Jobs\FetchTrendingTitlesJob;
@@ -28,6 +29,9 @@ Schedule::job(new FetchTrendingTitlesJob(TimeWindow::WEEK, TitleType::TV))
 
 Schedule::job(new EnrichTitleProvidersBatchJob)
     ->hourly()->withoutOverlapping();
+
+Schedule::job(new EnrichTitleCreditsBatchJob)
+    ->hourlyAt(30)->withoutOverlapping();
 
 Schedule::job(new EnrichTitleKnowledgeGraphsJob(100))
     ->everyThreeHours()->withoutOverlapping();

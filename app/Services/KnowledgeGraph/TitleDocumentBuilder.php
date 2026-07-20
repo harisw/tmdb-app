@@ -36,7 +36,7 @@ class TitleDocumentBuilder
 
         // Contextual signals
         if ($title->release_date) {
-            $parts[] = "Year: {$title->release_date}";
+            $parts[] = "Year: {$title->release_date->format('Y')}";
         }
 
         if ($title->collection) {

@@ -22,7 +22,7 @@ class EnrichTitleCreditsBatchJob implements ShouldQueue
 
     private const RETRY_MONTHS_THRESHOLD = 6;
 
-    public function __construct(private readonly int $limit = 50)
+    public function __construct(private readonly int $limit = 100)
     {
         $this->onQueue('enrichment');
     }
