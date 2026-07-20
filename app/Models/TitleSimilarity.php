@@ -50,4 +50,9 @@ class TitleSimilarity extends Pivot
     {
         return $this->belongsTo(Title::class);
     }
+
+    public function similarTitle(): BelongsTo
+    {
+        return $this->belongsTo(Title::class, 'similar_title_id', 'id');
+    }
 }

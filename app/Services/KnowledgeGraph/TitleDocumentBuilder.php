@@ -17,7 +17,7 @@ class TitleDocumentBuilder
         $parts[] = "Title: {$title->name}";
 
         if ($title->genres->isNotEmpty()) {
-            $parts[] = 'Genres: '.$title->genres->pluck('name')->join(', ');
+            $parts[] = 'Genres: '.$title->genres->take(2)->pluck('name')->join(', ');
         }
 
         if ($title->keywords->isNotEmpty()) {

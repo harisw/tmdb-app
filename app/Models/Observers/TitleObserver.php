@@ -7,7 +7,7 @@ use App\Services\KnowledgeGraph\TitleEnrichmentService;
 
 class TitleObserver
 {
-    private const EMBEDDING_FIELDS = ['name', 'tagline', 'overview', 'release_year', 'collection_id'];
+    //    private const EMBEDDING_FIELDS = ['name', 'tagline', 'overview', 'release_year', 'collection_id'];
 
     public function __construct(private readonly TitleEnrichmentService $enrichmentService) {}
 
