@@ -67,13 +67,13 @@ class RunJob extends Command
         $titleType = TitleType::from($this->choice('Which type of title?',
             TitleType::values()
         ));
-        $maxPage = (int) $this->ask('Max page number?');
+        $limit = (int) $this->ask('How many new titles to insert?');
         Log::channel('user')->info('Running run Job', [
             'timeWindow' => $timeWindow->value,
             'titleType' => $titleType->value,
-            'maxPage' => $maxPage,
+            'limit' => $limit,
         ]);
-        FetchTrendingTitlesJob::dispatch($timeWindow, $titleType, $maxPage);
+        FetchTrendingTitlesJob::dispatch($timeWindow, $titleType, $limit);
     }
 
     private function runEnrichTitlesProvider(): void

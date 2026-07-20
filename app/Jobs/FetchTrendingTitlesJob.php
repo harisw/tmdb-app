@@ -26,16 +26,29 @@ class FetchTrendingTitlesJob implements ShouldQueue
 
     private ?Collection $titleIdDict = null;
 
-    private int $maxPage;
+    private int $limit;
+
+    private int $maxPages;
 
     /**
      * Create a new job instance.
+     *
+     * @param  int  $limit  Number of *new* titles to insert. The job pages
+     *                      through the trending feed until it has inserted this
+     *                      many titles or TMDB runs out of pages, so it can
+     *                      reach further into the feed as early pages fill up
+     *                      with titles we already have.
+     * @param  int  $maxPages  Safety bound on how many pages to walk in a single
+     *                         run, so a quota that can't be met (e.g. a nearly
+     *                         complete catalogue) can't make the job page all the
+     *                         way to TMDB's 500-page cap within its timeout.
      */
-    public function __construct(TimeWindow $timeWindow, TitleType $titleType, int $maxPage = 10)
+    public function __construct(TimeWindow $timeWindow, TitleType $titleType, int $limit = 100, int $maxPages = 100)
     {
         $this->timeWindow = $timeWindow;
         $this->titleType = $titleType;
-        $this->maxPage = $maxPage;
+        $this->limit = $limit;
+        $this->maxPages = $maxPages;
     }
 
     /**
@@ -47,17 +60,31 @@ class FetchTrendingTitlesJob implements ShouldQueue
             ->whereNotNull('tmdb_id')
             ->pluck('id', 'tmdb_id');
 
+        $inserted = 0;
         $page = 0;
         do {
             $response = $tmdbService->getTrendings($this->titleType, $this->timeWindow, ++$page);
-            $this->processPage($tmdbService, $titleService, $response['results']);
+            $inserted += $this->processPage(
+                $tmdbService,
+                $titleService,
+                $response['results'],
+                $this->limit - $inserted,
+            );
             sleep(1);
-        } while ($page < $this->maxPage && $page <= $response['total_pages']);
+        } while ($inserted < $this->limit && $page < $response['total_pages'] && $page < $this->maxPages);
     }
 
-    private function processPage(TmdbApiService $tmdbService, TitleService $titleService, ?array $results): void
+    /**
+     * @param  int  $remaining  How many more titles we're still allowed to insert.
+     * @return int Number of new titles inserted from this page.
+     */
+    private function processPage(TmdbApiService $tmdbService, TitleService $titleService, ?array $results, int $remaining): int
     {
+        $inserted = 0;
         foreach ($results ?? [] as $title) {
+            if ($inserted >= $remaining) {
+                break;
+            }
             $tmdbId = $title['id'];
             if ($this->titleIdDict->has($tmdbId)) {
                 continue;
@@ -68,11 +95,14 @@ class FetchTrendingTitlesJob implements ShouldQueue
                 if ($newTitle) {
                     $this->titleIdDict->put($tmdbId, $newTitle->id);
                     EnrichTitleJob::dispatch($newTitle);
+                    $inserted++;
                 }
             } catch (\Exception $e) {
                 Log::error($e->getMessage());
             }
         }
+
+        return $inserted;
     }
 
     private function createNewTitle(array $titleDetail, TitleService $titleService): ?Title
