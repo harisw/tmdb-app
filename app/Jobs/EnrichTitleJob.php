@@ -2,7 +2,7 @@
 
 namespace App\Jobs;
 
-use App\Data\EnrichmentContext;
+use App\Data\Contexts\EnrichmentContext;
 use App\Models\Title;
 use App\Pipelines\Stages\ProcessKeywords;
 use App\Pipelines\Stages\ProcessWatchProviders;

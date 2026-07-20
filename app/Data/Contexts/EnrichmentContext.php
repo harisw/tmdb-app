@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Data;
+namespace App\Data\Contexts;
 
 use App\Models\Title;
 

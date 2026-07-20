@@ -2,7 +2,7 @@
 
 namespace App\Pipelines\Stages;
 
-use App\Data\EnrichmentContext;
+use App\Data\Contexts\EnrichmentContext;
 use App\Services\TmdbApiService;
 use App\Services\WatchProviderSyncService;
 use Closure;

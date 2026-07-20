@@ -4,6 +4,7 @@ namespace App\Console\Commands;
 
 use App\Domain\Enums\TitleType;
 use App\Jobs\EnrichTitleCreditsBatchJob;
+use App\Jobs\EnrichTitleKnowledgeGraphsJob;
 use App\Jobs\EnrichTitleProvidersBatchJob;
 use App\Jobs\FetchTrendingTitlesJob;
 use App\Jobs\TitlesBatchInsertJob;
@@ -33,7 +34,8 @@ class RunJob extends Command
     public function handle(): void
     {
         $jobClass = $this->choice('Which job class do you want to run?',
-            [FetchTrendingTitlesJob::class, EnrichTitleProvidersBatchJob::class, TitlesBatchInsertJob::class, EnrichTitleCreditsBatchJob::class],
+            [FetchTrendingTitlesJob::class, EnrichTitleProvidersBatchJob::class, TitlesBatchInsertJob::class,
+                EnrichTitleCreditsBatchJob::class, EnrichTitleKnowledgeGraphsJob::class],
         );
         switch ($jobClass) {
             case FetchTrendingTitlesJob::class:
@@ -47,6 +49,9 @@ class RunJob extends Command
                 break;
             case EnrichTitleCreditsBatchJob::class:
                 $this->runEnrichTitleCredits();
+                break;
+            case EnrichTitleKnowledgeGraphsJob::class:
+                $this->runEnrichTitleKnowledgeGraphs();
                 break;
             default:
                 $this->error('Unknown job class');
@@ -87,5 +92,11 @@ class RunJob extends Command
     {
         $limit = (int) $this->ask('Limit titles?', 10);
         EnrichTitleCreditsBatchJob::dispatch($limit);
+    }
+
+    private function runEnrichTitleKnowledgeGraphs(): void
+    {
+        $limit = (int) $this->ask('Limit titles?', 10);
+        EnrichTitleKnowledgeGraphsJob::dispatch($limit);
     }
 }

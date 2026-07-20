@@ -2,6 +2,8 @@
 
 namespace App\Providers;
 
+use App\Models\Observers\TitleObserver;
+use App\Models\Title;
 use App\Repositories\Contracts\PersonRepository;
 use App\Repositories\Contracts\TitlePersonRepository;
 use App\Repositories\EloquentPersonRepository;
@@ -34,6 +36,8 @@ class AppServiceProvider extends ServiceProvider
         $this->app->bind(TitleService::class, function () {
             return new TitleService;
         });
+
+        Title::observe(TitleObserver::class);
     }
 
     /**

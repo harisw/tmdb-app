@@ -1,0 +1,30 @@
+<?php
+
+namespace App\Services\KnowledgeGraph;
+
+use App\Data\Contexts\ReasonContext;
+use App\Models\Title;
+use App\Pipelines\Reasons\SharedGenresPipe;
+use App\Pipelines\Reasons\SharedKeywordsPipe;
+use App\Pipelines\Reasons\SharedSemanticsPipe;
+use Illuminate\Pipeline\Pipeline;
+
+readonly class ReasonBuilderService
+{
+    public function __construct(private Pipeline $pipeline) {}
+
+    public function build(Title $a, Title $b, float $score): array
+    {
+        $context = new ReasonContext($a, $b, $score);
+
+        return $this->pipeline
+            ->send($context)
+            ->through([
+                SharedGenresPipe::class,
+                SharedKeywordsPipe::class,
+                SharedSemanticsPipe::class,
+            ])
+            ->thenReturn()
+            ->getSortedReasons();
+    }
+}

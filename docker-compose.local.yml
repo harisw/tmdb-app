@@ -25,7 +25,7 @@ services:
             - laravel-network
 
     postgres:
-        image: postgres:15-bookworm
+        image: pgvector/pgvector:pg15
         container_name: postgres_db
         restart: always
         environment:

@@ -2,8 +2,8 @@
 
 namespace App\Pipelines\Stages;
 
+use App\Data\Contexts\EnrichmentContext;
 use App\Data\DTOs\TmdbApi\TmdbKeywordData;
-use App\Data\EnrichmentContext;
 use App\Models\Keyword;
 use App\Services\TmdbApiService;
 use Closure;

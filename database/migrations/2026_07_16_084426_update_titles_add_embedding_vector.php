@@ -9,6 +9,8 @@ return new class extends Migration
      */
     public function up(): void
     {
+        DB::statement('CREATE EXTENSION IF NOT EXISTS vector');
+
         DB::statement('ALTER TABLE titles ADD COLUMN embedding vector(1536)');
         DB::statement('CREATE INDEX titles_embedding_hnsw_idx ON titles
         USING hnsw (embedding vector_cosine_ops)
