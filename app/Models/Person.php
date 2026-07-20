@@ -45,6 +45,11 @@ use Spatie\SchemalessAttributes\Casts\SchemalessAttributes;
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Person whereTmdbId($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Person whereUpdatedAt($value)
  *
+ * @property-read TitlePerson|null $pivot
+ *
+ * @method static Builder<static>|Person whereExtraAttributes($value)
+ * @method static Builder<static>|Person withExtraAttributes()
+ *
  * @mixin \Eloquent
  */
 class Person extends Model

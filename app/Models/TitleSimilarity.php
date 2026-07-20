@@ -29,6 +29,18 @@ use Illuminate\Support\Carbon;
  * @method static \Illuminate\Database\Eloquent\Builder<static>|TitlePerson wherePersonId($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|TitlePerson whereTitleId($value)
  *
+ * @property int $similar_title_id
+ * @property float $score
+ * @property string $reasons
+ * @property-read Title $similarTitle
+ *
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|TitleSimilarity whereCreatedAt($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|TitleSimilarity whereId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|TitleSimilarity whereReasons($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|TitleSimilarity whereScore($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|TitleSimilarity whereSimilarTitleId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|TitleSimilarity whereUpdatedAt($value)
+ *
  * @mixin \Eloquent
  */
 class TitleSimilarity extends Pivot

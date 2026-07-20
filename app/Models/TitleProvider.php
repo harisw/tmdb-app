@@ -47,6 +47,15 @@ use Illuminate\Support\Carbon;
  * @method static \Illuminate\Database\Eloquent\Builder<static>|TitleProvider whereType($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|TitleProvider whereUpdatedAt($value)
  *
+ * @property int $country_provider_id
+ * @property string|null $tmdb_link
+ *
+ * @method static Builder<static>|TitleProvider forCountry(int $countryId)
+ * @method static Builder<static>|TitleProvider ofType(\App\Domain\Enums\StreamType $type)
+ * @method static Builder<static>|TitleProvider uniqueByProvider()
+ * @method static Builder<static>|TitleProvider whereCountryProviderId($value)
+ * @method static Builder<static>|TitleProvider whereTmdbLink($value)
+ *
  * @mixin \Eloquent
  */
 class TitleProvider extends Model

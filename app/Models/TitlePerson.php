@@ -29,6 +29,11 @@ use Illuminate\Support\Carbon;
  * @method static \Illuminate\Database\Eloquent\Builder<static>|TitlePerson whereOrder($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|TitlePerson wherePersonId($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|TitlePerson whereTitleId($value)
+ * @method static Builder<static>|TitlePerson ordered()
+ * @method static Builder<static>|TitlePerson whereCreatedAt($value)
+ * @method static Builder<static>|TitlePerson whereEpisodeCount($value)
+ * @method static Builder<static>|TitlePerson whereId($value)
+ * @method static Builder<static>|TitlePerson whereUpdatedAt($value)
  *
  * @mixin \Eloquent
  */

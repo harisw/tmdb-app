@@ -79,6 +79,31 @@ use Spatie\SchemalessAttributes\Casts\SchemalessAttributes;
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Title whereType($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Title whereUpdatedAt($value)
  *
+ * @property \Spatie\SchemalessAttributes\SchemalessAttributes|null $extra_attributes
+ * @property string|null $enriched_at
+ * @property bool $is_adult
+ * @property string|null $original_name
+ * @property string|null $credits_filled_at
+ * @property string|null $embedding
+ * @property-read Collection<int, TitlePerson> $cast
+ * @property-read int|null $cast_count
+ * @property-read Collection<int, TitlePerson> $crew
+ * @property-read int|null $crew_count
+ * @property-read Language $language
+ * @property-read TitlePerson|null $pivot
+ * @property-read Collection<int, Provider> $providers
+ * @property-read int|null $providers_count
+ * @property-read Collection<int, TitleProvider> $titleProviders
+ * @property-read int|null $title_providers_count
+ *
+ * @method static Builder<static>|Title whereCreditsFilledAt($value)
+ * @method static Builder<static>|Title whereEmbedding($value)
+ * @method static Builder<static>|Title whereEnrichedAt($value)
+ * @method static Builder<static>|Title whereExtraAttributes($value)
+ * @method static Builder<static>|Title whereIsAdult($value)
+ * @method static Builder<static>|Title whereOriginalName($value)
+ * @method static Builder<static>|Title withExtraAttributes()
+ *
  * @mixin \Eloquent
  */
 class Title extends Model
