@@ -6,7 +6,10 @@ use App\Domain\Enums\TitleType;
 use App\Jobs\EnrichTitleCreditsBatchJob;
 use App\Jobs\EnrichTitleKnowledgeGraphsJob;
 use App\Jobs\EnrichTitleProvidersBatchJob;
+use App\Jobs\FetchPopularTitlesJob;
+use App\Jobs\FetchTitlesJob;
 use App\Jobs\FetchTrendingTitlesJob;
+use App\Jobs\FetchUpcomingTitlesJob;
 use App\Jobs\TitlesBatchInsertJob;
 use App\Utils\Enum\TimeWindow;
 use Illuminate\Console\Command;
@@ -34,12 +37,17 @@ class RunJob extends Command
     public function handle(): void
     {
         $jobClass = $this->choice('Which job class do you want to run?',
-            [FetchTrendingTitlesJob::class, EnrichTitleProvidersBatchJob::class, TitlesBatchInsertJob::class,
+            [FetchTrendingTitlesJob::class, FetchPopularTitlesJob::class, FetchUpcomingTitlesJob::class,
+                EnrichTitleProvidersBatchJob::class, TitlesBatchInsertJob::class,
                 EnrichTitleCreditsBatchJob::class, EnrichTitleKnowledgeGraphsJob::class],
         );
         switch ($jobClass) {
             case FetchTrendingTitlesJob::class:
                 $this->runFetchTrendingTitles();
+                break;
+            case FetchPopularTitlesJob::class:
+            case FetchUpcomingTitlesJob::class:
+                $this->runFetchTitles($jobClass);
                 break;
             case EnrichTitleProvidersBatchJob::class:
                 $this->runEnrichTitlesProvider();
@@ -74,6 +82,23 @@ class RunJob extends Command
             'limit' => $limit,
         ]);
         FetchTrendingTitlesJob::dispatch($timeWindow, $titleType, $limit);
+    }
+
+    /**
+     * @param  class-string<FetchTitlesJob>  $jobClass
+     */
+    private function runFetchTitles(string $jobClass): void
+    {
+        $titleType = TitleType::from($this->choice('Which type of title?',
+            TitleType::values()
+        ));
+        $limit = (int) $this->ask('How many new titles to insert?');
+        Log::channel('user')->info('Running run Job', [
+            'job' => $jobClass,
+            'titleType' => $titleType->value,
+            'limit' => $limit,
+        ]);
+        $jobClass::dispatch($titleType, $limit);
     }
 
     private function runEnrichTitlesProvider(): void

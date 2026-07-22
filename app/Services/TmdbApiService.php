@@ -12,49 +12,67 @@ class TmdbApiService
     private PendingRequest $client;
 
     public function __construct(
-        private readonly string $apiKey,
-        private readonly string $baseUrl,
+        string $apiKey,
+        string $baseUrl,
     ) {
         // This runs every single time with bind()
         $this->client = Http::withToken($apiKey)
-            ->baseUrl($this->baseUrl)
+            ->baseUrl($baseUrl)
             ->withHeader('accept', 'application/json')
             ->timeout(30);
     }
 
     public function getTitle(TitleType $type, int $id)
     {
-        return $this->client->get("3/{$type->value}/{$id}")
-            ->json();
+        return $this->get("3/{$type->value}/{$id}");
     }
 
     public function getTrendings(TitleType $type, TimeWindow $window, int $page = 1)
     {
-        return $this->client->get("3/trending/{$type->value}/{$window->value}",
-            ['page' => $page])
-            ->json();
+        return $this->get("3/trending/{$type->value}/{$window->value}", ['page' => $page]);
+    }
+
+    public function getPopulars(TitleType $type, int $page = 1)
+    {
+        return $this->get("3/{$type->value}/popular", ['page' => $page]);
+    }
+
+    public function getUpcomings(TitleType $type, int $page = 1)
+    {
+        $path = "3/{$type->value}/".match ($type) {
+            TitleType::MOVIE => 'upcoming',
+            TitleType::TV => 'on_the_air'
+        };
+
+        return $this->get($path, ['page' => $page]);
     }
 
     public function getKeywords(TitleType $type, int $tmdbId)
     {
-        return $this->client->get("3/{$type->value}/{$tmdbId}/keywords")
-            ->json();
+        return $this->get("3/{$type->value}/{$tmdbId}/keywords");
     }
 
     public function getWatchProviders(TitleType $type, int $tmdbId)
     {
-        return $this->client->get("3/{$type->value}/{$tmdbId}/watch/providers")
-            ->json();
+        return $this->get("3/{$type->value}/{$tmdbId}/watch/providers");
     }
 
     public function getCredits(TitleType $type, int $tmdbId)
     {
-        $url = "3/{$type->value}/{$tmdbId}/".match ($type) {
+        $path = "3/{$type->value}/{$tmdbId}/".match ($type) {
             TitleType::MOVIE => 'credits',
             TitleType::TV => 'aggregate_credits'
         };
 
-        return $this->client->get($url)
-            ->json();
+        return $this->get($path);
+    }
+
+    /**
+     * Single place where a TMDB call is made and decoded, so every endpoint
+     * above stays a one-liner describing *what* it asks for.
+     */
+    private function get(string $path, array $query = []): ?array
+    {
+        return $this->client->get($path, $query)->json();
     }
 }

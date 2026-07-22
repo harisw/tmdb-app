@@ -4,7 +4,9 @@ use App\Domain\Enums\TitleType;
 use App\Jobs\EnrichTitleCreditsBatchJob;
 use App\Jobs\EnrichTitleKnowledgeGraphsJob;
 use App\Jobs\EnrichTitleProvidersBatchJob;
+use App\Jobs\FetchPopularTitlesJob;
 use App\Jobs\FetchTrendingTitlesJob;
+use App\Jobs\FetchUpcomingTitlesJob;
 use App\Utils\Enum\FeatureFlag;
 use App\Utils\Enum\TimeWindow;
 use Laravel\Pennant\Feature;
@@ -28,6 +30,18 @@ Schedule::job(new FetchTrendingTitlesJob(TimeWindow::WEEK, TitleType::MOVIE))
 
 Schedule::job(new FetchTrendingTitlesJob(TimeWindow::WEEK, TitleType::TV))
     ->saturdays();
+
+Schedule::job(new FetchPopularTitlesJob(TitleType::MOVIE))
+    ->dailyAt('03:00');
+
+Schedule::job(new FetchPopularTitlesJob(TitleType::TV))
+    ->dailyAt('05:00');
+
+Schedule::job(new FetchUpcomingTitlesJob(TitleType::MOVIE))
+    ->dailyAt('06:00');
+
+Schedule::job(new FetchUpcomingTitlesJob(TitleType::TV))
+    ->dailyAt('07:00');
 
 Schedule::job(new EnrichTitleProvidersBatchJob)
     ->hourly()->withoutOverlapping();
