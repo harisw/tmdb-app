@@ -11,8 +11,24 @@ class ProfileController extends Controller
 {
     public function update(Request $request): RedirectResponse
     {
+        $usernameRules = [
+            'required',
+            'string',
+            'min:3',
+            'max:30',
+            Rule::unique('users')->ignore($request->user()->id),
+        ];
+
+        // Reserve the operator's display name against impersonation, including
+        // on a fresh database where that row does not exist yet and `unique`
+        // would happily hand it out. Admins keep their own name, so this does
+        // not lock them out of saving their profile.
+        if (! $request->user()->is_admin && ($reserved = config('app.admin_username'))) {
+            $usernameRules[] = Rule::notIn([$reserved]);
+        }
+
         $validated = $request->validate([
-            'username' => ['required', 'string', 'min:3', 'max:30', Rule::unique('users')->ignore($request->user()->id)],
+            'username' => $usernameRules,
             'country' => ['required', 'string', 'exists:countries,iso2'],
             'avatar_style' => ['required', 'string'],
             'hide_adult' => ['required', 'boolean'],

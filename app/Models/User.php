@@ -79,6 +79,8 @@ class User extends Authenticatable implements MustVerifyEmail
         'country_id',
         'hide_adult',
         'extra_attributes',
+        // 'is_admin' is deliberately absent: it must never be mass-assignable
+        // from request input. Grant it with `php artisan admin:grant`.
     ];
 
     /**
@@ -104,6 +106,7 @@ class User extends Authenticatable implements MustVerifyEmail
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
             'hide_adult' => 'boolean',
+            'is_admin' => 'boolean',
             'extra_attributes' => SchemalessAttributes::class,
         ];
     }

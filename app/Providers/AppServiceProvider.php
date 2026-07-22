@@ -10,10 +10,12 @@ use App\Repositories\EloquentPersonRepository;
 use App\Repositories\EloquentTitlePersonRepository;
 use App\Services\TitleService;
 use App\Services\TmdbApiService;
+use App\Utils\Enum\FeatureFlag;
 use Gate;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\ServiceProvider;
+use Laravel\Pennant\Feature;
 use Laravel\Pulse\Facades\Pulse;
 use URL;
 
@@ -54,9 +56,17 @@ class AppServiceProvider extends ServiceProvider
             'email' => $user->email,
         ]);
 
-        Gate::define('viewPulse', function ($user) {
-            return $user->username === env('ADMIN_USERNAME');
-        });
+        // Anchored to a column, not to the username: usernames are editable at
+        // /profile, so deriving admin from one meant anyone could rename their
+        // way into it on any database where the name was still unclaimed.
+        Gate::define('admin', fn ($user) => (bool) $user->is_admin);
+        Gate::define('viewPulse', fn ($user) => Gate::forUser($user)->allows('admin'));
+
+        // Defaults only — Pennant stops consulting these once the flag has a
+        // stored value for the 'global' scope. @see FeatureFlag::default()
+        foreach (FeatureFlag::cases() as $flag) {
+            Feature::define($flag->value, fn () => $flag->default());
+        }
 
         RateLimiter::for('tmdb', fn () => Limit::perSecond(10));
     }

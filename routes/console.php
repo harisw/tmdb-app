@@ -5,7 +5,9 @@ use App\Jobs\EnrichTitleCreditsBatchJob;
 use App\Jobs\EnrichTitleKnowledgeGraphsJob;
 use App\Jobs\EnrichTitleProvidersBatchJob;
 use App\Jobs\FetchTrendingTitlesJob;
+use App\Utils\Enum\FeatureFlag;
 use App\Utils\Enum\TimeWindow;
+use Laravel\Pennant\Feature;
 
 Schedule::command('pulse:check')->everyMinute()->withoutOverlapping();
 
@@ -34,4 +36,5 @@ Schedule::job(new EnrichTitleCreditsBatchJob)
     ->hourlyAt(30)->withoutOverlapping();
 
 Schedule::job(new EnrichTitleKnowledgeGraphsJob(100))
-    ->everyThreeHours()->withoutOverlapping();
+    ->everyThreeHours()->withoutOverlapping()
+    ->when(fn () => Feature::for('global')->active(FeatureFlag::KnowledgeGraphEnrichment));
