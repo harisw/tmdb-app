@@ -38,10 +38,10 @@ Schedule::job(new FetchPopularTitlesJob(TitleType::TV))
     ->dailyAt('05:00');
 
 Schedule::job(new FetchUpcomingTitlesJob(TitleType::MOVIE))
-    ->dailyAt('06:00');
+    ->dailyAt('07:00');
 
 Schedule::job(new FetchUpcomingTitlesJob(TitleType::TV))
-    ->dailyAt('07:00');
+    ->dailyAt('09:00');
 
 Schedule::job(new EnrichTitleProvidersBatchJob)
     ->hourly()->withoutOverlapping();
