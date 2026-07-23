@@ -31,6 +31,8 @@ use Illuminate\Support\Carbon;
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Keyword whereSlug($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Keyword whereUpdatedAt($value)
  *
+ * @property-read mixed $url
+ *
  * @mixin \Eloquent
  */
 class Keyword extends Model

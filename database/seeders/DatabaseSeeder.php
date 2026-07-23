@@ -17,6 +17,7 @@ class DatabaseSeeder extends Seeder
             ProductionCompanySeeder::class,
             KeywordSeeder::class,
             CountrySeeder::class,
+            PersonSeeder::class,
             UserSeeder::class,
             //            CountryProviderSeeder::class,
             //            TitleSeeder::class,

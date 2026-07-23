@@ -17,6 +17,19 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Admin Username
+    |--------------------------------------------------------------------------
+    |
+    | The username granted the "admin" gate, which guards Horizon, Pulse and
+    | the feature flag panel. Read through config (not env()) so it survives
+    | `config:cache`, where the .env file is no longer loaded.
+    |
+    */
+
+    'admin_username' => env('ADMIN_USERNAME'),
+
+    /*
+    |--------------------------------------------------------------------------
     | Application Environment
     |--------------------------------------------------------------------------
     |

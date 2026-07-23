@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Casts\RoundFloat;
+use App\Domain\Enums\CreditJob;
 use App\Domain\Enums\TitleType;
 use App\Helpers\DateTimeHelper;
 use App\Models\Scopes\AdultContentScope;
@@ -47,6 +48,10 @@ use Spatie\SchemalessAttributes\Casts\SchemalessAttributes;
  * @property-read int|null $genres_count
  * @property-read Collection<int, Keyword> $keywords
  * @property-read int|null $keywords_count
+ * @property-read Collection<int, Person> $people
+ * @property-read int|null $people_count
+ * @property-read Collection<int, TitlePerson> $credits
+ * @property-read int|null $credits_count
  *
  * @method static \Database\Factories\TitleFactory factory($count = null, $state = [])
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Title newModelQuery()
@@ -73,6 +78,31 @@ use Spatie\SchemalessAttributes\Casts\SchemalessAttributes;
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Title whereTmdbId($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Title whereType($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Title whereUpdatedAt($value)
+ *
+ * @property \Spatie\SchemalessAttributes\SchemalessAttributes|null $extra_attributes
+ * @property string|null $enriched_at
+ * @property bool $is_adult
+ * @property string|null $original_name
+ * @property string|null $credits_filled_at
+ * @property string|null $embedding
+ * @property-read Collection<int, TitlePerson> $cast
+ * @property-read int|null $cast_count
+ * @property-read Collection<int, TitlePerson> $crew
+ * @property-read int|null $crew_count
+ * @property-read Language $language
+ * @property-read TitlePerson|null $pivot
+ * @property-read Collection<int, Provider> $providers
+ * @property-read int|null $providers_count
+ * @property-read Collection<int, TitleProvider> $titleProviders
+ * @property-read int|null $title_providers_count
+ *
+ * @method static Builder<static>|Title whereCreditsFilledAt($value)
+ * @method static Builder<static>|Title whereEmbedding($value)
+ * @method static Builder<static>|Title whereEnrichedAt($value)
+ * @method static Builder<static>|Title whereExtraAttributes($value)
+ * @method static Builder<static>|Title whereIsAdult($value)
+ * @method static Builder<static>|Title whereOriginalName($value)
+ * @method static Builder<static>|Title withExtraAttributes()
  *
  * @mixin \Eloquent
  */
@@ -147,5 +177,32 @@ class Title extends Model
     public function titleProviders(): HasMany
     {
         return $this->hasMany(TitleProvider::class);
+    }
+
+    public function people(): BelongsToMany
+    {
+        return $this->belongsToMany(Person::class, 'title_person')
+            ->using(TitlePerson::class)
+            ->withPivot(['job', 'character', 'order', 'episode_count'])
+            ->withTimestamps();
+    }
+
+    public function credits(): HasMany
+    {
+        return $this->hasMany(TitlePerson::class);
+    }
+
+    public function cast(): HasMany
+    {
+        return $this->credits()->where('job', CreditJob::CAST)->orderBy('order');
+    }
+
+    /**
+     * Crew is defined by exclusion — CreditJob has no CREW case, it has the
+     * specific jobs we model (director, writer, composer...).
+     */
+    public function crew(): HasMany
+    {
+        return $this->credits()->whereNot('job', CreditJob::CAST);
     }
 }

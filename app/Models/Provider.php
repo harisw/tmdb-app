@@ -37,6 +37,14 @@ use Illuminate\Support\Carbon;
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Provider whereTmdbProviderId($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Provider whereUpdatedAt($value)
  *
+ * @property int $count
+ * @property-read Collection<int, Title> $titles
+ * @property-read int|null $titles_count
+ * @property-read mixed $url
+ *
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Provider whereCount($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Provider whereTmdbId($value)
+ *
  * @mixin \Eloquent
  */
 class Provider extends Model

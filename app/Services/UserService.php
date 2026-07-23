@@ -71,9 +71,14 @@ class UserService
 
     private function getUniqueUsername(): string
     {
+        // The generator draws from a fixed adjective/noun list, so on a fresh
+        // database it could otherwise hand a new signup the reserved admin name
+        // by chance.
+        $reserved = array_filter([config('app.admin_username')]);
+
         do {
             $newUsername = ($this->usernameGenerator)();
-        } while (User::where('username', $newUsername)->exists());
+        } while (in_array($newUsername, $reserved, true) || User::where('username', $newUsername)->exists());
 
         return $newUsername;
     }

@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\FeatureFlagController;
 use App\Http\Controllers\GenreController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\KeywordController;
@@ -23,3 +24,9 @@ Route::middleware('throttle:40,1')->group(function () {
 });
 
 Route::get('/search-all', [SearchController::class, 'searchAll'])->name('search-all-title');
+
+Route::middleware(['auth', 'can:admin'])->prefix('admin')->group(function () {
+    Route::get('/feature-flags', [FeatureFlagController::class, 'index'])->name('feature-flags');
+    Route::patch('/feature-flags/{flag}', [FeatureFlagController::class, 'update'])
+        ->name('feature-flags.update');
+});

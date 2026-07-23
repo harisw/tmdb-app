@@ -40,6 +40,22 @@ use Spatie\SchemalessAttributes\Casts\SchemalessAttributes;
  * @method static \Illuminate\Database\Eloquent\Builder<static>|User whereRememberToken($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|User whereUpdatedAt($value)
  *
+ * @property string $username
+ * @property string|null $google_id
+ * @property string|null $google_token
+ * @property int|null $country_id
+ * @property \Spatie\SchemalessAttributes\SchemalessAttributes|null $extra_attributes
+ * @property bool $hide_adult
+ * @property-read mixed $avatar_url
+ * @property-read Country|null $country
+ *
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|User whereCountryId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|User whereExtraAttributes($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|User whereGoogleId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|User whereGoogleToken($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|User whereHideAdult($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|User whereUsername($value)
+ *
  * @mixin \Eloquent
  */
 class User extends Authenticatable implements MustVerifyEmail
@@ -63,6 +79,8 @@ class User extends Authenticatable implements MustVerifyEmail
         'country_id',
         'hide_adult',
         'extra_attributes',
+        // 'is_admin' is deliberately absent: it must never be mass-assignable
+        // from request input. Grant it with `php artisan admin:grant`.
     ];
 
     /**
@@ -88,6 +106,7 @@ class User extends Authenticatable implements MustVerifyEmail
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
             'hide_adult' => 'boolean',
+            'is_admin' => 'boolean',
             'extra_attributes' => SchemalessAttributes::class,
         ];
     }

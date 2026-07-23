@@ -2,15 +2,15 @@
 
 namespace App\Pipelines\Stages;
 
-use App\Data\EnrichmentContext;
-use App\Services\TmdbService;
+use App\Data\Contexts\EnrichmentContext;
+use App\Services\TmdbApiService;
 use App\Services\WatchProviderSyncService;
 use Closure;
 
 class ProcessWatchProviders
 {
     public function __construct(
-        private readonly TmdbService $tmdb,
+        private readonly TmdbApiService $tmdb,
         private readonly WatchProviderSyncService $sync,
     ) {}
 

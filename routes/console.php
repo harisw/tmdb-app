@@ -1,9 +1,15 @@
 <?php
 
 use App\Domain\Enums\TitleType;
-use App\Jobs\EnrichTitlesProviderBatchJob;
+use App\Jobs\EnrichTitleCreditsBatchJob;
+use App\Jobs\EnrichTitleKnowledgeGraphsJob;
+use App\Jobs\EnrichTitleProvidersBatchJob;
+use App\Jobs\FetchPopularTitlesJob;
 use App\Jobs\FetchTrendingTitlesJob;
+use App\Jobs\FetchUpcomingTitlesJob;
+use App\Utils\Enum\FeatureFlag;
 use App\Utils\Enum\TimeWindow;
+use Laravel\Pennant\Feature;
 
 Schedule::command('pulse:check')->everyMinute()->withoutOverlapping();
 
@@ -25,5 +31,24 @@ Schedule::job(new FetchTrendingTitlesJob(TimeWindow::WEEK, TitleType::MOVIE))
 Schedule::job(new FetchTrendingTitlesJob(TimeWindow::WEEK, TitleType::TV))
     ->saturdays();
 
-Schedule::job(new EnrichTitlesProviderBatchJob)
+Schedule::job(new FetchPopularTitlesJob(TitleType::MOVIE))
+    ->dailyAt('03:00');
+
+Schedule::job(new FetchPopularTitlesJob(TitleType::TV))
+    ->dailyAt('05:00');
+
+Schedule::job(new FetchUpcomingTitlesJob(TitleType::MOVIE))
+    ->dailyAt('07:00');
+
+Schedule::job(new FetchUpcomingTitlesJob(TitleType::TV))
+    ->dailyAt('09:00');
+
+Schedule::job(new EnrichTitleProvidersBatchJob)
     ->hourly()->withoutOverlapping();
+
+Schedule::job(new EnrichTitleCreditsBatchJob)
+    ->hourlyAt(30)->withoutOverlapping();
+
+Schedule::job(new EnrichTitleKnowledgeGraphsJob(100))
+    ->everyThreeHours()->withoutOverlapping()
+    ->when(fn () => Feature::for('global')->active(FeatureFlag::KnowledgeGraphEnrichment));
