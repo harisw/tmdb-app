@@ -2,28 +2,33 @@
     <Head title="Find by Keywords" />
     <AppLayout>
         <div>
-            <h1 class="text-2xl 2xl:text-4xl font-bold mb-6 text-madder">Browse by Tags</h1>
-            <div class="flex flex-wrap text-white gap-3 2xl:gap-5 w-full">
-                <div
-                    v-for="tag in tagItems"
-                    :key="tag.id"
-                    class="text-sm 2xl:text-xl hover:cursor-pointer hover:underline hover:font-semibold hover:text-gray-300"
-                    @click="itemOnClick(tag)"
-                >
-                    {{ tag.name }} ({{ tag.count }}),
-                </div>
-            </div>
-            <div v-if="hasMoreTags" class="flex justify-center items-center py-4 text-white">
-                <LoadingSpinner v-if="loadingTags" text="Loading more" />
-                <button
-                    v-else-if="hasMoreTags"
-                    class="bg-madder px-4 py-2 2xl:px-6 2xl:py-3 rounded-lg hover:cursor-pointer text-xs 2xl:text-base"
-                    @click="loadMoreTags"
-                >
-                    Load more Tags
-                </button>
-            </div>
-            <div v-if="items && selectedTag" class="w-full mt-10">
+            <h1 class="text-2xl 2xl:text-4xl font-bold text-madder [text-shadow:0_1px_2px_rgb(0_0_0/0.4)]">
+                Browse by Tags
+            </h1>
+            <p class="mt-1.5 text-sm 2xl:text-base text-white/60">Most used tags first.</p>
+
+            <ChipRail
+                class="mt-5 2xl:mt-7"
+                :items="tagItems"
+                item-key="slug"
+                :active="selectedTag?.slug"
+                @select="itemOnClick"
+            >
+                <template #footer>
+                    <div v-if="hasMoreTags" class="flex justify-center items-center pt-4 text-white">
+                        <LoadingSpinner v-if="loadingTags" text="Loading more" />
+                        <button
+                            v-else
+                            class="rounded-full border border-white/10 bg-white/5 px-4 py-1.5 2xl:px-6 2xl:py-2 text-sm 2xl:text-base text-white/90 cursor-pointer transition-colors motion-reduce:transition-none hover:border-white/25 hover:bg-white/10 hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+                            @click="loadMoreTags"
+                        >
+                            Load more tags
+                        </button>
+                    </div>
+                </template>
+            </ChipRail>
+
+            <div v-if="selectedTag" class="w-full mt-10 2xl:mt-14">
                 <TitleGrid :title="`${selectedTag.name} Titles`">
                     <TitleCard v-for="item in items" :key="item.id" :on-click="openModal" :item="item" />
                 </TitleGrid>
@@ -32,6 +37,7 @@
                     <span v-else-if="!hasMore">No more results</span>
                 </div>
             </div>
+            <p v-else class="mt-10 2xl:mt-14 text-sm 2xl:text-base text-white/60">Pick a tag to see its titles.</p>
         </div>
     </AppLayout>
     <TitleModal :show="showModal" :item="selectedItem" @close="closeModal" />
@@ -47,13 +53,17 @@ import LoadingSpinner from '../Components/LoadingSpinner.vue'
 import useInfiniteScroll from '../Composables/useInfiniteScroll.js'
 import useModal from '../Composables/useModal.js'
 import TitleGrid from '../Components/TitleGrid.vue'
+import ChipRail from '../Components/ChipRail.vue'
 
 const props = defineProps({
     tags: Object,
     titles: Object,
+    // The keyword resolved from ?tag= server-side, so a shared or reloaded URL
+    // lands on the same selection instead of an empty page.
+    selected: { type: Object, default: null },
 })
 
-const selectedTag = ref(null)
+const selectedTag = ref(props.selected)
 const loadingTags = ref(false)
 const hasMoreTags = ref(true)
 const tagOffset = ref(15)

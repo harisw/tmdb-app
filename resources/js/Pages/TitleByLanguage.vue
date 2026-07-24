@@ -9,33 +9,14 @@
                 {{ languages.length }} languages in the library, most titles first.
             </p>
 
-            <!-- The rail sits on its own panel so the chips read as one control
-                 rather than loose text floating on the ambient background. -->
-            <div class="mt-5 2xl:mt-7 rounded-2xl border border-white/10 bg-white/[0.03] p-3 sm:p-4 2xl:p-6">
-                <ul class="flex flex-wrap gap-2 2xl:gap-3">
-                    <li v-for="lang in languages" :key="lang.id">
-                        <button
-                            type="button"
-                            :aria-pressed="isActive(lang)"
-                            class="group flex items-center gap-2 2xl:gap-2.5 rounded-full border px-3 py-1.5 2xl:px-4 2xl:py-2 cursor-pointer transition-colors motion-reduce:transition-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
-                            :class="
-                                isActive(lang)
-                                    ? 'border-madder bg-madder/20 text-white shadow-[0_0_24px_-6px] shadow-madder'
-                                    : 'border-white/10 bg-white/5 text-white/90 hover:border-white/25 hover:bg-white/10 hover:text-white'
-                            "
-                            @click="itemOnClick(lang)"
-                        >
-                            <span class="text-sm 2xl:text-lg leading-none">{{ lang.name }}</span>
-                            <span
-                                v-if="lang.titles_count"
-                                class="text-xs 2xl:text-sm tabular-nums text-white/55 transition-colors motion-reduce:transition-none group-hover:text-white/80"
-                            >
-                                {{ formatCount(lang.titles_count) }}
-                            </span>
-                        </button>
-                    </li>
-                </ul>
-            </div>
+            <ChipRail
+                class="mt-5 2xl:mt-7"
+                :items="languages"
+                item-key="code"
+                count-key="titles_count"
+                :active="selectedLang?.code"
+                @select="itemOnClick"
+            />
 
             <div v-if="selectedLang" class="w-full mt-10 2xl:mt-14">
                 <TitleGrid :title="`${selectedLang.name} Titles`">
@@ -62,6 +43,7 @@ import LoadingSpinner from '../Components/LoadingSpinner.vue'
 import useInfiniteScroll from '../Composables/useInfiniteScroll.js'
 import useModal from '../Composables/useModal.js'
 import TitleGrid from '../Components/TitleGrid.vue'
+import ChipRail from '../Components/ChipRail.vue'
 
 const props = defineProps({
     languages: Array,
@@ -72,10 +54,6 @@ const props = defineProps({
 })
 
 const selectedLang = ref(props.selected)
-const numberFormat = new Intl.NumberFormat()
-
-const isActive = (lang) => lang.code === selectedLang.value?.code
-const formatCount = (count) => numberFormat.format(count)
 
 function itemOnClick(item) {
     query.value = {
