@@ -17,7 +17,13 @@ class LanguageController extends Controller
         $language = $lang ? Language::whereCode($lang)->first() : null;
 
         return Inertia::render('TitleByLanguage', [
-            'languages' => Language::orderByDesc('count')->whereHas('titles')->get(),
+            // Counted live rather than read off languages.count, which only
+            // refreshes when CountsSeeder runs and so reads 0 between imports.
+            'languages' => Language::whereHas('titles')
+                ->withCount('titles')
+                ->orderByDesc('titles_count')
+                ->get(),
+            'selected' => $language,
             'titles' => $language ? $language->titles()->with(['genres', 'keywords'])->latest()->paginate(self::PAGINATE_SIZE)
                 : collect(),
         ]);
