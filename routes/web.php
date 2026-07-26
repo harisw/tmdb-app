@@ -7,6 +7,8 @@ use App\Http\Controllers\KeywordController;
 use App\Http\Controllers\LanguageController;
 use App\Http\Controllers\ProviderController;
 use App\Http\Controllers\SearchController;
+use App\Http\Controllers\SimilarTitleController;
+use App\Http\Controllers\TitleGraphController;
 use Illuminate\Support\Facades\Route;
 
 require __DIR__.'/auth.php';
@@ -24,6 +26,11 @@ Route::middleware('throttle:40,1')->group(function () {
 });
 
 Route::get('/search-all', [SearchController::class, 'searchAll'])->name('search-all-title');
+
+Route::get('/title/{title}/similar', [SimilarTitleController::class, 'index'])->name('title-similar');
+
+Route::get('/graph', [TitleGraphController::class, 'index'])->name('title-graph');
+Route::get('/graph/neighbors', [TitleGraphController::class, 'neighbors'])->name('title-graph-neighbors');
 
 Route::middleware(['auth', 'can:admin'])->prefix('admin')->group(function () {
     Route::get('/feature-flags', [FeatureFlagController::class, 'index'])->name('feature-flags');

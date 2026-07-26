@@ -33,6 +33,11 @@
   },
   "dependencies": {
     "@inertiajs/vue3": "^2.0.17",
+    "d3-drag": "^3.0.0",
+    "d3-force": "^3.0.0",
+    "d3-scale": "^4.0.2",
+    "d3-selection": "^3.0.0",
+    "d3-zoom": "^3.0.0",
     "flag-icons": "^7.5.0",
     "lucide-vue-next": "^0.539.0",
     "pinia": "^3.0.4",

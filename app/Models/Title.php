@@ -179,6 +179,13 @@ class Title extends Model
         return $this->hasMany(TitleProvider::class);
     }
 
+    public function similarTitles(): BelongsToMany
+    {
+        return $this->belongsToMany(__CLASS__, 'title_similarities', 'title_id', 'similar_title_id')
+            ->withPivot(['score', 'reasons'])
+            ->orderByPivot('score', 'desc');
+    }
+
     public function people(): BelongsToMany
     {
         return $this->belongsToMany(Person::class, 'title_person')
