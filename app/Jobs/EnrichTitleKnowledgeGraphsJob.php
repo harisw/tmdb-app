@@ -24,18 +24,14 @@ class EnrichTitleKnowledgeGraphsJob implements ShouldQueue
     public function handle(): void
     {
         $titleIds = Title::whereNull('embedding')
-            ->whereHas('credits')       // Prevent enriching titles with empty credits
+            ->whereHas('credits')
             ->limit($this->limit)
             ->pluck('id');
 
         if ($titleIds->isEmpty()) {
-            // Nothing to embed; skip so we don't dispatch an empty batch that
-            // would re-materialise similarities for no reason.
             return;
         }
 
-        // Embed in chunks so each job is a single OpenAI request instead of
-        // one request per title.
         $jobs = $titleIds
             ->chunk(self::CHUNK_SIZE)
             ->map(fn ($chunk) => new GenerateTitleEmbeddingsChunkJob($chunk->values()->all()))
@@ -43,9 +39,6 @@ class EnrichTitleKnowledgeGraphsJob implements ShouldQueue
 
         Bus::batch($jobs)
             ->then(function (Batch $batch) use ($titleIds) {
-                // Only materialise the titles embedded in this run. Reverse edges
-                // (see MaterializeTitleSimilaritiesJob) keep existing titles linked
-                // to these new ones without re-materialising the whole catalogue.
                 $titleIds->each(fn ($id) => dispatch(new MaterializeTitleSimilaritiesJob($id)));
             })
             ->catch(fn (Batch $batch, Throwable $e) => \Log::error('Bulk enrich failed', ['error' => $e->getMessage()]))

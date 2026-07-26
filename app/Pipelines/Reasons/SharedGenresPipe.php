@@ -20,7 +20,7 @@ class SharedGenresPipe
             $context->addReason([
                 'type' => self::SHARED_GENRES,
                 'values' => $shared,
-                'weight' => count($shared) * 0.3,
+                'weight' => count($shared) * 0.2,
             ]);
         }
 

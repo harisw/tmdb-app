@@ -8,6 +8,7 @@ use App\Services\KnowledgeGraph\ReasonBuilderService;
 use DB;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
+use Illuminate\Support\Facades\Log;
 
 class MaterializeTitleSimilaritiesJob implements ShouldQueue
 {
@@ -15,19 +16,21 @@ class MaterializeTitleSimilaritiesJob implements ShouldQueue
 
     private const TOP_K = 20;
 
-    public function __construct(public readonly int $titleId) {}
+    public function __construct(public readonly int $titleId)
+    {
+        $this->onQueue('embeddings');
+    }
 
     public function handle(ReasonBuilderService $reasonService): void
     {
         $title = Title::findOrFail($this->titleId);
 
         if (! $title->embedding) {
+            Log::info("Title {$title->slug} has no embeddings");
+
             return;
         }
 
-        // Find top-K similar titles using pgvector cosine distance
-        // <=> is cosine distance (lower = more similar), so we convert:
-        // similarity = 1 - cosine_distance
         $neighbours = DB::select(<<<'SQL'
             SELECT
                 t.id,
@@ -46,12 +49,14 @@ class MaterializeTitleSimilaritiesJob implements ShouldQueue
         ]);
 
         if (empty($neighbours)) {
+            Log::info("Title {$title->slug} has no neighbours");
+
             return;
         }
 
         // Load both titles for reason generation
         $neighbourIds = array_column($neighbours, 'id');
-        $neighbourTitles = Title::with(['genres', 'keywords'])
+        $neighbourTitles = Title::with(['genres', 'keywords', 'topCasts', 'keyCrews'])
             ->whereIn('id', $neighbourIds)
             ->get()
             ->keyBy('id');

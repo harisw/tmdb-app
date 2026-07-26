@@ -4,6 +4,8 @@ namespace App\Services\KnowledgeGraph;
 
 use App\Data\Contexts\ReasonContext;
 use App\Models\Title;
+use App\Pipelines\Reasons\SharedCastsPipe;
+use App\Pipelines\Reasons\SharedCrewsPipe;
 use App\Pipelines\Reasons\SharedGenresPipe;
 use App\Pipelines\Reasons\SharedKeywordsPipe;
 use App\Pipelines\Reasons\SharedSemanticsPipe;
@@ -22,6 +24,8 @@ readonly class ReasonBuilderService
             ->through([
                 SharedGenresPipe::class,
                 SharedKeywordsPipe::class,
+                SharedCastsPipe::class,
+                SharedCrewsPipe::class,
                 SharedSemanticsPipe::class,
             ])
             ->thenReturn()

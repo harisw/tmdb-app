@@ -187,6 +187,21 @@ class Title extends Model
             ->withTimestamps();
     }
 
+    public function topCasts(): BelongsToMany
+    {
+        return $this->people()
+            ->wherePivot('job', CreditJob::CAST)
+            ->wherePivot('order', '<=', 5)
+            ->orderByPivot('order');
+    }
+
+    public function keyCrews(): BelongsToMany
+    {
+        return $this->people()
+            ->wherePivotIn('job', CreditJob::getCrewJobs())
+            ->orderByPivot('order');
+    }
+
     public function credits(): HasMany
     {
         return $this->hasMany(TitlePerson::class);
