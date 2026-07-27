@@ -14,7 +14,7 @@ class MaterializeTitleSimilaritiesJob implements ShouldQueue
 {
     use Queueable;
 
-    private const TOP_K = 20;
+    private const TOP_K = 10;
 
     public function __construct(public readonly int $titleId)
     {
@@ -69,6 +69,8 @@ class MaterializeTitleSimilaritiesJob implements ShouldQueue
         $upsertData = collect($neighbours)
             ->flatMap(function ($neighbour) use ($title, $neighbourTitles, $reasonService, $now) {
                 $neighbourTitle = $neighbourTitles[$neighbour->id] ?? null;
+
+                Log::info("Title {$title->slug} is neighbouring with {$neighbourTitle->slug}| score {$neighbour->score}");
                 $reasons = $neighbourTitle
                     ? $reasonService->build($title, $neighbourTitle, $neighbour->score)
                     : [];

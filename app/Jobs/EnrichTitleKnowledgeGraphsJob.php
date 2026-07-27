@@ -7,6 +7,7 @@ use Bus;
 use Illuminate\Bus\Batch;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
+use Illuminate\Support\Facades\Log;
 use Throwable;
 
 class EnrichTitleKnowledgeGraphsJob implements ShouldQueue
@@ -29,6 +30,8 @@ class EnrichTitleKnowledgeGraphsJob implements ShouldQueue
             ->pluck('id');
 
         if ($titleIds->isEmpty()) {
+            Log::info('No Titles target');
+
             return;
         }
 

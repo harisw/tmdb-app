@@ -10,8 +10,6 @@ use Inertia\Response;
 
 class TitleGraphController extends Controller
 {
-    private const MIN_SCORE = 0.5;
-
     private const LIMIT = 8;
 
     /**
@@ -38,7 +36,7 @@ class TitleGraphController extends Controller
 
         $neighbours = $title->similarTitles()
             ->select(['titles.id', 'slug', 'name', 'poster_path', 'release_date', 'rating', 'type'])
-            ->wherePivot('score', '>=', self::MIN_SCORE)
+            ->wherePivot('score', '>=', (int) config('knowledge_graph.min_score'))
             ->limit(self::LIMIT)
             ->get();
 

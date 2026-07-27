@@ -246,17 +246,17 @@ return [
 
         'local' => [
             'supervisor-1' => [
-                'connection' => 'redis',
+                'connection' => 'database',
                 'queue' => ['default'],
                 'balance' => 'simple',
                 'processes' => 3,
                 'tries' => 3,
             ],
             'supervisor-enrichment' => [
-                'connection' => 'redis',
-                'queue' => ['enrichment'],
+                'connection' => 'database',
+                'queue' => ['enrichment', 'embeddings'],
                 'balance' => 'simple',
-                'processes' => 1,
+                'processes' => 2,
                 'tries' => 3,
                 'timeout' => 60,
             ],

@@ -16,6 +16,7 @@ class SimilarTitleController extends Controller
                 'titles.id', 'name', 'slug', 'type', 'rating', 'release_date',
                 'runtime', 'backdrop_path', 'poster_path', 'overview',
             ])
+            ->wherePivot('score', '>=', (int) config('knowledge_graph.min_score'))
             ->with(['genres', 'keywords', 'titleProviders' => function ($q) {
                 $q->with('provider')->uniqueByProvider();
             }])
