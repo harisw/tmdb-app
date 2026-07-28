@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Keyword;
+use App\Models\Title;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -33,9 +34,7 @@ class KeywordController extends Controller
     {
         return Inertia::render('TitleByKeyword', [
             'keyword' => $keyword,
-            'titles' => $keyword->titles()->with(['genres', 'keywords', 'titleProviders' => function ($q) {
-                $q->with('provider')->uniqueByProvider();
-            }])->latest()->paginate(self::PAGINATE_SIZE),
+            'titles' => $keyword->titles()->with(Title::detailRelations())->latest()->paginate(self::PAGINATE_SIZE),
         ]);
     }
 }

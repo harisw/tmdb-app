@@ -125,6 +125,12 @@ class Title extends Model
 
     protected $guarded = [];
 
+    /**
+     * The embedding vector is only ever used server-side (similarity
+     * materialisation); never ship it to the client.
+     */
+    protected $hidden = ['embedding'];
+
     protected $casts = [
         'runtime' => 'string',
         'release_date' => 'datetime:Y',
@@ -226,5 +232,18 @@ class Title extends Model
     public function crew(): HasMany
     {
         return $this->credits()->whereNot('job', CreditJob::CAST);
+    }
+
+    /**
+     * The eager loads needed to render a title in TitleModal. Shared by every
+     * endpoint that feeds the modal so the payloads can't drift apart.
+     *
+     * @return array<int|string, mixed>
+     */
+    public static function detailRelations(): array
+    {
+        return ['genres', 'keywords', 'titleProviders' => function ($q) {
+            $q->with('provider')->uniqueByProvider();
+        }];
     }
 }

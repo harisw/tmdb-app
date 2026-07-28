@@ -5,6 +5,8 @@ import { drag } from 'd3-drag'
 
 const NODE_R = 26
 const POSTER_R = 24
+const TAP_SLOP = 4
+const DOUBLE_TAP_MS = 260
 
 /**
  * A traversable force-directed graph rendered as SVG.
@@ -18,8 +20,9 @@ const POSTER_R = 24
  * @param {string} opts.posterBase   base URL to prefix poster_path with
  * @param {string} opts.placeholder  fallback poster src
  * @param {(node) => void} opts.onSelect  called when a node is clicked (not dragged)
+ * @param {(node) => void} opts.onExpand
  */
-export function createForceGraph(svgEl, { posterBase, placeholder, onSelect }) {
+export function createForceGraph(svgEl, { posterBase, placeholder, onSelect, onExpand }) {
     const nodes = []
     const links = []
     const nodeById = new Map()
@@ -27,6 +30,7 @@ export function createForceGraph(svgEl, { posterBase, placeholder, onSelect }) {
 
     let width = svgEl.clientWidth || 800
     let height = svgEl.clientHeight || 600
+    let pendingTap = null
 
     const svg = select(svgEl)
     const root = svg.append('g')
@@ -50,7 +54,7 @@ export function createForceGraph(svgEl, { posterBase, placeholder, onSelect }) {
     const zoomBehavior = zoom()
         .scaleExtent([0.2, 4])
         .on('zoom', (event) => root.attr('transform', event.transform))
-    svg.call(zoomBehavior)
+    svg.call(zoomBehavior).on('dblclick.zoom', null)
 
     function ticked() {
         linkLayer
@@ -84,8 +88,25 @@ export function createForceGraph(svgEl, { posterBase, placeholder, onSelect }) {
                 if (!event.active) simulation.alphaTarget(0)
                 d.fx = null
                 d.fy = null
-                const moved = Math.hypot(event.x - d._sx, event.y - d._sy)
-                if (moved < 4) onSelect(d)
+                if (Math.hypot(event.x - d._sx, event.y - d._sy) >= TAP_SLOP) return
+
+                if (pendingTap) {
+                    const sameNode = pendingTap.id === d.id
+                    clearTimeout(pendingTap.timer)
+                    pendingTap = null
+                    if (sameNode) {
+                        onExpand(d)
+                        return
+                    }
+                }
+
+                pendingTap = {
+                    id: d.id,
+                    timer: setTimeout(() => {
+                        pendingTap = null
+                        onSelect(d)
+                    }, DOUBLE_TAP_MS),
+                }
             })
     }
 
@@ -99,7 +120,7 @@ export function createForceGraph(svgEl, { posterBase, placeholder, onSelect }) {
             .attr('stroke-width', (d) => 1 + 3 * (d.score ?? 0.5))
 
         // Nodes
-        nodeLayer
+        const node = nodeLayer
             .selectAll('g.node')
             .data(nodes, (d) => d.id)
             .join((enter) => {
@@ -142,12 +163,20 @@ export function createForceGraph(svgEl, { posterBase, placeholder, onSelect }) {
 
                 return g
             })
-            .select('circle.ring')
-            .attr('stroke', (d) => (d.expanded ? '#22c55e' : d.root ? '#f59e0b' : '#6b7280'))
 
+        applyNodeStyle(node)
         simulation.nodes(nodes)
         simulation.force('link').links(links)
         simulation.alpha(0.7).restart()
+    }
+
+    function applyNodeStyle(sel) {
+        sel.select('circle.ring')
+            .attr('class', (d) => (d.busy ? 'ring node-busy' : 'ring'))
+            .attr('stroke', (d) => (d.busy ? '#e5e7eb' : d.expanded ? '#22c55e' : d.root ? '#f59e0b' : '#6b7280'))
+            .attr('stroke-dasharray', (d) => (d.busy ? '4 4' : null))
+
+        sel.select('image').attr('opacity', (d) => (d.busy ? 0.35 : 1))
     }
 
     function addNode(raw, extra = {}) {
@@ -198,11 +227,28 @@ export function createForceGraph(svgEl, { posterBase, placeholder, onSelect }) {
         simulation.alpha(0.4).restart()
     }
 
+    function setBusy(id, isBusy) {
+        const node = nodeById.get(id)
+        if (!node) return
+        node.busy = isBusy
+        applyNodeStyle(nodeLayer.selectAll('g.node').filter((d) => d.id === id))
+    }
+
+    function pause() {
+        simulation.stop()
+    }
+
+    function resume() {
+        simulation.alpha(0.1).restart()
+    }
+
     function destroy() {
+        if (pendingTap) clearTimeout(pendingTap.timer)
+        pendingTap = null
         simulation.stop()
         svg.on('.zoom', null)
         root.remove()
     }
 
-    return { load, merge, resize, destroy }
+    return { load, merge, resize, destroy, setBusy, pause, resume }
 }

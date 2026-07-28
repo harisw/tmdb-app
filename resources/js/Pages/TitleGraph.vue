@@ -6,7 +6,7 @@
                 <div>
                     <h1 class="text-xl md:text-2xl font-bold text-white">Similarity Graph</h1>
                     <p class="text-sm text-white/50">
-                        {{ focusName ? `Exploring around “${focusName}”` : 'Click a title to explore its neighbours' }}
+                        {{ focusName ? `Exploring around “${focusName}”` : 'Click a title to see its details' }}
                     </p>
                 </div>
                 <div class="flex items-center gap-3 text-xs text-white/60">
@@ -59,10 +59,16 @@
                     v-if="!loading && !error"
                     class="pointer-events-none absolute bottom-3 inset-x-0 text-center text-[11px] text-white/35"
                 >
-                    Drag to reposition · scroll to zoom · click a node to expand · press F for fullscreen
+                    Drag to reposition · scroll to zoom · click for details · double-click to expand · F for fullscreen
                 </p>
             </div>
         </div>
+        <TitleModal
+            :show="showModal"
+            :item="selectedItem"
+            :to="isFullscreen ? container : 'body'"
+            @close="onCloseModal"
+        />
     </AppLayout>
 </template>
 
@@ -73,12 +79,15 @@ import { ref, computed, onMounted, onBeforeUnmount } from 'vue'
 import { Maximize2, Minimize2 } from 'lucide-vue-next'
 import AppLayout from '../Layouts/AppLayout.vue'
 import LoadingSpinner from '../Components/LoadingSpinner.vue'
+import TitleModal from '../Components/TitleModal.vue'
+import useModal from '../Composables/useModal.js'
 import { createForceGraph } from '../Composables/useForceGraph.js'
 
 const props = defineProps({
     slug: { type: String, default: null },
 })
-
+const { openModal, closeModal, selectedItem, showModal } = useModal()
+let titleRequestId = 0
 const page = usePage()
 const POSTER_PLACEHOLDER = '/poster-placeholder.svg'
 
@@ -128,6 +137,26 @@ async function expandNode(node) {
     }
 }
 
+async function openTitle(node) {
+    const token = ++titleRequestId
+    graph.setBusy(node.id, true)
+    try {
+        const { data } = await window.axios.get(`/title/${node.id}`)
+        if (token !== titleRequestId) return // a newer click superseded this one
+        openModal(data.title)
+        graph.pause()
+    } catch (e) {
+        // leave the graph as it was; the node stays interactive for a retry
+    } finally {
+        graph.setBusy(node.id, false)
+    }
+}
+
+function onCloseModal() {
+    closeModal()
+    graph.resume()
+}
+
 // Reflect the focused title in the URL so the view is shareable and can land
 // on any title, matching the ?title_slug= entry point.
 function syncUrl(slug) {
@@ -150,6 +179,7 @@ function onFullscreenChange() {
 }
 
 function onKeydown(e) {
+    if (showModal.value) return
     if (e.key !== 'f' && e.key !== 'F') return
     if (e.metaKey || e.ctrlKey || e.altKey) return
     const tag = document.activeElement?.tagName
@@ -162,7 +192,8 @@ onMounted(() => {
     graph = createForceGraph(svgEl.value, {
         posterBase: posterBase.value,
         placeholder: POSTER_PLACEHOLDER,
-        onSelect: expandNode,
+        onSelect: openTitle,
+        onExpand: expandNode,
     })
 
     resizeObserver = new ResizeObserver(() => graph?.resize())
@@ -186,3 +217,18 @@ onBeforeUnmount(() => {
     graph?.destroy()
 })
 </script>
+
+<!-- Deliberately not scoped: scoped styles match on a data-v attribute stamped
+     onto Vue-rendered elements, but every element inside the SVG is created by
+     d3, so a scoped rule would silently never apply. -->
+<style>
+.node-busy {
+    animation: ring-spin 1s linear infinite;
+}
+
+@keyframes ring-spin {
+    to {
+        stroke-dashoffset: -16;
+    }
+}
+</style>

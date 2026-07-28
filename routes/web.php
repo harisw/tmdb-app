@@ -8,6 +8,7 @@ use App\Http\Controllers\LanguageController;
 use App\Http\Controllers\ProviderController;
 use App\Http\Controllers\SearchController;
 use App\Http\Controllers\SimilarTitleController;
+use App\Http\Controllers\TitleController;
 use App\Http\Controllers\TitleGraphController;
 use Illuminate\Support\Facades\Route;
 
@@ -27,6 +28,7 @@ Route::middleware('throttle:40,1')->group(function () {
 
 Route::get('/search-all', [SearchController::class, 'searchAll'])->name('search-all-title');
 
+Route::get('/title/{title}', [TitleController::class, 'show'])->name('title-show');
 Route::get('/title/{title}/similar', [SimilarTitleController::class, 'index'])->name('title-similar');
 
 Route::get('/graph', [TitleGraphController::class, 'index'])->name('title-graph');

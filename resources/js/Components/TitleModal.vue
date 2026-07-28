@@ -9,6 +9,7 @@ import GenreBadges from './GenreBadges.vue'
 const props = defineProps({
     show: { type: Boolean, required: true },
     item: { type: Object, default: null },
+    to: { type: [String, Object], default: 'body' },
 })
 
 const page = usePage()
@@ -94,12 +95,32 @@ function handleKey(e) {
     if (e.key === 'Escape') close()
 }
 
+// Lock the page behind the modal so dismissing lands the user back where they
+// opened from. Restored on unmount too, so an unmount mid-transition can't
+// leave the page permanently unscrollable.
+let previousOverflow = ''
+
+watch(
+    () => props.show,
+    (show) => {
+        if (show) {
+            previousOverflow = document.body.style.overflow
+            document.body.style.overflow = 'hidden'
+        } else {
+            document.body.style.overflow = previousOverflow
+        }
+    }
+)
+
 onMounted(() => window.addEventListener('keydown', handleKey))
-onUnmounted(() => window.removeEventListener('keydown', handleKey))
+onUnmounted(() => {
+    window.removeEventListener('keydown', handleKey)
+    document.body.style.overflow = previousOverflow
+})
 </script>
 
 <template>
-    <Teleport to="body">
+    <Teleport :to="to">
         <transition name="fade">
             <div
                 v-if="show"
@@ -108,7 +129,7 @@ onUnmounted(() => window.removeEventListener('keydown', handleKey))
             >
                 <div
                     ref="scroller"
-                    class="relative bg-licorice text-white rounded-2xl shadow-2xl ring-1 ring-white/10 max-w-3xl w-full my-10 overflow-hidden"
+                    class="modal-panel relative bg-licorice text-white rounded-2xl shadow-2xl ring-1 ring-white/10 max-w-3xl w-full my-10 overflow-hidden"
                 >
                     <button
                         class="btn btn-sm btn-circle btn-neutral absolute top-3 right-3 z-10 bg-black/50 border-0 hover:bg-black/70"
@@ -185,7 +206,8 @@ onUnmounted(() => window.removeEventListener('keydown', handleKey))
                                         :href="`/graph?title_slug=${currentItem.slug}`"
                                         class="btn btn-xs btn-neutral gap-1 border-0 bg-white/10 hover:bg-white/20"
                                     >
-                                        <Share2 :size="13" /> Explore graph
+                                        <Share2 :size="13" />
+                                        Explore graph
                                     </Link>
                                 </div>
 
@@ -240,13 +262,49 @@ onUnmounted(() => window.removeEventListener('keydown', handleKey))
 </template>
 
 <style scoped>
-.fade-enter-active,
+/* One transition drives both the backdrop and the panel so they can't desync.
+   Only opacity/transform animate, keeping the whole thing on the compositor.
+   Leave is quicker than enter: dismissing should feel like getting out of the way. */
+.fade-enter-active {
+    transition: opacity 0.2s ease-out;
+}
+
 .fade-leave-active {
-    transition: opacity 0.3s ease;
+    transition: opacity 0.15s ease-in;
 }
 
 .fade-enter-from,
 .fade-leave-to {
     opacity: 0;
+}
+
+.fade-enter-active .modal-panel {
+    transition: transform 0.2s ease-out;
+}
+
+.fade-leave-active .modal-panel {
+    transition: transform 0.15s ease-in;
+}
+
+.fade-enter-from .modal-panel {
+    transform: scale(0.97);
+}
+
+.fade-leave-to .modal-panel {
+    transform: scale(0.98);
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .fade-enter-active,
+    .fade-leave-active,
+    .fade-enter-active .modal-panel,
+    .fade-leave-active .modal-panel {
+        transition-duration: 1ms;
+    }
+
+    .fade-enter-from .modal-panel,
+    .fade-leave-to .modal-panel {
+        transform: none;
+    }
 }
 </style>
