@@ -36,7 +36,7 @@ class TitleGraphController extends Controller
 
         $neighbours = $title->similarTitles()
             ->select(['titles.id', 'slug', 'name', 'poster_path', 'release_date', 'rating', 'type'])
-            ->wherePivot('score', '>=', (int) config('knowledge_graph.min_score'))
+            ->wherePivot('score', '>=', config('features.knowledge_graph.min_score'))
             ->limit(self::LIMIT)
             ->get();
 
