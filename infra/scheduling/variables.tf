@@ -9,13 +9,13 @@ variable "rds_instance_identifier" {
 }
 
 variable "start_cron" {
-    description = "Cron to start resources (UTC)"
+    description = "Cron to start resources (KST, per schedule_expression_timezone)"
     type    = string
-    default = "cron(0 22 * * ? *)" #8 am KST
+    default = "cron(0 8 * * ? *)" #8 am KST
 }
 
 variable "stop_cron" {
-    description = "Cron to stop resources(UTC)"
+    description = "Cron to stop resources (KST, per schedule_expression_timezone)"
     type    = string
-    default = "cron(0 16 * * ? *)" #1 am KST
+    default = "cron(0 1 * * ? *)" #1 am KST
 }
