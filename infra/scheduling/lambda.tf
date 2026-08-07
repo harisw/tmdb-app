@@ -36,6 +36,10 @@ resource "aws_lambda_function" "start" {
     filename            = data.archive_file.start.output_path
     source_code_hash    = data.archive_file.start.output_base64sha256
 
+    #The 3s default is not enough for a cold start plus two control-plane
+    #calls; the RDS call was the one left hanging when it ran out.
+    timeout             = 30
+
     environment {
         variables = {
             EC2_INSTANCE_ID     = var.ec2_instance_id
@@ -53,6 +57,10 @@ resource "aws_lambda_function" "stop" {
     runtime             = "python3.12"
     filename            = data.archive_file.stop.output_path
     source_code_hash    = data.archive_file.stop.output_base64sha256
+
+    #The 3s default is not enough for a cold start plus two control-plane
+    #calls; the RDS call was the one left hanging when it ran out.
+    timeout             = 30
 
     environment {
         variables = {

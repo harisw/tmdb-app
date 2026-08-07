@@ -1,0 +1,59 @@
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Sid": "InvokeSchedulerLambdas",
+      "Effect": "Allow",
+      "Action": "lambda:InvokeFunction",
+      "Resource": "arn:aws:lambda:ap-northeast-2:012504444753:function:chill-*"
+    },
+    {
+      "Sid": "ReadLambdaLogEvents",
+      "Effect": "Allow",
+      "Action": [
+        "logs:DescribeLogGroups",
+        "logs:DescribeLogStreams",
+        "logs:GetLogEvents",
+        "logs:FilterLogEvents",
+        "logs:StartQuery"
+      ],
+      "Resource": [
+        "arn:aws:logs:ap-northeast-2:012504444753:log-group:/aws/lambda/chill-*",
+        "arn:aws:logs:ap-northeast-2:012504444753:log-group:/aws/lambda/chill-*:*"
+      ]
+    },
+    {
+      "Sid": "LogsActionsWithoutResourceSupport",
+      "Effect": "Allow",
+      "Action": [
+        "logs:GetQueryResults",
+        "logs:StopQuery",
+        "logs:DescribeQueries"
+      ],
+      "Resource": "*"
+    },
+    {
+      "Sid": "InspectKmsKeys",
+      "Effect": "Allow",
+      "Action": [
+        "kms:DescribeKey",
+        "kms:GetKeyPolicy",
+        "kms:ListAliases",
+        "kms:ListKeys",
+        "kms:ListGrants",
+        "kms:ListRetirableGrants"
+      ],
+      "Resource": "*"
+    },
+    {
+      "Sid": "ReadCloudWatchMetrics",
+      "Effect": "Allow",
+      "Action": [
+        "cloudwatch:GetMetricData",
+        "cloudwatch:GetMetricStatistics",
+        "cloudwatch:ListMetrics"
+      ],
+      "Resource": "*"
+    }
+  ]
+}

@@ -29,10 +29,25 @@ resource "aws_iam_role_policy" "lambda_scheduler" {
                 Action      = ["rds:StartDBInstance", "rds:StopDBInstance"]
                 Resource    = data.aws_db_instance.chill.db_instance_arn
             },
+            #rds:DescribeDBInstances has no resource-level support, so it can
+            #only be granted on "*". The handlers use it to skip the start/stop
+            #call when the instance is not in a state that accepts it.
+            {
+                Effect      = "Allow"
+                Action      = ["rds:DescribeDBInstances"]
+                Resource    = "*"
+            },
             {
                 Effect      = "Allow"
                 Action      = ["logs:CreateLogGroup", "logs:CreateLogStream", "logs:PutLogEvents"]
                 Resource    = "arn:aws:logs:*:*:*"
+            },
+            #Lambda decrypts the environment variables before the runtime starts,
+            #so without this the invoke fails in the service layer and never logs.
+            {
+                Effect      = "Allow"
+                Action      = ["kms:Decrypt"]
+                Resource    = "arn:aws:kms:ap-northeast-2:012504444753:key/fa46f0ba-e17e-46bf-ad81-b4443a133827"
             }
         ]
     })
