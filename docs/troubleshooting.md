@@ -2,6 +2,9 @@
 
 Lessons learned and gotchas worth remembering. Grouped by topic.
 
+For AWS infrastructure (`infra/scheduling/` — Lambda, EventBridge Scheduler, KMS, CloudWatch),
+see [troubleshooting-aws.md](troubleshooting-aws.md).
+
 ---
 
 ## PHP configuration (memory limit, upload size, timeouts)
