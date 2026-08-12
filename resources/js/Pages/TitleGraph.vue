@@ -79,7 +79,7 @@ import { ref, computed, onMounted, onBeforeUnmount } from 'vue'
 import { Maximize2, Minimize2 } from 'lucide-vue-next'
 import AppLayout from '../Layouts/AppLayout.vue'
 import LoadingSpinner from '../Components/LoadingSpinner.vue'
-import TitleModal from '../Components/TitleModal.vue'
+import TitleModal from '../Components/Modals/TitleModal.vue'
 import useModal from '../Composables/useModal.js'
 import { createForceGraph } from '../Composables/useForceGraph.js'
 

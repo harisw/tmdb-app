@@ -3,8 +3,8 @@ import { storeToRefs } from 'pinia'
 import AmbientBackground from '../Components/AmbientBackground.vue'
 import Navbar from '../Components/Navbar.vue'
 import Toast from '../Components/Toast.vue'
-import AuthModal from '../Components/AuthModal.vue'
-import ProfileModal from '../Components/ProfileModal.vue'
+import AuthModal from '../Components/Modals/AuthModal.vue'
+import ProfileModal from '../Components/Modals/ProfileModal.vue'
 import { useUiStore } from '../stores/ui.js'
 
 // Modals are hosted once here (not in Navbar) so any component can open them
@@ -30,7 +30,7 @@ const { authModalOpen, authModalTab, profileModalOpen } = storeToRefs(ui)
         </main>
         <Toast />
 
-        <AuthModal :is-open="authModalOpen" :initial-tab="authModalTab" @close="ui.closeAuthModal" />
-        <ProfileModal :is-open="profileModalOpen" @close="ui.closeProfileModal" />
+        <AuthModal :show="authModalOpen" :initial-tab="authModalTab" @close="ui.closeAuthModal" />
+        <ProfileModal :show="profileModalOpen" @close="ui.closeProfileModal" />
     </div>
 </template>

@@ -1,7 +1,7 @@
 <script setup>
 import { Head } from '@inertiajs/vue3'
 import AppLayout from '../Layouts/AppLayout.vue'
-import TitleModal from '../Components/TitleModal.vue'
+import TitleModal from '../Components/Modals/TitleModal.vue'
 import Carousel from '../Components/Carousel.vue'
 import TitleCard from '../Components/TitleCard.vue'
 import useModal from '../Composables/useModal.js'
