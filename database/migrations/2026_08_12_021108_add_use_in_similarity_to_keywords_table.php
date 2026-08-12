@@ -11,7 +11,9 @@ return new class extends Migration
      */
     public function up(): void
     {
-        //
+        Schema::table('keywords', function (Blueprint $table) {
+            $table->boolean('use_in_similarity')->default(true);
+        });
     }
 
     /**
@@ -19,6 +21,8 @@ return new class extends Migration
      */
     public function down(): void
     {
-        //
+        Schema::table('keywords', function (Blueprint $table) {
+            $table->dropColumn('use_in_similarity');
+        });
     }
 };

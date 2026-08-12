@@ -27,7 +27,9 @@ class GenerateTitleEmbeddingJob implements ShouldQueue
             return;
         }
 
-        $title = Title::with(['genres', 'keywords', 'people', 'collection'])
+        $title = Title::with(['genres', 'people', 'collection', 'keywords' => function ($query) {
+            $query->where('use_in_similarity', true);
+        }])
             ->findOrFail($this->titleId);
 
         $document = $documentBuilder->build($title);

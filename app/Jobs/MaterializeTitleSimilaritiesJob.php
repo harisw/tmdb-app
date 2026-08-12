@@ -25,7 +25,7 @@ class MaterializeTitleSimilaritiesJob implements ShouldQueue
     {
         $title = Title::findOrFail($this->titleId);
 
-        if (!$title->embedding) {
+        if (! $title->embedding) {
             Log::info("Title {$title->slug} has no embeddings");
 
             return;
@@ -70,7 +70,7 @@ class MaterializeTitleSimilaritiesJob implements ShouldQueue
         $minScore = config('features.knowledge_graph.min_score');
 
         $upsertData = collect($neighbours)
-            ->filter(fn($nb) => $nb->score > $minScore)
+            ->filter(fn ($nb) => $nb->score > $minScore)
             ->flatMap(function ($neighbour) use ($title, $neighbourTitles, $reasonService, $now) {
                 $neighbourTitle = $neighbourTitles[$neighbour->id] ?? null;
 

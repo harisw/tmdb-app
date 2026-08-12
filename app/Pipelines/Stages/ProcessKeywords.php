@@ -20,7 +20,10 @@ class ProcessKeywords
             ->toBase()
             ->map(fn (TmdbKeywordData $kw) => Keyword::firstOrCreate(
                 ['slug' => $kw->slug],
-                ['name' => $kw->name]
+                [
+                    'name' => $kw->name,
+                    'use_in_similarity' => $this->isUsedInSimilarity($kw->slug),
+                ]
             )->id);
         $ctx->title->keywords()->sync($keywordIds);
 
@@ -30,5 +33,10 @@ class ProcessKeywords
     private function getKeywordData($data): array
     {
         return $data['keywords'] ?? $data['results'] ?? [];
+    }
+
+    private function isUsedInSimilarity(string $slug): bool
+    {
+        return ! preg_match('/^\d{4}$/', $slug);
     }
 }
