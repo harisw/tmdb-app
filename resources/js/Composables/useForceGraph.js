@@ -22,7 +22,7 @@ const DOUBLE_TAP_MS = 260
  * @param {(node) => void} opts.onSelect  called when a node is clicked (not dragged)
  * @param {(node) => void} opts.onExpand
  */
-export function createForceGraph(svgEl, { posterBase, placeholder, onSelect, onExpand }) {
+export function createForceGraph(svgEl, { posterBase, placeholder, onSelect, onExpand, onLinkClick }) {
     const nodes = []
     const links = []
     const nodeById = new Map()
@@ -34,7 +34,7 @@ export function createForceGraph(svgEl, { posterBase, placeholder, onSelect, onE
 
     const svg = select(svgEl)
     const root = svg.append('g')
-    const linkLayer = root.append('g').attr('stroke', '#ffffff')
+    const linkLayer = root.append('g')
     const nodeLayer = root.append('g')
 
     const linkKey = (s, t) => [s, t].sort((a, b) => a - b).join('-')
@@ -58,6 +58,7 @@ export function createForceGraph(svgEl, { posterBase, placeholder, onSelect, onE
 
     function ticked() {
         linkLayer
+            .selectAll('g.link')
             .selectAll('line')
             .attr('x1', (d) => d.source.x)
             .attr('y1', (d) => d.source.y)
@@ -113,11 +114,36 @@ export function createForceGraph(svgEl, { posterBase, placeholder, onSelect, onE
     function update() {
         // Links
         linkLayer
-            .selectAll('line')
-            .data(links, (d) => d.key)
-            .join((enter) => enter.append('line').attr('stroke-linecap', 'round'))
-            .attr('stroke-opacity', (d) => 0.15 + 0.5 * (d.score ?? 0.5))
-            .attr('stroke-width', (d) => 1 + 3 * (d.score ?? 0.5))
+            .selectAll('g.link')
+            .data(links, (d) => {
+                console.log(d)
+                return d.key
+            })
+            .join((enter) => {
+                const g = enter.append('g').attr('class', 'link')
+
+                g.append('line')
+                    .attr('class', 'link-hit')
+                    .attr('stroke', 'transparent')
+                    .attr('stroke-width', 16)
+                    .style('cursor', onLinkClick ? 'pointer' : null)
+                    .on('click', (ev, d) => {
+                        ev.stopPropagation()
+                        onLinkClick?.(d)
+                    })
+
+                g.append('line')
+                    .attr('class', 'link-visible')
+                    .attr('stroke', '#ffffff')
+                    .attr('stroke-linecap', 'round')
+                    .style('pointer-events', 'none')
+
+                return g
+            })
+            .select('line.link-visible')
+            .attr('stroke-opacity', (d) => 0.15 + 0.5 * d.score)
+            .attr('stroke-width', (d) => 2 * d.score)
+            .attr('stroke-dasharray', (d) => (d.score < 0.6 ? 8 : null))
 
         // Nodes
         const node = nodeLayer
