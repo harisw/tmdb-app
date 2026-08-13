@@ -67,20 +67,10 @@ const submit = () => {
 
 <template>
     <BaseModal :show="show" @close="emit('close')">
-        <template #default="{ close }">
+        <template #default>
             <!-- Header -->
-            <div class="flex items-center justify-between px-6 pt-6 pb-4">
+            <div class="flex items-center px-6 pt-6 pb-4">
                 <h2 class="text-white font-semibold text-base">Update Profile</h2>
-                <button class="text-gray-500 hover:text-white transition-colors cursor-pointer" @click="close">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path
-                            stroke-linecap="round"
-                            stroke-linejoin="round"
-                            stroke-width="2"
-                            d="M6 18L18 6M6 6l12 12"
-                        />
-                    </svg>
-                </button>
             </div>
 
             <form class="px-6 pb-6 space-y-4" @submit.prevent="submit">

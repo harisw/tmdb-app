@@ -88,7 +88,7 @@ watch(
 
 <template>
     <BaseModal ref="baseModal" :show="show" :to="to" max-width="max-w-3xl" align="start" @close="$emit('close')">
-        <template #default="{ close }">
+        <template #close="{ close }">
             <button
                 class="btn btn-sm btn-circle btn-neutral absolute top-3 right-3 z-10 bg-black/50 border-0 hover:bg-black/70"
                 aria-label="Close"
@@ -96,7 +96,9 @@ watch(
             >
                 <X :size="18" :stroke-width="2.5" />
             </button>
+        </template>
 
+        <template #default>
             <div v-if="currentItem">
                 <!-- Backdrop with scrim + overlaid title/meta -->
                 <div class="relative">

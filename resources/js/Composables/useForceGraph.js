@@ -116,7 +116,6 @@ export function createForceGraph(svgEl, { posterBase, placeholder, onSelect, onE
         linkLayer
             .selectAll('g.link')
             .data(links, (d) => {
-                console.log(d)
                 return d.key
             })
             .join((enter) => {

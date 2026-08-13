@@ -1,5 +1,6 @@
 <script setup>
 import { onBeforeUnmount, onMounted, ref, watch } from 'vue'
+import { X } from 'lucide-vue-next'
 
 const props = defineProps({
     show: { type: Boolean, required: true },
@@ -69,6 +70,17 @@ onBeforeUnmount(() => {
                     :class="[maxWidth, align === 'start' ? 'my-10' : '']"
                 >
                     <slot :close="close" />
+
+                    <slot name="close" :close="close">
+                        <button
+                            type="button"
+                            class="btn btn-xs btn-circle btn-ghost absolute top-3 right-3 z-10 border-0 text-white/50 hover:bg-white/10 hover:text-white"
+                            aria-label="Close"
+                            @click="close"
+                        >
+                            <X :size="16" />
+                        </button>
+                    </slot>
                 </div>
             </div>
         </Transition>

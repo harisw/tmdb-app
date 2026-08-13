@@ -54,12 +54,22 @@ const strength = computed(() => {
     if (score >= 0.4) return 'moderate'
     return 'weak'
 })
+
+function viewTarget() {
+    emit('view', props.link.target)
+    emit('close')
+}
+
+function expandTarget() {
+    emit('expand', props.link.target)
+    emit('close')
+}
 </script>
 
 <template>
     <BaseModal :show="show" :to="to" max-width="max-w-lg" align="start" @close="$emit('close')">
-        <template #default="{ close }">
-            <div v-if="link" class="p-5 space-y-5">
+        <template #default>
+            <div v-if="link" class="p-5 pr-9 space-y-5">
                 <div class="flex flex-col sm:flex-row items-center gap-2 sm:gap-3">
                     <span
                         class="w-full sm:flex-1 min-w-0 rounded-2xl bg-white/10 px-4 py-2 text-center text-sm sm:text-base font-semibold leading-snug text-white break-words"
@@ -127,10 +137,7 @@ const strength = computed(() => {
                     <button
                         type="button"
                         class="btn btn-sm sm:flex-1 h-auto min-h-9 py-2 flex-wrap whitespace-normal text-center leading-snug bg-white/5 hover:bg-white/10 border-white/10 text-white gap-1.5"
-                        @click="
-                            emit('view', link.target)
-                            close()
-                        "
+                        @click="viewTarget"
                     >
                         <Info :size="14" class="shrink-0" />
                         <span>View {{ link.target.name }}</span>
@@ -138,10 +145,7 @@ const strength = computed(() => {
                     <button
                         type="button"
                         class="btn btn-sm sm:flex-1 h-auto min-h-9 py-2 flex-wrap whitespace-normal text-center leading-snug bg-white/5 hover:bg-white/10 border-white/10 text-white gap-1.5"
-                        @click="
-                            emit('expand', link.target)
-                            close()
-                        "
+                        @click="expandTarget"
                     >
                         <Waypoints :size="14" class="shrink-0" />
                         <span>Expand neighbours</span>

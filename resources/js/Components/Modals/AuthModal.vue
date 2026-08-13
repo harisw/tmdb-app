@@ -94,7 +94,7 @@ const resendVerification = () => {
 
 <template>
     <BaseModal :show="show" @close="emit('close')">
-        <template #default="{ close }">
+        <template #default>
             <!-- Verification pending screen -->
             <Transition name="slide-up" mode="out-in">
                 <div
@@ -176,7 +176,7 @@ const resendVerification = () => {
                 <!-- Forms screen -->
                 <div v-else key="forms">
                     <!-- Header tabs -->
-                    <div class="flex items-center justify-between px-6 pt-6 pb-4">
+                    <div class="flex items-center px-6 pt-6 pb-4">
                         <div class="flex gap-1 bg-white/5 rounded-lg p-1">
                             <button
                                 class="px-4 py-1.5 text-sm font-medium rounded-md transition-colors cursor-pointer"
@@ -197,16 +197,6 @@ const resendVerification = () => {
                                 Register
                             </button>
                         </div>
-                        <button class="text-gray-500 hover:text-white transition-colors cursor-pointer" @click="close">
-                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path
-                                    stroke-linecap="round"
-                                    stroke-linejoin="round"
-                                    stroke-width="2"
-                                    d="M6 18L18 6M6 6l12 12"
-                                />
-                            </svg>
-                        </button>
                     </div>
 
                     <!-- Login form -->
