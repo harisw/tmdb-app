@@ -45,13 +45,13 @@ class HandleInertiaRequests extends Middleware
     {
         return array_merge(parent::share($request), [
             'genres' => Cache::remember('top-genres', 7200, static function () {
-                return Genre::orderByDesc('count')->take(7)->get();
+                return Genre::orderByDesc('count')->take(7)->get()->toArray();
             }),
             'countries' => Cache::rememberForever('countries', static function () {
-                return Country::get();
+                return Country::get()->toArray();
             }),
             'providers' => Cache::remember('top-providers', 7200, static function () {
-                return Provider::orderByDesc('count')->take(7)->get();
+                return Provider::orderByDesc('count')->take(7)->get()->toArray();
             }),
             'base_url' => [
                 'poster' => config('services.tmdb.img_url').Title::IMG_SMALL_URL,
