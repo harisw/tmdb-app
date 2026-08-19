@@ -5,6 +5,7 @@ import { FilmIcon, TvIcon } from 'lucide-vue-next'
 import { computed } from 'vue'
 import ProvidersBadge from './ProvidersBadge.vue'
 import GenreBadges from './GenreBadges.vue'
+import Adult from './Icons/Adult.vue'
 
 const props = defineProps({
     onClick: { type: Function },
@@ -62,8 +63,15 @@ function onPosterError(e) {
                         <RatingBadge :rating="item.rating" />
                     </div>
 
-                    <!-- bottom: provider logos -->
-                    <div class="absolute inset-x-2 bottom-2 flex justify-end gap-1">
+                    <!-- bottom row: adult marker (left) + provider logos (right) -->
+                    <div class="absolute inset-x-2 bottom-2 flex justify-end items-center gap-1">
+                        <span
+                            v-if="item.is_adult"
+                            class="mr-auto p-1 badge rounded-full bg-black/80 text-red-500"
+                            title="Adult content"
+                        >
+                            <Adult class="w-7 h-7" />
+                        </span>
                         <ProvidersBadge
                             v-if="item.title_providers?.length"
                             :title-providers="item.title_providers.slice(0, 3)"
