@@ -242,8 +242,15 @@ class Title extends Model
      */
     public static function detailRelations(): array
     {
-        return ['genres', 'keywords', 'titleProviders' => function ($q) {
-            $q->with('provider')->uniqueByProvider();
+        $countryId = auth()->user()?->country_id;
+        if (! $countryId && request('country')) {
+            $countryId = Country::whereIso2(request('country'))->first()?->id;
+        }
+
+        return ['genres', 'keywords', 'titleProviders' => function ($q) use ($countryId) {
+            $q->when($countryId, function ($q) use ($countryId) {
+                $q->where('country_id', $countryId);
+            })->with('provider')->uniqueByProvider();
         }];
     }
 }

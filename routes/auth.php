@@ -29,4 +29,6 @@ Route::post('/logout', [LoginController::class, 'destroy'])->name('logout');
 
 Route::middleware('auth')->group(function () {
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
+    Route::patch('/profile/country', [ProfileController::class, 'updateCountry'])
+        ->name('profile.update-country');
 });

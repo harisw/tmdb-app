@@ -2,89 +2,127 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+## Fundamental Principles
+
+1. **Declarative Code**: Express _what_ to do, not _how_ to do it
+2. **Composition over Inheritance**: Small components that combine together
+3. **Immutability**: Predictable and traceable state via Pinia
+4. **Type Safety**: Explicit PHP type hints and return types; typed `defineProps` on every Vue component
+5. **Performance First**: Optimizations from the start, not afterwards
+6. **KISS (Keep It Simple)**: Simplicity over complexity, always
+
+## Code Practices
+
+- **Single Responsibility**: Each module has a single responsibility
+- **DRY (Don't Repeat Yourself)**: Reuse through composition
+- **YAGNI (You Aren't Gonna Need It)**: No premature abstractions
+- **Fail Fast**: Validation and explicit errors immediately
+
 ## Technology Stack
 
-- **Backend:** Laravel 12 + PHP 8.3
-- **Frontend:** Vue 3 + Inertia.js + Tailwind CSS v4 + Vite
-- **Database:** PostgreSQL 15 (with full-text search via `titles_searchable_index`)
-- **Infrastructure:** Docker + Nginx
+- **Backend:** Laravel 13 + PHP 8.4
+- **Frontend:** Vue 3 + Inertia.js v2 + Tailwind CSS v4 + daisyUI 5 + Vite 6, Pinia for state
+- **Database:** PostgreSQL 15 via `pgvector`
+- **Queues:** database driver locally, Redis + Horizon in production
+- **Infrastructure:** Docker + Nginx, deployed to AWS (see `infra/`, `docs/deployment.md`)
 
 ## Development Commands
 
 ```bash
-# Full dev environment (PHP server + queue + logs + Vite, all concurrent)
-composer run dev
+composer run dev     # PHP server + queue listener + pail logs + Vite, concurrently
+npm run dev          # Frontend only
+npm run build        # Build assets
+npm run lint         # ESLint over resources/js
+npm run format       # Prettier write
 
-# Frontend only
-npm run dev
-
-# Build frontend assets
-npm run build
-
-# Run tests
-composer run test
-
-# Or directly
-php artisan test
+composer run test                                     # config:clear, then full suite
+php artisan test --compact tests/Feature/Some/File.php # single file
+php artisan test --compact --filter=testName          # single test
+vendor/bin/pint --dirty                               # format changed PHP
 ```
+
+Project Artisan commands: `titles:refresh-searchable`, `admin:grant {username}`, `admin:revoke {username}`, `run:job`.
+
+### Tests need a real PostgreSQL database
+
+`phpunit.xml` pins `DB_CONNECTION=pgsql` against a `tmdb_test` database. SQLite is not an option — search depends on `tsvector`/`ts_rank` and similarity on pgvector operators, and SQLite's loose FK enforcement made error-recovery tests non-deterministic. Create that database before running the suite; see `docs/testing.md`.
 
 ## Architecture Overview
 
-This is a Laravel + Vue 3 SPA using **Inertia.js** as the bridge — there are no API endpoints consumed by the frontend; Inertia handles page transitions server-side.
+Laravel + Vue 3 SPA bridged by **Inertia.js v2**. `routes/api.php` is deliberately empty — every page, including the graph endpoints, is served from `routes/web.php` so it shares the session and axios setup. Frontend data arrives as Inertia props; there is no JSON API for the SPA to fetch.
 
-### Backend Structure
+`Title` is the central model: movies and TV live in one table discriminated by `type`. Genres, keywords, production companies, providers and people are many-to-many; language is a direct FK.
 
-- `routes/web.php` — all routes (no separate API routes used by frontend)
-- `app/Http/Controllers/` — HomeController, Auth controllers, CsvUploadController
-- `app/Models/` — Movie, Genre, Keyword, Language, ProductionCompany, SearchableMovie
-- `app/Services/` — MovieService (query logic), CsvUploadService (CSV import)
-- `app/Jobs/ProcessCsv` — queued job for bulk CSV imports
+### Two global scopes filter every Title query
 
-**Movie relationships:** Movies belong to many genres, keywords, and production companies (pivot tables). Languages are a direct foreign key on titles.
+Both live in `app/Models/Scopes/` and apply implicitly, so `Title::query()` is never unfiltered:
 
-**Search:** Uses a dedicated `titles_searchable_index` table with PostgreSQL tsvector for full-text search, populated during CSV import.
+- `AdultContentScope` — hides `is_adult` titles unless the authenticated user has `hide_adult = false`. Guests always have them hidden.
+- `TitleTypeScope` — narrows to `titles.type` whenever a `title_type` query parameter is present.
 
-### Frontend Structure
+That query parameter is injected client-side: `resources/js/app.js` registers a `router.on('before')` hook appending the Pinia `titleType` store value to every GET visit. The movie/TV toggle therefore reaches the database through a global scope with no controller involvement — changing one end without the other silently breaks filtering.
 
-- `resources/js/Pages/` — Inertia page components (mirrors route structure)
-- `resources/js/Components/` — shared reusable components
-- `resources/js/Composables/` — Vue composables
-- Single layout: `resources/js/Layouts/AppLayout.vue`
+### TMDB ingestion
 
-Key pages: `Home.vue`, `AllGenres.vue`, `MovieByGenre.vue`, `MovieByLanguage.vue`, `MovieByKeyword.vue`, `MovieSearchAll.vue`, `Auth/Login.vue`, `Auth/Register.vue`
+Scheduled in `routes/console.php`, not user-triggered. `FetchTitlesJob` is an abstract pager subclassed by `FetchTrending/Popular/UpcomingTitlesJob`; it walks a paginated TMDB feed until it has inserted `$limit` *new* titles, so it reaches deeper as the catalogue fills. Rows land via `TitleService::insertRow()`, then `EnrichTitle*Job`s backfill credits, providers and knowledge-graph data on the `enrichment` queue.
+
+Inbound payloads are parsed by `App\Data\DTOs\TmdbApi\*` (spatie/laravel-data), with `MapInputName`/`MapOutputName` translating between TMDB's field names and ours — TMDB's `adult` becomes `is_adult`, for instance. Note that flag marks pornographic content, not an age rating; no maturity certifications are fetched.
+
+Bulk seeding still exists separately: `TitleSeeder` and `TitlesBatchInsertJob` read a CSV from S3 via `SEED_CSV_S3_KEY`.
+
+### Similarity / knowledge graph
+
+The least obvious subsystem, spread across jobs, services and pipelines:
+
+1. `GenerateTitleEmbeddingJob` calls `OpenAIEmbeddingService` on a document assembled by `TitleDocumentBuilder`, storing the vector in `titles.embedding` (hidden from serialization).
+2. `MaterializeTitleSimilaritiesJob` runs a raw pgvector cosine KNN (`<=>`) for the top 10 neighbours and persists them to `title_similarities`. Similarity is **precomputed, never queried live**.
+3. For each pair, `ReasonBuilderService` sends a `ReasonContext` through an `Illuminate\Pipeline` of `app/Pipelines/Reasons/*Pipe` classes — shared genres, keywords, casts, crews, semantics — producing ranked human-readable explanations.
+
+`TitleEnrichmentService::enqueue()` chains steps 1→2 as a `Bus::batch` on the `embeddings` queue. Results surface at `/title/{title}/similar` and in the force-directed graph (`Pages/TitleGraph.vue` + `Composables/useForceGraph.js`, d3-force).
+
+**`composer run dev` only listens on the default queue.** Anything dispatched `onQueue('embeddings')` or `onQueue('enrichment')` sits unprocessed. Run `php artisan horizon`, or `php artisan queue:work --queue=embeddings,enrichment`, when working on ingestion or similarity. `config/horizon.php` defines a supervisor per queue.
+
+### Search
+
+Full-text search reads the `titles_searchable_index` table (`SearchableTitle` model) using PostgreSQL tsvector. It is not maintained transactionally — `titles:refresh-searchable` rebuilds it, scheduled every six hours, so newly ingested titles stay unsearchable until it runs.
+
+### Shared Inertia props
+
+`HandleInertiaRequests::share()` gives every page `genres`, `countries`, `providers`, `base_url` (TMDB image prefixes), `auth.user`, `enums.TitleType`, `flash` and `avatarStyles`. The lists are cached from two hours to forever, so newly seeded genres or providers won't appear until caches clear. Build image URLs from `usePage().props.base_url` rather than hardcoding.
+
+### Other conventions worth knowing
+
+- **Feature flags** use Laravel Pennant keyed by `App\Utils\Enum\FeatureFlag`, toggled at `/admin/feature-flags` behind `can:admin`.
+- **Repositories** exist only for `Person` and `TitlePerson` (`app/Repositories/Contracts/`). Everything else goes through services or Eloquent directly — don't add repositories elsewhere for symmetry.
+- **Monitoring:** Laravel Pulse (`pulse:check` every minute), Debugbar locally, Grafana Loki via Alloy in production (`alloy/config.alloy`).
 
 ## Environment Setup
 
-Copy `.env.example` to `.env`. Key variables:
+Copy `.env.example` to `.env`. Beyond the standard Laravel keys:
 
 ```
-DB_CONNECTION=pgsql
-DB_HOST=127.0.0.1
-DB_PORT=5432
-DB_DATABASE=tmdb
-DB_USERNAME=user
-DB_PASSWORD=password
-ALLOW_REGISTER=false          # Toggle user registration
-MOVIE_DB_IMG_URL=<tmdb-image-base-url>
+DB_CONNECTION=pgsql          # pgvector image; SQLite is not viable
+TMDB_BASE_URL=               # TMDB API v3 base
+TMDB_API_KEY=
+MOVIE_DB_IMG_URL=            # TMDB image CDN base
+OPENAI_API_KEY=              # embeddings; similarity is inert without it
+SEED_CSV_S3_KEY=             # bulk title seeding source
+ALLOW_REGISTER=false         # toggle user registration
+GOOGLE_CLIENT_ID=            # Socialite login
+ADMIN_USERNAME=              # seeded admin account
 ```
-
-Sessions, cache, and queues all use the database driver.
 
 ## Docker
 
 ```bash
-# Local development (app + nginx on :8000 + postgres)
-docker-compose -f docker-compose.local.yml up
-
-# Production (postgres only — app deployed separately)
-docker-compose up
+docker-compose -f docker-compose.local.yml up   # app + nginx :8000 + pgvector postgres
+docker-compose up                               # postgres only
+docker-compose -f docker-compose.prod.yml up    # app + redis + fluent-bit, ECR images
 ```
 
-The Dockerfile is a multi-stage build: Node 20 Alpine builds frontend assets, PHP 8.3 FPM Alpine serves the app.
+The Dockerfile is a multi-stage build: Node 25 Alpine builds frontend assets, PHP 8.4 FPM Alpine serves the app.
 
-## Data Import
-
-Movies are loaded via CSV upload through a modal UI (`CsvUploadController` + `ProcessCsv` job). The queue must be running (`php artisan queue:work`) to process imports.
+`README.md` is unmodified Laravel boilerplate. Project documentation lives in `docs/`: `deployment.md`, `testing.md`, `troubleshooting.md`, `troubleshooting-aws.md`.
 
 ===
 

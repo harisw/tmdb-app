@@ -4,6 +4,8 @@ import { storeToRefs } from 'pinia'
 import { usePage, Link, router } from '@inertiajs/vue3'
 import { Play } from 'lucide-vue-next'
 import useBaseUrl from '../Composables/useBaseUrl.js'
+import AccountMenu from './AccountMenu.vue'
+import CountrySwitcher from './CountrySwitcher.vue'
 import { useTitleTypeStore } from '../stores/titleType.js'
 import { useUiStore } from '../stores/ui.js'
 
@@ -39,75 +41,20 @@ const isAuthenticated = computed(() => !!user.value)
             <div class="max-w-[2200px] w-full mx-auto px-4 2xl:px-8 flex items-center">
                 <!-- Start: hamburger (mobile) + logo -->
                 <div class="navbar-start gap-2">
-                    <div class="dropdown lg:hidden">
-                        <label tabindex="0" class="btn btn-ghost btn-circle text-white hover:bg-gray-800">
-                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path
-                                    stroke-linecap="round"
-                                    stroke-linejoin="round"
-                                    stroke-width="2"
-                                    d="M4 6h16M4 12h16M4 18h16"
-                                />
-                            </svg>
-                        </label>
-                        <ul
-                            tabindex="0"
-                            class="menu menu-sm dropdown-content mt-3 z-[100] p-2 shadow-lg bg-black border border-gray-800 rounded-box w-56 text-white"
-                        >
-                            <li>
-                                <details>
-                                    <summary>Genres</summary>
-                                    <ul>
-                                        <li v-for="genre in genres" :key="genre.id">
-                                            <Link :href="genre.url">{{ genre.name }}</Link>
-                                        </li>
-                                        <li>
-                                            <Link :href="baseUrl + '/genre/all'">See more</Link>
-                                        </li>
-                                    </ul>
-                                </details>
-                            </li>
-                            <li>
-                                <details>
-                                    <summary>Providers</summary>
-                                    <ul>
-                                        <li v-for="provider in providers" :key="provider.id">
-                                            <Link :href="provider.url">{{ provider.name }}</Link>
-                                        </li>
-                                        <li>
-                                            <Link :href="baseUrl + '/provider/all'">See more</Link>
-                                        </li>
-                                    </ul>
-                                </details>
-                            </li>
-                            <li>
-                                <Link :href="baseUrl + '/tags'">Browse by Tags</Link>
-                            </li>
-                            <li>
-                                <Link :href="baseUrl + '/languages'">Browse by Languages</Link>
-                            </li>
-                            <li>
-                                <Link :href="baseUrl + '/search-all'">Find more</Link>
-                            </li>
-                            <template v-if="isAuthenticated">
-                                <div class="divider my-1 border-gray-800"></div>
-                                <li>
-                                    <Link href="/logout" method="post" as="button" class="w-full">Logout</Link>
-                                </li>
-                            </template>
-                            <template v-else>
-                                <div class="divider my-1 border-gray-800"></div>
-                                <li>
-                                    <button class="w-full text-left" @click="ui.openAuthModal('login')">Login</button>
-                                </li>
-                                <li>
-                                    <button class="w-full text-left" @click="ui.openAuthModal('register')">
-                                        Register
-                                    </button>
-                                </li>
-                            </template>
-                        </ul>
-                    </div>
+                    <label
+                        for="mobile-nav-drawer"
+                        aria-label="Open menu"
+                        class="btn btn-ghost btn-circle text-white hover:bg-gray-800 lg:hidden"
+                    >
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path
+                                stroke-linecap="round"
+                                stroke-linejoin="round"
+                                stroke-width="2"
+                                d="M4 6h16M4 12h16M4 18h16"
+                            />
+                        </svg>
+                    </label>
 
                     <Link :href="baseUrl" class="flex items-center gap-1.5">
                         <Play :size="14" class="text-madder fill-madder 2xl:hidden" />
@@ -210,6 +157,10 @@ const isAuthenticated = computed(() => !!user.value)
 
                 <!-- End: auth / profile -->
                 <div class="navbar-end gap-2">
+                    <!-- Mobile gets these in the sliding sidebar's bottom bar instead
+                         (see MobileSidebar.vue) so they aren't stranded next to the
+                         hamburger, floating above the drawer. -->
+                    <CountrySwitcher class="hidden lg:inline-block" />
                     <template v-if="!isAuthenticated">
                         <button
                             class="btn btn-ghost btn-sm text-white hidden lg:flex"
@@ -224,33 +175,7 @@ const isAuthenticated = computed(() => !!user.value)
                             Register
                         </button>
                     </template>
-                    <div v-if="isAuthenticated" class="dropdown dropdown-end">
-                        <label tabindex="0" class="cursor-pointer">
-                            <div class="avatar">
-                                <div
-                                    class="w-9 2xl:w-11 rounded-full ring-2 ring-madder ring-offset-1 ring-offset-black"
-                                >
-                                    <img :src="user.avatar_url" :alt="user.avatar_url" />
-                                </div>
-                            </div>
-                        </label>
-                        <ul
-                            tabindex="0"
-                            class="dropdown-content menu menu-sm mt-3 z-[100] p-2 shadow-lg bg-black border border-gray-800 rounded-box w-44 2xl:w-48 text-white"
-                        >
-                            <li class="menu-title text-sm">@{{ user.username }}</li>
-                            <li>
-                                <button class="w-full hover:bg-gray-800" @click="ui.openProfileModal()">
-                                    Update Profile
-                                </button>
-                            </li>
-                            <li>
-                                <Link href="/logout" method="post" as="button" class="w-full hover:bg-gray-800"
-                                    >Logout</Link
-                                >
-                            </li>
-                        </ul>
-                    </div>
+                    <AccountMenu v-if="isAuthenticated" class="hidden lg:inline-block" />
                 </div>
             </div>
         </nav>

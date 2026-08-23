@@ -48,7 +48,7 @@ class HandleInertiaRequests extends Middleware
                 return Genre::orderByDesc('count')->take(7)->get()->toArray();
             }),
             'countries' => Cache::rememberForever('countries', static function () {
-                return Country::get()->toArray();
+                return Country::orderBy('name')->get()->toArray();
             }),
             'providers' => Cache::remember('top-providers', 7200, static function () {
                 return Provider::orderByDesc('count')->take(7)->get()->toArray();

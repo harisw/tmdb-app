@@ -6,6 +6,7 @@ import BaseModal from './BaseModal.vue'
 import RatingBadge from '../RatingBadge.vue'
 import ProvidersBadge from '../ProvidersBadge.vue'
 import GenreBadges from '../GenreBadges.vue'
+import { PROVIDER_MODE_FULL } from '../../constants/ui.js'
 
 const props = defineProps({
     show: { type: Boolean, required: true },
@@ -132,7 +133,7 @@ watch(
 
                     <div v-if="currentItem.title_providers?.length" class="space-y-2">
                         <h3 class="text-xs font-semibold uppercase tracking-wide text-gray-400">Where to watch</h3>
-                        <ProvidersBadge :title-providers="currentItem.title_providers" />
+                        <ProvidersBadge :title-providers="currentItem.title_providers" :mode="PROVIDER_MODE_FULL" />
                     </div>
 
                     <div v-if="currentItem.genres?.length" class="space-y-2">
@@ -177,7 +178,7 @@ watch(
                                 v-for="title in similar.slice(0, 6)"
                                 :key="title.id"
                                 type="button"
-                                class="group text-left focus:outline-none"
+                                class="group text-left focus:outline-none hover:cursor-pointer"
                                 @click="selectSimilar(title)"
                             >
                                 <div
