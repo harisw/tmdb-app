@@ -134,24 +134,38 @@ const isAuthenticated = computed(() => !!user.value)
                                 </li>
                             </ul>
                         </div>
-                        <Link
-                            :href="baseUrl + '/tags'"
-                            class="btn btn-ghost btn-sm text-white hover:text-gray-300 2xl:text-lg 2xl:h-10"
-                        >
-                            Browse by Tags
-                        </Link>
-                        <Link
-                            :href="baseUrl + '/languages'"
-                            class="btn btn-ghost btn-sm text-white hover:text-gray-300 2xl:text-lg 2xl:h-10"
-                        >
-                            Browse by Languages
-                        </Link>
-                        <Link
-                            :href="baseUrl + '/search-all'"
-                            class="btn btn-ghost btn-sm text-white hover:text-gray-300 2xl:text-lg 2xl:h-10"
-                        >
-                            Find more
-                        </Link>
+                        <div class="dropdown">
+                            <label
+                                tabindex="0"
+                                class="btn btn-ghost btn-sm text-white hover:text-gray-300 gap-1 2xl:text-lg 2xl:h-10"
+                            >
+                                Browse by
+                                <svg class="w-4 h-4 fill-current" viewBox="0 0 20 20">
+                                    <path d="M5.25 7.5L10 12.25L14.75 7.5H5.25Z" />
+                                </svg>
+                            </label>
+                            <ul
+                                tabindex="0"
+                                class="dropdown-content menu menu-sm mt-1 z-[100] p-0 shadow-lg bg-black border border-gray-800 rounded-box w-48 2xl:w-56 text-white"
+                            >
+                                <li>
+                                    <Link :href="baseUrl + '/tags'" class="hover:bg-gray-800 rounded-none"
+                                        >By Tags</Link
+                                    >
+                                </li>
+                                <li>
+                                    <Link :href="baseUrl + '/languages'" class="hover:bg-gray-800 rounded-none"
+                                        >By Languages</Link
+                                    >
+                                </li>
+                            </ul>
+                        </div>
+                        <!--                        <Link-->
+                        <!--                            :href="baseUrl + '/search-all'"-->
+                        <!--                            class="btn btn-ghost btn-sm text-white hover:text-gray-300 2xl:text-lg 2xl:h-10"-->
+                        <!--                        >-->
+                        <!--                            Find more-->
+                        <!--                        </Link>-->
                     </div>
                 </div>
 
