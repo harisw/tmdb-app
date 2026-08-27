@@ -11,11 +11,13 @@ class PostTitleEventRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'title_id' => ['required', 'integer', 'exists:title,id'],
-            'type' => ['required', 'string', Rule::contains(TitleEventType::values())],
-            'rate' => [
-                Rule::requiredIf(fn ($req) => $req->type === TitleEventType::RATE->value),
-                'float',
+            'title_id' => ['required', 'integer', 'exists:titles,id'],
+            'type' => ['required', 'string', Rule::in(TitleEventType::values())],
+            'value' => [
+                'nullable',
+                Rule::requiredIf(fn () => $this->input('type') === TitleEventType::RATE->value),
+                'numeric',
+                'between:0,5',
             ],
         ];
     }

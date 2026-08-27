@@ -3,7 +3,9 @@
 namespace App\Models;
 
 use App\Domain\Enums\TitleEventType;
+use App\Infrastructure\Observers\TitleInteractionEventObserver;
 use Database\Factories\TitleInteractionEventFactory;
+use Illuminate\Database\Eloquent\Attributes\ObservedBy;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -32,6 +34,7 @@ use Illuminate\Support\Carbon;
  *
  * @mixin \Eloquent
  */
+#[ObservedBy([TitleInteractionEventObserver::class])]
 class TitleInteractionEvent extends Model
 {
     /** @use HasFactory<TitleInteractionEventFactory> */

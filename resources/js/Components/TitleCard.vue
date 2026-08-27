@@ -5,7 +5,7 @@ import { FilmIcon, TvIcon } from 'lucide-vue-next'
 import { computed } from 'vue'
 import ProvidersBadge from './ProvidersBadge.vue'
 import GenreBadges from './GenreBadges.vue'
-import Adult from './Icons/Adult.vue'
+import UserTitleAction from './UserTitleAction.vue'
 
 const props = defineProps({
     onClick: { type: Function },
@@ -40,8 +40,9 @@ function onPosterError(e) {
             <div
                 class="relative bg-licorice/95 ring-1 ring-white/5 rounded-xl shadow-xl transition-transform duration-500 transform group-hover:rotate-y-3 group-hover:-rotate-x-1 group-hover:scale-105 [transform-style:preserve-3d] overflow-x-hidden h-full"
             >
-                <!-- #3: poster + overlays wrapped in one relative container -->
-                <div class="relative">
+                <!-- #3: poster + overlays wrapped in one relative container.
+                     overflow-hidden masks the action group while it slides up. -->
+                <div class="relative overflow-hidden rounded-t-xl">
                     <img
                         :src="posterSrc"
                         :alt="`${item.name} Poster`"
@@ -63,11 +64,9 @@ function onPosterError(e) {
                         <RatingBadge :rating="item.rating" />
                     </div>
 
-                    <!-- bottom row: adult marker (left) + provider logos (right) -->
+                    <!-- bottom row: action group (left) + provider logos (right) -->
                     <div class="absolute inset-x-2 bottom-2 flex justify-end items-center gap-1">
-                        <div class="mr-auto flex gap-1">
-                            <button class="btn btn-soft">Default</button>
-                        </div>
+                        <UserTitleAction :title="item" />
                         <ProvidersBadge
                             v-if="item.title_providers?.length"
                             :title-providers="item.title_providers.slice(0, 3)"

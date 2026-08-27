@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Models\Observers;
+namespace App\Infrastructure\Observers;
 
 use App\Models\Title;
 use App\Services\KnowledgeGraph\TitleEnrichmentService;

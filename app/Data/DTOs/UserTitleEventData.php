@@ -12,12 +12,14 @@ class UserTitleEventData extends Data
     public function __construct(
         public readonly int $title_id,
         public readonly string $type,
-        public readonly ?float $rate,
+        public readonly ?float $value,
     ) {}
 
     public function setUser(User $user): self
     {
         $this->user = $user;
+
+        return $this;
     }
 
     public function getUser(): ?User

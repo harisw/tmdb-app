@@ -6,9 +6,11 @@ use App\Casts\RoundFloat;
 use App\Domain\Enums\CreditJob;
 use App\Domain\Enums\TitleType;
 use App\Helpers\DateTimeHelper;
+use App\Infrastructure\Observers\TitleObserver;
 use App\Models\Scopes\AdultContentScope;
 use App\Models\Scopes\TitleTypeScope;
 use Database\Factories\TitleFactory;
+use Illuminate\Database\Eloquent\Attributes\ObservedBy;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -106,6 +108,7 @@ use Spatie\SchemalessAttributes\Casts\SchemalessAttributes;
  *
  * @mixin \Eloquent
  */
+#[ObservedBy([TitleObserver::class])]
 class Title extends Model
 {
     /** @use HasFactory<TitleFactory> */
