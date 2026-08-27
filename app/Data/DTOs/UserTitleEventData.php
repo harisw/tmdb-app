@@ -15,7 +15,7 @@ class UserTitleEventData extends Data
         public readonly ?float $rate,
     ) {}
 
-    public function setUser(User $user): void
+    public function setUser(User $user): self
     {
         $this->user = $user;
     }

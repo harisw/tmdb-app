@@ -2,7 +2,7 @@
 
 namespace App\Http\Requests;
 
-use App\Domain\Enums\InteractionEventType;
+use App\Domain\Enums\TitleEventType;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
@@ -12,9 +12,9 @@ class PostTitleEventRequest extends FormRequest
     {
         return [
             'title_id' => ['required', 'integer', 'exists:title,id'],
-            'type' => ['required', 'string', Rule::contains(InteractionEventType::values())],
+            'type' => ['required', 'string', Rule::contains(TitleEventType::values())],
             'rate' => [
-                Rule::requiredIf(fn ($req) => $req->type === InteractionEventType::RATE->value),
+                Rule::requiredIf(fn ($req) => $req->type === TitleEventType::RATE->value),
                 'float',
             ],
         ];

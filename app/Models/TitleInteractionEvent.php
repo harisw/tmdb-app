@@ -2,7 +2,7 @@
 
 namespace App\Models;
 
-use App\Domain\Enums\InteractionEventType;
+use App\Domain\Enums\TitleEventType;
 use Database\Factories\TitleInteractionEventFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -13,7 +13,7 @@ use Illuminate\Support\Carbon;
  * @property int $id
  * @property int $user_id
  * @property int $title_id
- * @property InteractionEventType $event_type
+ * @property TitleEventType $event_type
  * @property numeric|null $value
  * @property Carbon $created_at
  * @property-read Title $title
@@ -47,7 +47,7 @@ class TitleInteractionEvent extends Model
     ];
 
     protected $casts = [
-        'event_type' => InteractionEventType::class,
+        'event_type' => TitleEventType::class,
     ];
 
     public function user(): BelongsTo

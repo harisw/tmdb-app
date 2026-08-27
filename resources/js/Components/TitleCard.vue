@@ -65,13 +65,9 @@ function onPosterError(e) {
 
                     <!-- bottom row: adult marker (left) + provider logos (right) -->
                     <div class="absolute inset-x-2 bottom-2 flex justify-end items-center gap-1">
-                        <span
-                            v-if="item.is_adult"
-                            class="mr-auto p-1 badge rounded-full bg-black/80 text-red-500"
-                            title="Adult content"
-                        >
-                            <Adult class="w-7 h-7" />
-                        </span>
+                        <div class="mr-auto flex gap-1">
+                            <button class="btn btn-soft">Default</button>
+                        </div>
                         <ProvidersBadge
                             v-if="item.title_providers?.length"
                             :title-providers="item.title_providers.slice(0, 3)"

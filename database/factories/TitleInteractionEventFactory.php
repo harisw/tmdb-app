@@ -2,7 +2,7 @@
 
 namespace Database\Factories;
 
-use App\Domain\Enums\InteractionEventType;
+use App\Domain\Enums\TitleEventType;
 use App\Models\Title;
 use App\Models\TitleInteractionEvent;
 use App\Models\User;
@@ -20,13 +20,13 @@ class TitleInteractionEventFactory extends Factory
      */
     public function definition(): array
     {
-        $eventType = fake()->randomElement(InteractionEventType::cases());
+        $eventType = fake()->randomElement(TitleEventType::cases());
 
         return [
             'user_id' => User::factory(),
             'title_id' => Title::factory(),
             'event_type' => $eventType,
-            'value' => $eventType === InteractionEventType::RATE
+            'value' => $eventType === TitleEventType::RATE
                 ? fake()->randomFloat(1, 0, 5)
                 : null,
         ];

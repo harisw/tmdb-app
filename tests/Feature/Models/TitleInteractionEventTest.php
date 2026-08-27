@@ -2,7 +2,7 @@
 
 namespace Tests\Feature\Models;
 
-use App\Domain\Enums\InteractionEventType;
+use App\Domain\Enums\TitleEventType;
 use App\Models\Title;
 use App\Models\TitleInteractionEvent;
 use App\Models\User;
@@ -21,11 +21,11 @@ class TitleInteractionEventTest extends TestCase
         $event = TitleInteractionEvent::factory()->create([
             'user_id' => $user->id,
             'title_id' => $title->id,
-            'event_type' => InteractionEventType::RATE,
+            'event_type' => TitleEventType::RATE,
             'value' => 4.567,
         ]);
 
-        $this->assertSame(InteractionEventType::RATE, $event->event_type);
+        $this->assertSame(TitleEventType::RATE, $event->event_type);
         $this->assertSame('4.6', (string) $event->value);
         $this->assertTrue($event->user->is($user));
         $this->assertTrue($event->title->is($title));
@@ -41,7 +41,7 @@ class TitleInteractionEventTest extends TestCase
     public function test_non_rate_events_can_omit_value(): void
     {
         $event = TitleInteractionEvent::factory()->create([
-            'event_type' => InteractionEventType::WATCHED,
+            'event_type' => TitleEventType::WATCHED,
             'value' => null,
         ]);
 

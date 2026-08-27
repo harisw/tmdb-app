@@ -4,7 +4,7 @@ namespace App\Domain\Enums;
 
 use App\Utils\Traits\EnumValues;
 
-enum InteractionEventType: string
+enum TitleEventType: string
 {
     use EnumValues;
 
