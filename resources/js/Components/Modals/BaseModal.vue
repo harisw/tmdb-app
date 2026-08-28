@@ -1,6 +1,7 @@
 <script setup>
 import { onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { X } from 'lucide-vue-next'
+import { button } from '../../variants/button.js'
 
 const props = defineProps({
     show: { type: Boolean, required: true },
@@ -74,7 +75,14 @@ onBeforeUnmount(() => {
                     <slot name="close" :close="close">
                         <button
                             type="button"
-                            class="btn btn-xs btn-circle btn-ghost absolute top-3 right-3 z-10 border-0 text-white/50 hover:bg-white/10 hover:text-white"
+                            :class="
+                                button({
+                                    intent: 'ghost',
+                                    size: 'xs',
+                                    circle: true,
+                                    class: 'absolute top-3 right-3 z-10 text-white/50 hover:text-white',
+                                })
+                            "
                             aria-label="Close"
                             @click="close"
                         >

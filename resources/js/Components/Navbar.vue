@@ -8,8 +8,11 @@ import AccountMenu from './AccountMenu.vue'
 import CountrySwitcher from './CountrySwitcher.vue'
 import { useTitleTypeStore } from '../stores/titleType.js'
 import { useUiStore } from '../stores/ui.js'
+import DropdownMenu from './DropdownMenu.vue'
+import { button } from '../variants/button.js'
 
 const baseUrl = useBaseUrl()
+const page = usePage()
 
 // Global modal state now lives in the ui store; the modals themselves are
 // hosted in AppLayout, so Navbar only needs the "open" actions.
@@ -28,9 +31,26 @@ const typeOptions = [
 ]
 const pillIndex = computed(() => typeOptions.findIndex((o) => o.value === titleType.value))
 
-const page = usePage()
-const genres = computed(() => page.props.genres)
-const providers = computed(() => page.props.providers)
+const topGenres = computed(() => [
+    ...page.props.topGenres.map((genre) => ({
+        url: genre.url,
+        label: genre.name,
+    })),
+    { url: baseUrl + '/genre/all', label: 'See more' },
+])
+
+const topProviders = computed(() => [
+    ...page.props.topProviders.map((provider) => ({
+        url: provider.url,
+        label: provider.name,
+    })),
+    { url: baseUrl + '/provider/all', label: 'See more' },
+])
+
+const browseByMenu = [
+    { url: baseUrl + '/tags', label: 'By Tags' },
+    { url: baseUrl + '/languages', label: 'By Languages' },
+]
 const user = computed(() => page.props.auth.user)
 const isAuthenticated = computed(() => !!user.value)
 </script>
@@ -44,7 +64,7 @@ const isAuthenticated = computed(() => !!user.value)
                     <label
                         for="mobile-nav-drawer"
                         aria-label="Open menu"
-                        class="btn btn-ghost btn-circle text-white hover:bg-gray-800 lg:hidden"
+                        :class="button({ intent: 'ghost', circle: true, class: 'lg:hidden' })"
                     >
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path
@@ -82,84 +102,9 @@ const isAuthenticated = computed(() => !!user.value)
                 <!-- Center: desktop nav links -->
                 <div class="navbar-center hidden lg:flex">
                     <div class="flex items-center gap-1 text-sm 2xl:text-lg">
-                        <div class="dropdown">
-                            <label
-                                tabindex="0"
-                                class="btn btn-ghost btn-sm text-white hover:text-gray-300 gap-1 2xl:text-lg 2xl:h-10"
-                            >
-                                Genres
-                                <svg class="w-4 h-4 fill-current" viewBox="0 0 20 20">
-                                    <path d="M5.25 7.5L10 12.25L14.75 7.5H5.25Z" />
-                                </svg>
-                            </label>
-                            <ul
-                                tabindex="0"
-                                class="dropdown-content menu menu-sm mt-1 z-[100] p-0 shadow-lg bg-black border border-gray-800 rounded-box w-48 2xl:w-56 text-white"
-                            >
-                                <li v-for="genre in genres" :key="genre.id">
-                                    <Link :href="genre.url" class="hover:bg-gray-800 rounded-none">{{
-                                        genre.name
-                                    }}</Link>
-                                </li>
-                                <li>
-                                    <Link :href="baseUrl + '/genre/all'" class="hover:bg-gray-800 rounded-none"
-                                        >See more</Link
-                                    >
-                                </li>
-                            </ul>
-                        </div>
-                        <div class="dropdown">
-                            <label
-                                tabindex="0"
-                                class="btn btn-ghost btn-sm text-white hover:text-gray-300 gap-1 2xl:text-lg 2xl:h-10"
-                            >
-                                Providers
-                                <svg class="w-4 h-4 fill-current" viewBox="0 0 20 20">
-                                    <path d="M5.25 7.5L10 12.25L14.75 7.5H5.25Z" />
-                                </svg>
-                            </label>
-                            <ul
-                                tabindex="0"
-                                class="dropdown-content menu menu-sm mt-1 z-[100] p-0 shadow-lg bg-black border border-gray-800 rounded-box w-48 2xl:w-56 text-white"
-                            >
-                                <li v-for="provider in providers" :key="provider.id">
-                                    <Link :href="provider.url" class="hover:bg-gray-800 rounded-none">{{
-                                        provider.name
-                                    }}</Link>
-                                </li>
-                                <li>
-                                    <Link :href="baseUrl + '/provider/all'" class="hover:bg-gray-800 rounded-none"
-                                        >See more</Link
-                                    >
-                                </li>
-                            </ul>
-                        </div>
-                        <div class="dropdown">
-                            <label
-                                tabindex="0"
-                                class="btn btn-ghost btn-sm text-white hover:text-gray-300 gap-1 2xl:text-lg 2xl:h-10"
-                            >
-                                Browse by
-                                <svg class="w-4 h-4 fill-current" viewBox="0 0 20 20">
-                                    <path d="M5.25 7.5L10 12.25L14.75 7.5H5.25Z" />
-                                </svg>
-                            </label>
-                            <ul
-                                tabindex="0"
-                                class="dropdown-content menu menu-sm mt-1 z-[100] p-0 shadow-lg bg-black border border-gray-800 rounded-box w-48 2xl:w-56 text-white"
-                            >
-                                <li>
-                                    <Link :href="baseUrl + '/tags'" class="hover:bg-gray-800 rounded-none"
-                                        >By Tags</Link
-                                    >
-                                </li>
-                                <li>
-                                    <Link :href="baseUrl + '/languages'" class="hover:bg-gray-800 rounded-none"
-                                        >By Languages</Link
-                                    >
-                                </li>
-                            </ul>
-                        </div>
+                        <DropdownMenu :submenus="topGenres" label="Genres" />
+                        <DropdownMenu :submenus="topProviders" label="Providers" />
+                        <DropdownMenu :submenus="browseByMenu" label="Browse by" />
                         <!--                        <Link-->
                         <!--                            :href="baseUrl + '/search-all'"-->
                         <!--                            class="btn btn-ghost btn-sm text-white hover:text-gray-300 2xl:text-lg 2xl:h-10"-->
@@ -177,13 +122,13 @@ const isAuthenticated = computed(() => !!user.value)
                     <CountrySwitcher class="hidden lg:inline-block" />
                     <template v-if="!isAuthenticated">
                         <button
-                            class="btn btn-ghost btn-sm text-white hidden lg:flex"
+                            :class="button({ intent: 'link', class: 'hidden lg:flex' })"
                             @click="ui.openAuthModal('login')"
                         >
                             Login
                         </button>
                         <button
-                            class="btn btn-sm bg-madder text-white border-none hover:bg-red-800 hidden lg:flex"
+                            :class="button({ intent: 'primary', class: 'hidden lg:flex' })"
                             @click="ui.openAuthModal('register')"
                         >
                             Register

@@ -13,8 +13,8 @@ const ui = useUiStore()
 const { closeMobileDrawer } = useMobileDrawer()
 
 const page = usePage()
-const genres = computed(() => page.props.genres)
-const providers = computed(() => page.props.providers)
+const topGenres = computed(() => page.props.topGenres)
+const topProviders = computed(() => page.props.topProviders)
 const isAuthenticated = computed(() => !!page.props.auth.user)
 
 function openAuthModal(tab) {
@@ -43,7 +43,7 @@ function openAuthModal(tab) {
                 <details>
                     <summary>Genres</summary>
                     <ul>
-                        <li v-for="genre in genres" :key="genre.id">
+                        <li v-for="genre in topGenres" :key="genre.id">
                             <Link :href="genre.url" @click="closeMobileDrawer">{{ genre.name }}</Link>
                         </li>
                         <li>
@@ -56,7 +56,7 @@ function openAuthModal(tab) {
                 <details>
                     <summary>Providers</summary>
                     <ul>
-                        <li v-for="provider in providers" :key="provider.id">
+                        <li v-for="provider in topProviders" :key="provider.id">
                             <Link :href="provider.url" @click="closeMobileDrawer">{{ provider.name }}</Link>
                         </li>
                         <li>

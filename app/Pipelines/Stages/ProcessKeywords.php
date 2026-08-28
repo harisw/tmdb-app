@@ -16,7 +16,7 @@ class ProcessKeywords
     {
         $keywords = $this->getKeywordData($this->tmdb->getKeywords($ctx->title->type, $ctx->title->tmdb_id));
 
-        $keywordIds = TmdbKeywordData::collect(collect($keywords)->unique('name'))
+        $keywordIds = TmdbKeywordData::collect(collect($keywords)->unique('name')->map('trim')->filter())
             ->toBase()
             ->map(fn (TmdbKeywordData $kw) => Keyword::firstOrCreate(
                 ['slug' => $kw->slug],

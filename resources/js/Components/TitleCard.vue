@@ -6,6 +6,7 @@ import { computed } from 'vue'
 import ProvidersBadge from './ProvidersBadge.vue'
 import GenreBadges from './GenreBadges.vue'
 import UserTitleAction from './UserTitleAction.vue'
+import { badge } from '../variants/badge.js'
 
 const props = defineProps({
     onClick: { type: Function },
@@ -52,15 +53,10 @@ function onPosterError(e) {
 
                     <!-- top row: type badge + rating -->
                     <div class="absolute inset-x-2 top-2 flex justify-between items-center">
-                        <span
-                            v-if="item.type === 'movie'"
-                            class="p-1 gap-1 badge rounded-md text-white text-xs font-medium bg-black/80"
-                        >
+                        <span v-if="item.type === 'movie'" :class="badge({ tone: 'movie' })">
                             <FilmIcon size="14" /> Film
                         </span>
-                        <span v-else class="p-1 gap-1 badge rounded-md text-white text-xs font-medium bg-blue-900/80">
-                            <TvIcon size="14" /> TV
-                        </span>
+                        <span v-else :class="badge({ tone: 'tv' })"> <TvIcon size="14" /> TV </span>
                         <RatingBadge :rating="item.rating" />
                     </div>
 
