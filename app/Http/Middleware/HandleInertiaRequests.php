@@ -3,7 +3,7 @@
 namespace App\Http\Middleware;
 
 use App\Data\DTOs\UserData;
-use App\Domain\Enums\TitleEventType;
+use App\Domain\Enums\TitleAction;
 use App\Domain\Enums\TitleType;
 use App\Models\Country;
 use App\Models\Genre;
@@ -66,7 +66,13 @@ class HandleInertiaRequests extends Middleware
             ],
             'enums' => [
                 'TitleType' => TitleType::collection(),
-                'TitleEventType' => TitleEventType::collection(),
+                'TitleAction' => collect(TitleAction::cases())->mapWithKeys(fn (TitleAction $action) => [
+                    $action->value => [
+                        'on' => $action->events()['on']->value,
+                        'off' => $action->events()['off']->value,
+                        'ratable' => $action->ratable(),
+                    ],
+                ]),
             ],
             'flash' => [
                 'message' => fn () => $request->session()->get('message'),

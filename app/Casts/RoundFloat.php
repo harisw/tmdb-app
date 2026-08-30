@@ -7,19 +7,17 @@ use Illuminate\Database\Eloquent\Model;
 
 class RoundFloat implements CastsAttributes
 {
+    public function __construct(private int $precision = 2) {}
+
     /**
-     * Cast the given value.
-     *
      * @param  array<string, mixed>  $attributes
      */
     public function get(Model $model, string $key, mixed $value, array $attributes): mixed
     {
-        return round((float) $value, 2);
+        return $value === null ? null : round((float) $value, $this->precision);
     }
 
     /**
-     * Prepare the given value for storage.
-     *
      * @param  array<string, mixed>  $attributes
      */
     public function set(Model $model, string $key, mixed $value, array $attributes): mixed

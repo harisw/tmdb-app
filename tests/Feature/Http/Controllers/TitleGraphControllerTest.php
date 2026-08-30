@@ -4,6 +4,7 @@ namespace Tests\Feature\Http\Controllers;
 
 use App\Models\Title;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Bus;
 use Tests\TestCase;
 
 class TitleGraphControllerTest extends TestCase
@@ -14,6 +15,8 @@ class TitleGraphControllerTest extends TestCase
     {
         parent::setUp();
         $this->withoutVite();
+
+        Bus::fake();
     }
 
     private function attachSimilar(Title $title, Title $similar, float $score, array $reasons = []): void

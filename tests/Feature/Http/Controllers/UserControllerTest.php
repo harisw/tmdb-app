@@ -5,6 +5,7 @@ namespace Tests\Feature\Http\Controllers;
 use App\Domain\Enums\TitleEventType;
 use App\Models\Title;
 use App\Models\User;
+use App\Models\UserTitleState;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Testing\TestResponse;
 use Tests\TestCase;
@@ -54,17 +55,6 @@ class UserControllerTest extends TestCase
         ])->assertJsonValidationErrorFor('type');
     }
 
-    public function test_it_requires_a_value_for_rate_events(): void
-    {
-        $this->actingAs(User::factory()->create());
-        $title = Title::factory()->create();
-
-        $this->postEvent([
-            'title_id' => $title->id,
-            'type' => TitleEventType::RATE->value,
-        ])->assertJsonValidationErrorFor('value');
-    }
-
     public function test_it_rejects_a_rating_outside_the_zero_to_five_range(): void
     {
         $this->actingAs(User::factory()->create());
@@ -72,12 +62,12 @@ class UserControllerTest extends TestCase
 
         $this->postEvent([
             'title_id' => $title->id,
-            'type' => TitleEventType::RATE->value,
+            'type' => TitleEventType::WATCHED->value,
             'value' => 9,
         ])->assertJsonValidationErrorFor('value');
     }
 
-    public function test_it_records_a_rate_event_and_returns_the_resource(): void
+    public function test_it_records_a_like_with_a_rating_and_returns_the_state(): void
     {
         $user = User::factory()->create();
         $title = Title::factory()->create();
@@ -85,19 +75,34 @@ class UserControllerTest extends TestCase
 
         $this->postEvent([
             'title_id' => $title->id,
-            'type' => TitleEventType::RATE->value,
+            'type' => TitleEventType::LIKE->value,
             'value' => 4.5,
         ])
-            ->assertCreated()
-            ->assertJsonPath('data.title_id', $title->id)
-            ->assertJsonPath('data.event_type', TitleEventType::RATE->value)
-            ->assertJsonPath('data.value', 4.5);
+            ->assertOk()
+            ->assertJsonPath('data.liked', true)
+            ->assertJsonPath('data.rate', 4.5);
 
-        $this->assertDatabaseHas('title_interaction_events', [
+        $this->assertDatabaseHas('user_title_states', [
             'user_id' => $user->id,
             'title_id' => $title->id,
-            'event_type' => TitleEventType::RATE->value,
+            'liked' => true,
         ]);
+    }
+
+    public function test_it_records_a_like_without_a_rating(): void
+    {
+        $user = User::factory()->create();
+        $title = Title::factory()->create();
+        $this->actingAs($user);
+
+        $this->postEvent([
+            'title_id' => $title->id,
+            'type' => TitleEventType::LIKE->value,
+            'value' => null,
+        ])
+            ->assertOk()
+            ->assertJsonPath('data.liked', true)
+            ->assertJsonPath('data.rate', null);
     }
 
     public function test_it_records_a_watchlist_event(): void
@@ -110,7 +115,9 @@ class UserControllerTest extends TestCase
             'title_id' => $title->id,
             'type' => TitleEventType::TO_WATCH_ADDED->value,
             'value' => null,
-        ])->assertCreated();
+        ])
+            ->assertOk()
+            ->assertJsonPath('data.to_watch', true);
 
         $this->assertDatabaseHas('title_interaction_events', [
             'user_id' => $user->id,
@@ -118,6 +125,26 @@ class UserControllerTest extends TestCase
             'event_type' => TitleEventType::TO_WATCH_ADDED->value,
             'value' => null,
         ]);
+    }
+
+    public function test_watched_removed_toggles_the_state_off(): void
+    {
+        $user = User::factory()->create();
+        $title = Title::factory()->create();
+        UserTitleState::factory()->create([
+            'user_id' => $user->id,
+            'title_id' => $title->id,
+            'watched' => true,
+        ]);
+        $this->actingAs($user);
+
+        $this->postEvent([
+            'title_id' => $title->id,
+            'type' => TitleEventType::WATCHED_REMOVED->value,
+            'value' => null,
+        ])
+            ->assertOk()
+            ->assertJsonPath('data.watched', false);
     }
 
     public function test_the_event_is_attributed_to_the_authenticated_user(): void
@@ -132,7 +159,7 @@ class UserControllerTest extends TestCase
             'type' => TitleEventType::WATCHED->value,
             'value' => null,
             'user_id' => $someoneElse->id,
-        ])->assertCreated();
+        ])->assertOk();
 
         $this->assertDatabaseHas('title_interaction_events', [
             'title_id' => $title->id,
@@ -153,7 +180,7 @@ class UserControllerTest extends TestCase
             'title_id' => $title->id,
             'type' => TitleEventType::TO_WATCH_ADDED->value,
             'value' => null,
-        ])->assertCreated();
+        ])->assertOk();
 
         $this->assertDatabaseHas('user_title_states', [
             'user_id' => $user->id,

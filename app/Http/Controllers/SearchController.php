@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Resources\TitleResource;
 use App\Models\Genre;
 use App\Models\Keyword;
 use App\Models\Language;
@@ -25,15 +26,15 @@ class SearchController extends Controller
         $q = $request->query('q');
         $results = SearchableTitle::selectRaw("title_id, ts_rank(search_vector, plainto_tsquery('english',(?))) as rank", [$q])
             ->whereRaw('search_vector @@ plainto_tsquery(?)', [$q])
-            ->with('title')
+            ->with(['title' => fn ($query) => $query->with(Title::detailRelations())])
             ->orderByDesc('rank')
-            ->take(30)->get()->pluck('title');
+            ->take(30)->get()->pluck('title')->filter()->values();
 
         $hasMore = $results->count() > self::SEARCH_LIMIT;
 
         return response()->json([
             'hasMore' => $hasMore,
-            'results' => $results->take(self::SEARCH_LIMIT),
+            'results' => TitleResource::collection($results->take(self::SEARCH_LIMIT)),
         ]);
     }
 
@@ -51,8 +52,10 @@ class SearchController extends Controller
                 ->orderByDesc('rank')
                 ->take(100)->pluck('title_id') : collect();
 
-            $results = $this->applyFilters($results, $request->query('lang'), $request->query('gen'),
-                $request->query('tag'))->paginate(self::PAGINATE_SIZE);
+            $results = TitleResource::collection(
+                $this->applyFilters($results, $request->query('lang'), $request->query('gen'),
+                    $request->query('tag'))->paginate(self::PAGINATE_SIZE)
+            );
         }
 
         return Inertia::render('TitleSearchAll', [
@@ -65,7 +68,7 @@ class SearchController extends Controller
 
     private function applyFilters(Collection $titleIds, ?string $lang, ?string $gen, ?string $tag): Builder
     {
-        $query = Title::query()->with(['genres', 'keywords']);
+        $query = Title::query()->with(Title::detailRelations());
         $languageIds = $lang ? Language::whereCode($lang)->pluck('id') : [];
 
         if ($languageIds) {

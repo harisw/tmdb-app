@@ -26,7 +26,7 @@ class TitleInteractionEventFactory extends Factory
             'user_id' => User::factory(),
             'title_id' => Title::factory(),
             'event_type' => $eventType,
-            'value' => $eventType === TitleEventType::RATE
+            'value' => in_array($eventType, [TitleEventType::LIKE, TitleEventType::WATCHED], true)
                 ? fake()->randomFloat(1, 0, 5)
                 : null,
         ];

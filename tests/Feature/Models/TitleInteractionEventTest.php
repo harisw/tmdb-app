@@ -21,12 +21,12 @@ class TitleInteractionEventTest extends TestCase
         $event = TitleInteractionEvent::factory()->create([
             'user_id' => $user->id,
             'title_id' => $title->id,
-            'event_type' => TitleEventType::RATE,
-            'value' => 4.567,
+            'event_type' => TitleEventType::LIKE,
+            'value' => 4.5,
         ]);
 
-        $this->assertSame(TitleEventType::RATE, $event->event_type);
-        $this->assertSame('4.6', (string) $event->value);
+        $this->assertSame(TitleEventType::LIKE, $event->event_type);
+        $this->assertSame('4.5', (string) $event->value);
         $this->assertTrue($event->user->is($user));
         $this->assertTrue($event->title->is($title));
     }
@@ -38,10 +38,10 @@ class TitleInteractionEventTest extends TestCase
         $this->assertArrayNotHasKey('updated_at', $event->getAttributes());
     }
 
-    public function test_non_rate_events_can_omit_value(): void
+    public function test_toggle_events_can_omit_value(): void
     {
         $event = TitleInteractionEvent::factory()->create([
-            'event_type' => TitleEventType::WATCHED,
+            'event_type' => TitleEventType::TO_WATCH_ADDED,
             'value' => null,
         ]);
 

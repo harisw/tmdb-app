@@ -69,27 +69,78 @@ class TitleInteractionServiceTest extends TestCase
 
     public function test_create_event_maps_the_dto_type_onto_the_event_type_column(): void
     {
-        $event = $this->service->createEvent($this->dto(TitleEventType::RATE, 4.5));
+        $event = $this->service->createEvent($this->dto(TitleEventType::LIKE, 4.5));
 
-        $this->assertSame(TitleEventType::RATE, $event->refresh()->event_type);
+        $this->assertSame(TitleEventType::LIKE, $event->refresh()->event_type);
         $this->assertSame('4.5', (string) $event->value);
     }
 
-    public function test_create_event_stores_a_null_value_for_non_rate_events(): void
+    public function test_create_event_stores_a_null_value_for_toggle_events(): void
     {
         $event = $this->service->createEvent($this->dto(TitleEventType::TO_WATCH_ADDED));
 
         $this->assertNull($event->refresh()->value);
     }
 
-    public function test_rate_event_writes_the_rate_onto_the_state(): void
+    public function test_record_creates_the_event_and_returns_the_synced_state(): void
     {
-        $this->service->createOrUpdateState($this->unsavedEvent(TitleEventType::RATE, 3.5));
+        $state = $this->service->record($this->dto(TitleEventType::TO_WATCH_ADDED));
+
+        $this->assertInstanceOf(UserTitleState::class, $state);
+        $this->assertTrue($state->to_watch);
+        $this->assertDatabaseHas('title_interaction_events', [
+            'user_id' => $this->user->id,
+            'title_id' => $this->title->id,
+            'event_type' => TitleEventType::TO_WATCH_ADDED->value,
+        ]);
+    }
+
+    public function test_like_event_sets_liked_and_stores_an_optional_rating(): void
+    {
+        $this->service->createOrUpdateState($this->unsavedEvent(TitleEventType::LIKE, 4.5));
 
         $this->assertDatabaseHas('user_title_states', [
             'user_id' => $this->user->id,
             'title_id' => $this->title->id,
-            'rate' => 3.5,
+            'liked' => true,
+            'rate' => 4.5,
+        ]);
+    }
+
+    public function test_like_event_without_a_value_leaves_the_rate_untouched(): void
+    {
+        UserTitleState::factory()->create([
+            'user_id' => $this->user->id,
+            'title_id' => $this->title->id,
+            'rate' => 3,
+        ]);
+
+        $this->service->createOrUpdateState($this->unsavedEvent(TitleEventType::LIKE));
+
+        $this->assertDatabaseHas('user_title_states', [
+            'user_id' => $this->user->id,
+            'title_id' => $this->title->id,
+            'liked' => true,
+            'rate' => 3,
+        ]);
+    }
+
+    public function test_unlike_event_clears_the_liked_flag_only(): void
+    {
+        UserTitleState::factory()->create([
+            'user_id' => $this->user->id,
+            'title_id' => $this->title->id,
+            'liked' => true,
+            'rate' => 4,
+        ]);
+
+        $this->service->createOrUpdateState($this->unsavedEvent(TitleEventType::UNLIKE));
+
+        $this->assertDatabaseHas('user_title_states', [
+            'user_id' => $this->user->id,
+            'title_id' => $this->title->id,
+            'liked' => false,
+            'rate' => 4,
         ]);
     }
 
@@ -144,10 +195,29 @@ class TitleInteractionServiceTest extends TestCase
         ]);
     }
 
+    public function test_watched_removed_event_clears_the_watched_flag_only(): void
+    {
+        UserTitleState::factory()->create([
+            'user_id' => $this->user->id,
+            'title_id' => $this->title->id,
+            'watched' => true,
+            'rate' => 4,
+        ]);
+
+        $this->service->createOrUpdateState($this->unsavedEvent(TitleEventType::WATCHED_REMOVED));
+
+        $this->assertDatabaseHas('user_title_states', [
+            'user_id' => $this->user->id,
+            'title_id' => $this->title->id,
+            'watched' => false,
+            'rate' => 4,
+        ]);
+    }
+
     public function test_a_later_event_updates_the_single_state_row_for_the_pair(): void
     {
         $this->service->createOrUpdateState($this->unsavedEvent(TitleEventType::TO_WATCH_ADDED));
-        $this->service->createOrUpdateState($this->unsavedEvent(TitleEventType::RATE, 3.5));
+        $this->service->createOrUpdateState($this->unsavedEvent(TitleEventType::WATCHED, 3.5));
 
         $states = UserTitleState::query()
             ->where('user_id', $this->user->id)
@@ -156,6 +226,7 @@ class TitleInteractionServiceTest extends TestCase
 
         $this->assertCount(1, $states);
         $this->assertTrue($states->first()->to_watch);
+        $this->assertTrue($states->first()->watched);
         $this->assertSame('3.5', (string) $states->first()->rate);
     }
 }

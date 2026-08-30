@@ -15,9 +15,10 @@ return new class extends Migration
         Schema::create('user_title_states', function (Blueprint $table) {
             $table->foreignId('user_id')->references('id')->on('users');
             $table->foreignId('title_id')->references('id')->on('titles');
-            $table->float('rate', 1)->nullable()->default(null);
+            $table->boolean('liked')->default(false);
             $table->boolean('watched')->default(false);
             $table->boolean('to_watch')->default(false);
+            $table->float('rate', 1)->nullable()->default(null);
             $table->timestamp('updated_at')->useCurrent();
 
             $table->primary(['user_id', 'title_id']);

@@ -18,6 +18,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Support\Carbon;
 use Spatie\SchemalessAttributes\Casts\SchemalessAttributes;
 
@@ -128,10 +129,6 @@ class Title extends Model
 
     protected $guarded = [];
 
-    /**
-     * The embedding vector is only ever used server-side (similarity
-     * materialisation); never ship it to the client.
-     */
     protected $hidden = ['embedding'];
 
     protected $casts = [
@@ -223,6 +220,11 @@ class Title extends Model
         return $this->hasMany(TitlePerson::class);
     }
 
+    public function userState(): HasOne
+    {
+        return $this->hasOne(UserTitleState::class);
+    }
+
     public function cast(): HasMany
     {
         return $this->credits()->where('job', CreditJob::CAST)->orderBy('order');
@@ -250,10 +252,16 @@ class Title extends Model
             $countryId = Country::whereIso2(request('country'))->first()?->id;
         }
 
-        return ['genres', 'keywords', 'titleProviders' => function ($q) use ($countryId) {
+        $relations = ['genres', 'keywords', 'titleProviders' => function ($q) use ($countryId) {
             $q->when($countryId, function ($q) use ($countryId) {
                 $q->where('country_id', $countryId);
             })->with('provider')->uniqueByProvider();
         }];
+
+        if ($userId = auth()->id()) {
+            $relations['userState'] = fn ($q) => $q->where('user_id', $userId);
+        }
+
+        return $relations;
     }
 }

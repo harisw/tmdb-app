@@ -73,7 +73,7 @@ export default function useInfiniteScroll(source, options = {}) {
                 if (!res || !data) return
                 if (reset) items.value = data
                 else items.value.push(...data)
-                hasMore.value = !!res.next_page_url
+                hasMore.value = !!res.links?.next
             },
             onFinish: () => (loading.value = false),
         })
@@ -144,7 +144,7 @@ export default function useInfiniteScroll(source, options = {}) {
         }
         items.value = res?.data || []
         page.value = 1
-        hasMore.value = !!res?.next_page_url
+        hasMore.value = !!res?.links?.next
     })
 
     return {

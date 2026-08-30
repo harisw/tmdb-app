@@ -1,7 +1,7 @@
 <script setup>
 import { computed, ref, watch } from 'vue'
 import { usePage, Link } from '@inertiajs/vue3'
-import { X, Clock, Calendar, Share2 } from 'lucide-vue-next'
+import { X, Clock, Calendar, Share2, Eye, Bookmark, Star } from 'lucide-vue-next'
 import BaseModal from './BaseModal.vue'
 import RatingBadge from '../RatingBadge.vue'
 import ProvidersBadge from '../ProvidersBadge.vue'
@@ -38,6 +38,12 @@ const backdropSrc = computed(() =>
 function posterSrc(title) {
     return title.poster_path ? page.props.base_url.poster + title.poster_path : POSTER_PLACEHOLDER
 }
+
+const userState = computed(() => currentItem.value?.user_state ?? null)
+const hasUserState = computed(() => {
+    const s = userState.value
+    return !!s && (s.watched || s.to_watch || Number(s.rate) > 0)
+})
 
 function onBackdropError(e) {
     if (e.target.src.endsWith(BACKDROP_PLACEHOLDER)) return
@@ -120,6 +126,27 @@ watch(
                             </span>
                             <span v-if="currentItem.runtime" class="flex items-center gap-1">
                                 <Clock :size="15" /> {{ currentItem.runtime }}
+                            </span>
+                        </div>
+
+                        <div v-if="hasUserState" class="mt-2 flex flex-wrap items-center gap-2 text-xs">
+                            <span
+                                v-if="userState.watched"
+                                class="badge badge-sm gap-1 border-none bg-madder/90 text-white"
+                            >
+                                <Eye :size="13" /> Watched
+                            </span>
+                            <span
+                                v-if="userState.to_watch"
+                                class="badge badge-sm gap-1 border-none bg-white/15 text-white"
+                            >
+                                <Bookmark :size="13" /> On watchlist
+                            </span>
+                            <span
+                                v-if="Number(userState.rate) > 0"
+                                class="badge badge-sm gap-1 border-none bg-black/50 text-amber-300 tabular-nums"
+                            >
+                                <Star :size="13" /> Your rating {{ userState.rate }}
                             </span>
                         </div>
                     </div>

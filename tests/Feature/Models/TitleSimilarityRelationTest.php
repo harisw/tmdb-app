@@ -4,11 +4,19 @@ namespace Tests\Feature\Models;
 
 use App\Models\Title;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Bus;
 use Tests\TestCase;
 
 class TitleSimilarityRelationTest extends TestCase
 {
     use RefreshDatabase;
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        Bus::fake();
+    }
 
     private function attachSimilar(Title $title, Title $similar, float $score, array $reasons = []): void
     {

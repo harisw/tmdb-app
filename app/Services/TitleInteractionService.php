@@ -9,9 +9,22 @@ use App\Models\UserTitleState;
 
 class TitleInteractionService
 {
-    public function __construct() {}
+    /**
+     * Record an interaction and return the resulting state. The state row is
+     * kept in sync by TitleInteractionEventObserver when the event is created,
+     * so this just reads it back.
+     */
+    public function record(UserTitleEventData $data): UserTitleState
+    {
+        $this->createEvent($data);
 
-    public function createEvent(UserTitleEventData $data): ?TitleInteractionEvent
+        return UserTitleState::query()
+            ->where('user_id', $data->getUser()->id)
+            ->where('title_id', $data->title_id)
+            ->firstOrFail();
+    }
+
+    public function createEvent(UserTitleEventData $data): TitleInteractionEvent
     {
         return TitleInteractionEvent::create([
             'user_id' => $data->getUser()->id,
@@ -21,7 +34,7 @@ class TitleInteractionService
         ]);
     }
 
-    public function createOrUpdateState(TitleInteractionEvent $event): ?UserTitleState
+    public function createOrUpdateState(TitleInteractionEvent $event): UserTitleState
     {
         return UserTitleState::updateOrCreate([
             'user_id' => $event->user_id,
@@ -29,16 +42,24 @@ class TitleInteractionService
         ], $this->getUpdateAttribute($event));
     }
 
+    /**
+     * @return array<string, mixed>
+     */
     private function getUpdateAttribute(TitleInteractionEvent $event): array
     {
         return match ($event->event_type) {
-            TitleEventType::RATE => ['rate' => $event->value],
+            TitleEventType::LIKE => [
+                'liked' => true,
+                ...($event->value !== null ? ['rate' => $event->value] : []),
+            ],
+            TitleEventType::UNLIKE => ['liked' => false],
             TitleEventType::TO_WATCH_ADDED => ['to_watch' => true],
             TitleEventType::TO_WATCH_REMOVED => ['to_watch' => false],
             TitleEventType::WATCHED => [
                 'watched' => true,
-                ...($event->value ? ['rate' => $event->value] : []),
-            ]
+                ...($event->value !== null ? ['rate' => $event->value] : []),
+            ],
+            TitleEventType::WATCHED_REMOVED => ['watched' => false],
         };
     }
 }

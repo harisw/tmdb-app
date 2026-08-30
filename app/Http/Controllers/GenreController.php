@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Resources\TitleResource;
 use App\Models\Genre;
 use App\Models\Title;
 use Inertia\Inertia;
@@ -14,10 +15,10 @@ class GenreController extends Controller
     public function index(): Response
     {
         $genres = Genre::with(['titles' => function ($query) {
-            $query->with(['titleProviders' => function ($q) {
-                $q->with('provider')->uniqueByProvider();
-            }])->orderByDesc('created_at')->take(30);
-        }])->get();
+            $query->with(Title::detailRelations())->orderByDesc('created_at')->take(30);
+        }])->get()->map(fn (Genre $genre) => array_merge($genre->toArray(), [
+            'titles' => TitleResource::collection($genre->titles)->resolve(),
+        ]));
 
         return Inertia::render('AllGenres', [
             'allGenres' => $genres,
@@ -28,7 +29,12 @@ class GenreController extends Controller
     {
         return Inertia::render('TitleByGenre', [
             'genre' => $genre,
-            'titles' => $genre->titles()->with(Title::detailRelations())->latest()->paginate(self::PAGINATE_SIZE),
+            'titles' => TitleResource::collection(
+                $genre->titles()
+                    ->with(Title::detailRelations())
+                    ->latest()
+                    ->paginate(self::PAGINATE_SIZE)
+            ),
         ]);
     }
 }

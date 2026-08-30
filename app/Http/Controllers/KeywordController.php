@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Resources\TitleResource;
 use App\Models\Keyword;
 use App\Models\Title;
 use Illuminate\Http\Request;
@@ -25,7 +26,13 @@ class KeywordController extends Controller
         return Inertia::render('AllKeywords', [
             'tags' => $tags,
             'selected' => $key,
-            'titles' => $key ? $key->titles()->with(['genres', 'keywords'])->latest()->paginate(self::PAGINATE_SIZE)
+            'titles' => $key
+                ? TitleResource::collection(
+                    $key->titles()
+                        ->with(Title::detailRelations())
+                        ->latest()
+                        ->paginate(self::PAGINATE_SIZE)
+                )
                 : collect(),
         ]);
     }
@@ -34,7 +41,12 @@ class KeywordController extends Controller
     {
         return Inertia::render('TitleByKeyword', [
             'keyword' => $keyword,
-            'titles' => $keyword->titles()->with(Title::detailRelations())->latest()->paginate(self::PAGINATE_SIZE),
+            'titles' => TitleResource::collection(
+                $keyword->titles()
+                    ->with(Title::detailRelations())
+                    ->latest()
+                    ->paginate(self::PAGINATE_SIZE)
+            ),
         ]);
     }
 }

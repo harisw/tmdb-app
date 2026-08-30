@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Resources\TitleResource;
 use App\Models\Title;
 use Illuminate\Http\JsonResponse;
 
@@ -14,7 +15,7 @@ class SimilarTitleController extends Controller
         $titles = $title->similarTitles()
             ->select([
                 'titles.id', 'name', 'slug', 'type', 'rating', 'release_date',
-                'runtime', 'backdrop_path', 'poster_path', 'overview',
+                'runtime', 'backdrop_path', 'poster_path', 'overview', 'is_adult',
             ])
             ->wherePivot('score', '>=', config('features.knowledge_graph.min_score'))
             ->with(Title::detailRelations())
@@ -22,7 +23,7 @@ class SimilarTitleController extends Controller
             ->get();
 
         return response()->json([
-            'titles' => $titles,
+            'titles' => TitleResource::collection($titles),
         ]);
     }
 }

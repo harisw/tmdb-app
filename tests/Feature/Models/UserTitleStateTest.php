@@ -74,4 +74,16 @@ class UserTitleStateTest extends TestCase
 
         UserTitleState::factory()->create(['rate' => 5.1]);
     }
+
+    public function test_liked_is_fillable_and_cast_to_boolean(): void
+    {
+        $state = UserTitleState::factory()->create(['liked' => 1]);
+
+        $this->assertTrue($state->liked);
+        $this->assertDatabaseHas('user_title_states', [
+            'user_id' => $state->user_id,
+            'title_id' => $state->title_id,
+            'liked' => true,
+        ]);
+    }
 }

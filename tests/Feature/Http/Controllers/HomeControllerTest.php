@@ -6,9 +6,14 @@ use App\Models\Genre;
 use App\Models\Keyword;
 use App\Models\Language;
 use App\Models\ProductionCompany;
+use App\Models\Provider;
 use App\Models\Title;
+use App\Models\TitleProvider;
+use App\Models\User;
+use App\Models\UserTitleState;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Artisan;
+use Illuminate\Support\Facades\Bus;
 use Tests\TestCase;
 
 class HomeControllerTest extends TestCase
@@ -19,6 +24,8 @@ class HomeControllerTest extends TestCase
     {
         parent::setUp();
         $this->withoutVite();
+
+        Bus::fake();
     }
 
     public function test_index_returns_ok(): void
@@ -26,6 +33,17 @@ class HomeControllerTest extends TestCase
         Title::factory(3)->create();
 
         $this->get('/')->assertOk();
+    }
+
+    public function test_shared_props_expose_the_title_action_map(): void
+    {
+        $this->get('/')->assertInertia(fn ($page) => $page
+            ->where('enums.TitleAction.like.on', 'like')
+            ->where('enums.TitleAction.like.off', 'unlike')
+            ->where('enums.TitleAction.like.ratable', true)
+            ->where('enums.TitleAction.watchlist.ratable', false)
+            ->where('enums.TitleAction.watched.off', 'watched_removed')
+        );
     }
 
     public function test_index_renders_home_component_with_props(): void
@@ -50,6 +68,63 @@ class HomeControllerTest extends TestCase
             );
     }
 
+    public function test_index_titles_use_the_resource_shape(): void
+    {
+        Title::factory()->create();
+
+        $this->get('/')
+            ->assertInertia(fn ($page) => $page
+                ->has('titles.data.0', fn ($title) => $title
+                    ->hasAll(['id', 'name', 'slug', 'type', 'rating', 'release_date', 'poster_path', 'is_adult', 'genres', 'keywords', 'title_providers', 'user_state'])
+                    ->missing('revenue')
+                    ->missing('embedding')
+                    ->etc()
+                )
+            );
+    }
+
+    public function test_index_titles_carry_pagination_metadata(): void
+    {
+        Title::factory(35)->create();
+
+        $this->get('/')
+            ->assertInertia(fn ($page) => $page
+                ->has('titles.data', 30)
+                ->where('titles.meta.current_page', 1)
+                ->where('titles.meta.per_page', 30)
+                ->where('titles.meta.total', 35)
+                ->whereNot('titles.links.next', null)
+            );
+    }
+
+    public function test_index_embeds_authenticated_user_state_on_titles(): void
+    {
+        $user = User::factory()->create();
+        $title = Title::factory()->create();
+        UserTitleState::factory()->create([
+            'user_id' => $user->id,
+            'title_id' => $title->id,
+            'watched' => true,
+        ]);
+
+        $this->actingAs($user)
+            ->get('/')
+            ->assertInertia(fn ($page) => $page
+                ->where('titles.data.0.user_state.watched', true)
+            );
+    }
+
+    public function test_index_title_user_state_is_null_for_guests(): void
+    {
+        $title = Title::factory()->create();
+        UserTitleState::factory()->create(['title_id' => $title->id, 'watched' => true]);
+
+        $this->get('/')
+            ->assertInertia(fn ($page) => $page
+                ->where('titles.data.0.user_state', null)
+            );
+    }
+
     public function test_get_all_genres_renders_genres_page(): void
     {
         Genre::factory(3)->create();
@@ -59,6 +134,43 @@ class HomeControllerTest extends TestCase
             ->assertInertia(fn ($page) => $page
                 ->component('AllGenres')
                 ->has('allGenres', 3)
+            );
+    }
+
+    public function test_get_all_genres_titles_use_the_resource_shape_with_user_state(): void
+    {
+        $user = User::factory()->create();
+        $genre = Genre::factory()->create();
+        $title = Title::factory()->create();
+        $genre->titles()->attach($title->id);
+        UserTitleState::factory()->create([
+            'user_id' => $user->id,
+            'title_id' => $title->id,
+            'to_watch' => true,
+        ]);
+
+        $this->actingAs($user)
+            ->get('/genre/all')
+            ->assertInertia(fn ($page) => $page
+                ->where('allGenres.0.titles.0.id', $title->id)
+                ->where('allGenres.0.titles.0.user_state.to_watch', true)
+                ->missing('allGenres.0.titles.0.revenue')
+            );
+    }
+
+    public function test_get_all_providers_renders_with_resource_shaped_titles(): void
+    {
+        $title = Title::factory()->create();
+        $titleProvider = TitleProvider::factory()->create(['title_id' => $title->id]);
+        Provider::whereKey($titleProvider->provider_id)->update(['count' => 1000]);
+
+        $this->get('/provider/all')
+            ->assertOk()
+            ->assertInertia(fn ($page) => $page
+                ->component('AllProviders')
+                ->where('allProviders.0.titles.0.id', $title->id)
+                ->where('allProviders.0.titles.0.user_state', null)
+                ->missing('allProviders.0.titles.0.embedding')
             );
     }
 

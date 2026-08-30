@@ -5,12 +5,22 @@ namespace Tests\Feature\Http\Controllers;
 use App\Models\Genre;
 use App\Models\Keyword;
 use App\Models\Title;
+use App\Models\User;
+use App\Models\UserTitleState;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Bus;
 use Tests\TestCase;
 
 class SimilarTitleControllerTest extends TestCase
 {
     use RefreshDatabase;
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        Bus::fake();
+    }
 
     private function attachSimilar(Title $title, Title $similar, float $score): void
     {
@@ -32,7 +42,42 @@ class SimilarTitleControllerTest extends TestCase
         $this->getJson("/title/{$title->id}/similar")
             ->assertOk()
             ->assertJsonCount(2, 'titles')
-            ->assertJsonStructure(['titles' => [['id', 'name', 'slug', 'poster_path', 'genres', 'keywords', 'title_providers']]]);
+            ->assertJsonStructure(['titles' => [[
+                'id', 'name', 'slug', 'type', 'rating', 'release_date', 'runtime',
+                'overview', 'backdrop_path', 'poster_path', 'is_adult',
+                'genres', 'keywords', 'title_providers', 'user_state',
+            ]]]);
+    }
+
+    public function test_it_embeds_the_authenticated_users_state_on_each_similar_title(): void
+    {
+        $user = User::factory()->create();
+        $title = Title::factory()->create();
+        $similar = Title::factory()->create();
+        $this->attachSimilar($title, $similar, 0.8);
+
+        UserTitleState::factory()->create([
+            'user_id' => $user->id,
+            'title_id' => $similar->id,
+            'to_watch' => true,
+        ]);
+
+        $this->actingAs($user)
+            ->getJson("/title/{$title->id}/similar")
+            ->assertOk()
+            ->assertJsonPath('titles.0.user_state.to_watch', true);
+    }
+
+    public function test_user_state_is_null_for_guests(): void
+    {
+        $title = Title::factory()->create();
+        $similar = Title::factory()->create();
+        $this->attachSimilar($title, $similar, 0.8);
+        UserTitleState::factory()->create(['title_id' => $similar->id, 'to_watch' => true]);
+
+        $this->getJson("/title/{$title->id}/similar")
+            ->assertOk()
+            ->assertJsonPath('titles.0.user_state', null);
     }
 
     public function test_returns_empty_when_no_similar_titles(): void

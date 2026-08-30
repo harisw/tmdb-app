@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Casts\RoundFloat;
 use Database\Factories\UserTitleStateFactory;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -12,7 +13,8 @@ use Illuminate\Support\Carbon;
 /**
  * @property int $user_id
  * @property int $title_id
- * @property numeric $rate
+ * @property float|null $rate
+ * @property bool $liked
  * @property bool $watched
  * @property bool $to_watch
  * @property Carbon $updated_at
@@ -44,14 +46,17 @@ class UserTitleState extends Model
     protected $fillable = [
         'user_id',
         'title_id',
-        'rate',
+        'liked',
         'watched',
         'to_watch',
+        'rate',
     ];
 
     protected $casts = [
+        'liked' => 'boolean',
         'watched' => 'boolean',
         'to_watch' => 'boolean',
+        'rate' => RoundFloat::class.':1',
     ];
 
     protected function setKeysForSaveQuery($query): Builder
