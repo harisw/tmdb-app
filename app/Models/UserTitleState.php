@@ -2,7 +2,6 @@
 
 namespace App\Models;
 
-use App\Casts\RoundFloat;
 use Database\Factories\UserTitleStateFactory;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -56,7 +55,7 @@ class UserTitleState extends Model
         'liked' => 'boolean',
         'watched' => 'boolean',
         'to_watch' => 'boolean',
-        'rate' => RoundFloat::class.':1',
+        'rate' => 'float',
     ];
 
     protected function setKeysForSaveQuery($query): Builder

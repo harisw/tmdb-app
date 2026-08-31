@@ -10,18 +10,12 @@ use App\Models\UserTitleState;
 class TitleInteractionService
 {
     /**
-     * Record an interaction and return the resulting state. The state row is
-     * kept in sync by TitleInteractionEventObserver when the event is created,
-     * so this just reads it back.
+     * Record an interaction: append it to the event log and sync the derived
+     * UserTitleState row that the read model serves from.
      */
     public function record(UserTitleEventData $data): UserTitleState
     {
-        $this->createEvent($data);
-
-        return UserTitleState::query()
-            ->where('user_id', $data->getUser()->id)
-            ->where('title_id', $data->title_id)
-            ->firstOrFail();
+        return $this->createOrUpdateState($this->createEvent($data));
     }
 
     public function createEvent(UserTitleEventData $data): TitleInteractionEvent

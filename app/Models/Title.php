@@ -2,7 +2,6 @@
 
 namespace App\Models;
 
-use App\Casts\RoundFloat;
 use App\Domain\Enums\CreditJob;
 use App\Domain\Enums\TitleType;
 use App\Helpers\DateTimeHelper;
@@ -134,7 +133,7 @@ class Title extends Model
     protected $casts = [
         'runtime' => 'string',
         'release_date' => 'datetime:Y',
-        'rating' => RoundFloat::class,
+        'rating' => 'float',
         'type' => TitleType::class,
         'is_adult' => 'boolean',
         'extra_attributes' => SchemalessAttributes::class,

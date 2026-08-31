@@ -76,28 +76,19 @@ class TitleSimilarityRelationTest extends TestCase
 
     public function test_relationship_matches_the_title_id_side_only(): void
     {
-        // Storage is symmetric (the materialise job writes both directions), so
-        // the relationship only needs to match title_id. A row written for one
-        // direction must NOT surface on the other side.
         $title = Title::factory()->create();
         $similar = Title::factory()->create();
 
+        // A single-direction row surfaces only on the title_id side.
         $this->attachSimilar($title, $similar, 0.9);
 
         $this->assertTrue($title->similarTitles->contains($similar));
         $this->assertFalse($similar->fresh()->similarTitles->contains($title));
-    }
 
-    public function test_both_titles_find_each_other_when_stored_symmetrically(): void
-    {
-        $title = Title::factory()->create();
-        $similar = Title::factory()->create();
-
-        // Mirror how MaterializeTitleSimilaritiesJob persists an edge.
-        $this->attachSimilar($title, $similar, 0.9);
+        // MaterializeTitleSimilaritiesJob writes both directions, so a mirrored
+        // row makes the relationship resolve from either side.
         $this->attachSimilar($similar, $title, 0.9);
 
-        $this->assertTrue($title->similarTitles->contains($similar));
         $this->assertTrue($similar->fresh()->similarTitles->contains($title));
     }
 }

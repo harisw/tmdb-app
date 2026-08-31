@@ -14,13 +14,13 @@ class TitleResourceTest extends TestCase
 {
     use RefreshDatabase;
 
-    public function test_it_exposes_only_the_whitelisted_title_fields(): void
+    public function test_it_exposes_only_whitelisted_fields_and_hides_internal_columns(): void
     {
         $title = Title::factory()->create();
         $title->genres()->attach(Genre::factory()->create());
         $title->keywords()->attach(Keyword::factory()->create());
 
-        $this->getJson("/title/{$title->id}")
+        $response = $this->getJson("/title/{$title->id}")
             ->assertOk()
             ->assertJsonStructure([
                 'title' => [
@@ -29,13 +29,6 @@ class TitleResourceTest extends TestCase
                     'genres', 'keywords', 'title_providers', 'user_state',
                 ],
             ]);
-    }
-
-    public function test_it_omits_internal_and_unused_columns(): void
-    {
-        $title = Title::factory()->create();
-
-        $response = $this->getJson("/title/{$title->id}")->assertOk();
 
         foreach (['embedding', 'revenue', 'popularity', 'tmdb_id', 'imdb_id', 'status', 'homepage', 'tagline', 'original_name', 'language_id'] as $field) {
             $response->assertJsonMissingPath("title.{$field}");
@@ -49,26 +42,6 @@ class TitleResourceTest extends TestCase
         $this->getJson("/title/{$title->id}")
             ->assertOk()
             ->assertJsonPath('title.release_date', '2019');
-    }
-
-    public function test_user_state_is_null_for_guests(): void
-    {
-        $title = Title::factory()->create();
-        UserTitleState::factory()->create(['title_id' => $title->id]);
-
-        $this->getJson("/title/{$title->id}")
-            ->assertOk()
-            ->assertJsonPath('title.user_state', null);
-    }
-
-    public function test_user_state_is_null_when_the_authenticated_user_has_no_row(): void
-    {
-        $title = Title::factory()->create();
-        $this->actingAs(User::factory()->create());
-
-        $this->getJson("/title/{$title->id}")
-            ->assertOk()
-            ->assertJsonPath('title.user_state', null);
     }
 
     public function test_user_state_reflects_the_authenticated_users_row(): void
@@ -110,17 +83,27 @@ class TitleResourceTest extends TestCase
             ->assertJsonPath('title.user_state.liked', false);
     }
 
-    public function test_user_state_does_not_leak_another_users_row(): void
+    public function test_user_state_is_null_unless_the_row_belongs_to_the_current_user(): void
     {
+        // Guest viewer: a state row exists, but no one is authenticated.
+        $guestTitle = Title::factory()->create();
+        UserTitleState::factory()->create(['title_id' => $guestTitle->id, 'watched' => true]);
+
+        $this->getJson("/title/{$guestTitle->id}")
+            ->assertOk()
+            ->assertJsonPath('title.user_state', null);
+
+        // Authenticated viewer with no row of their own, and another user's row
+        // for the same title must not leak.
         $title = Title::factory()->create();
         UserTitleState::factory()->create([
             'user_id' => User::factory()->create()->id,
             'title_id' => $title->id,
             'watched' => true,
         ]);
-        $this->actingAs(User::factory()->create());
 
-        $this->getJson("/title/{$title->id}")
+        $this->actingAs(User::factory()->create())
+            ->getJson("/title/{$title->id}")
             ->assertOk()
             ->assertJsonPath('title.user_state', null);
     }

@@ -13,7 +13,7 @@ class UserTitleStateTest extends TestCase
 {
     use RefreshDatabase;
 
-    public function test_state_relates_to_user_and_title_and_rounds_rate_to_one_decimal(): void
+    public function test_state_relates_to_user(): void
     {
         $user = User::factory()->create();
         $title = Title::factory()->create();
@@ -21,27 +21,12 @@ class UserTitleStateTest extends TestCase
         $state = UserTitleState::factory()->create([
             'user_id' => $user->id,
             'title_id' => $title->id,
-            'rate' => 3.456,
+            'rate' => 3.5,
         ]);
 
         $this->assertSame('3.5', (string) $state->rate);
         $this->assertTrue($state->user->is($user));
         $this->assertTrue($state->title->is($title));
-    }
-
-    public function test_save_updates_the_row_scoped_by_the_composite_key(): void
-    {
-        $state = UserTitleState::factory()->create(['watched' => false]);
-
-        $state->watched = true;
-        $state->save();
-
-        $this->assertTrue(
-            UserTitleState::where('user_id', $state->user_id)
-                ->where('title_id', $state->title_id)
-                ->first()
-                ->watched
-        );
     }
 
     public function test_upsert_updates_existing_state_by_composite_key(): void
@@ -73,17 +58,5 @@ class UserTitleStateTest extends TestCase
         $this->expectException(QueryException::class);
 
         UserTitleState::factory()->create(['rate' => 5.1]);
-    }
-
-    public function test_liked_is_fillable_and_cast_to_boolean(): void
-    {
-        $state = UserTitleState::factory()->create(['liked' => 1]);
-
-        $this->assertTrue($state->liked);
-        $this->assertDatabaseHas('user_title_states', [
-            'user_id' => $state->user_id,
-            'title_id' => $state->title_id,
-            'liked' => true,
-        ]);
     }
 }

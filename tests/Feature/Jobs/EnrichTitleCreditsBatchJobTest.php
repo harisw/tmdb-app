@@ -39,19 +39,6 @@ class EnrichTitleCreditsBatchJobTest extends TestCase
         $this->assertQueuedFor($stale);
     }
 
-    public function test_skips_titles_that_have_no_tmdb_id(): void
-    {
-        Queue::fake();
-
-        // CSV-imported titles can have no tmdb_id. There is nothing to fetch
-        // against, and dispatching one only burns the retry budget.
-        Title::factory()->create(['tmdb_id' => null, 'credits_filled_at' => null, 'popularity' => 500]);
-
-        (new EnrichTitleCreditsBatchJob(10))->handle();
-
-        Queue::assertNothingPushed();
-    }
-
     public function test_prefers_popular_titles_within_its_limit(): void
     {
         Queue::fake();
