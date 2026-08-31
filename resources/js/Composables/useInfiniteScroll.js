@@ -20,7 +20,7 @@ export default function useInfiniteScroll(source, options = {}) {
 
     const items = ref(resource?.data || [])
     const page = ref(1)
-    const hasMore = ref(true)
+    const hasMore = ref(!!resource?.links?.next)
     const query = ref({})
     // const nextPageUrl = ref(resource.next_page_url);
     const loading = ref(false)

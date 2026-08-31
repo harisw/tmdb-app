@@ -8,6 +8,7 @@ use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\DatabaseNotification;
 use Illuminate\Notifications\DatabaseNotificationCollection;
@@ -124,5 +125,27 @@ class User extends Authenticatable implements MustVerifyEmail
         return Attribute::make(
             get: fn (mixed $value, array $attributes) => "https://api.dicebear.com/9.x/{$avatar['style']}/svg?seed=".urlencode($avatar['seed'])
         );
+    }
+
+    public function titles(): BelongsToMany
+    {
+        return $this->belongsToMany(Title::class, 'user_title_states')
+            ->using(UserTitleState::class)
+            ->withPivot('id', 'liked', 'watched', 'to_watch', 'rate');
+    }
+
+    public function likedTitles(): BelongsToMany
+    {
+        return $this->titles()->wherePivot('liked', true);
+    }
+
+    public function watchedTitles(): BelongsToMany
+    {
+        return $this->titles()->wherePivot('watched', true);
+    }
+
+    public function toWatchTitles(): BelongsToMany
+    {
+        return $this->titles()->wherePivot('to_watch', true);
     }
 }

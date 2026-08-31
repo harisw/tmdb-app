@@ -19,10 +19,6 @@ const { authModalOpen, authModalTab, profileModalOpen } = storeToRefs(ui)
         <input id="mobile-nav-drawer" type="checkbox" class="drawer-toggle" />
 
         <div class="drawer-content min-h-screen bg-licorice">
-            <!-- `relative` (never `relative z-*`) so AmbientBackground can pin to the
-                 full page box without isolating the grain from the licorice backdrop.
-                 `min-h-screen` keeps short pages (e.g. /languages) from leaving a
-                 bare licorice strip under the background layer. -->
             <main class="relative min-h-screen bg-licorice">
                 <AmbientBackground />
                 <Navbar />

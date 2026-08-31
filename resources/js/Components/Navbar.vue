@@ -51,6 +51,15 @@ const browseByMenu = [
     { url: baseUrl + '/tags', label: 'By Tags' },
     { url: baseUrl + '/languages', label: 'By Languages' },
 ]
+
+const userListBaseUrl = baseUrl + '/user/titles'
+const userListMenu = [
+    { url: userListBaseUrl, label: 'My Lists' },
+    { url: userListBaseUrl + '/liked', label: 'Liked Titles' },
+    { url: userListBaseUrl + '/watched', label: 'Watched Titles' },
+    { url: userListBaseUrl + '/bookmarked', label: 'Bookmarked Titles' },
+]
+
 const user = computed(() => page.props.auth.user)
 const isAuthenticated = computed(() => !!user.value)
 </script>
@@ -105,12 +114,7 @@ const isAuthenticated = computed(() => !!user.value)
                         <DropdownMenu :submenus="topGenres" label="Genres" />
                         <DropdownMenu :submenus="topProviders" label="Providers" />
                         <DropdownMenu :submenus="browseByMenu" label="Browse by" />
-                        <!--                        <Link-->
-                        <!--                            :href="baseUrl + '/search-all'"-->
-                        <!--                            class="btn btn-ghost btn-sm text-white hover:text-gray-300 2xl:text-lg 2xl:h-10"-->
-                        <!--                        >-->
-                        <!--                            Find more-->
-                        <!--                        </Link>-->
+                        <DropdownMenu :submenus="userListMenu" label="My List" />
                     </div>
                 </div>
 

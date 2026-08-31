@@ -5,8 +5,8 @@ namespace App\Models;
 use Database\Factories\UserTitleStateFactory;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\Pivot;
 use Illuminate\Support\Carbon;
 
 /**
@@ -33,14 +33,14 @@ use Illuminate\Support\Carbon;
  *
  * @mixin \Eloquent
  */
-class UserTitleState extends Model
+class UserTitleState extends Pivot
 {
     /** @use HasFactory<UserTitleStateFactory> */
     use HasFactory;
 
     const CREATED_AT = null;
 
-    public $incrementing = false;
+    protected $table = 'user_title_states';
 
     protected $fillable = [
         'user_id',

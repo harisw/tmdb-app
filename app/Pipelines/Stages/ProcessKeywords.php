@@ -7,6 +7,7 @@ use App\Data\DTOs\TmdbApi\TmdbKeywordData;
 use App\Models\Keyword;
 use App\Services\TmdbApiService;
 use Closure;
+use Illuminate\Support\Collection;
 
 class ProcessKeywords
 {
@@ -16,7 +17,7 @@ class ProcessKeywords
     {
         $keywords = $this->getKeywordData($this->tmdb->getKeywords($ctx->title->type, $ctx->title->tmdb_id));
 
-        $keywordIds = TmdbKeywordData::collect(collect($keywords)->unique('name')->map('trim')->filter())
+        $keywordIds = TmdbKeywordData::collect($this->prepareKeywords($keywords))
             ->toBase()
             ->map(fn (TmdbKeywordData $kw) => Keyword::firstOrCreate(
                 ['slug' => $kw->slug],
@@ -28,6 +29,11 @@ class ProcessKeywords
         $ctx->title->keywords()->sync($keywordIds);
 
         return $next($ctx);
+    }
+
+    private function prepareKeywords(array $keywords): Collection
+    {
+        return collect($keywords)->only('name')->unique()->map(fn ($k) => trim($k))->filter();
     }
 
     private function getKeywordData($data): array

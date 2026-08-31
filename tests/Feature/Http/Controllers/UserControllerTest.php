@@ -5,6 +5,7 @@ namespace Tests\Feature\Http\Controllers;
 use App\Domain\Enums\TitleEventType;
 use App\Models\Title;
 use App\Models\User;
+use App\Models\UserTitleState;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Testing\TestResponse;
 use Tests\TestCase;
@@ -86,6 +87,60 @@ class UserControllerTest extends TestCase
             'title_id' => $title->id,
             'liked' => true,
         ]);
+    }
+
+    public function test_guests_cannot_view_their_title_lists(): void
+    {
+        $this->get(route('user.title-lists'))->assertRedirect(route('login'));
+    }
+
+    public function test_title_lists_groups_titles_by_pivot_state_for_the_authenticated_user(): void
+    {
+        $user = User::factory()->create();
+        $liked = Title::factory()->create();
+        $watched = Title::factory()->create();
+        $someoneElsesLike = Title::factory()->create();
+
+        UserTitleState::factory()->create(['user_id' => $user->id, 'title_id' => $liked->id, 'liked' => true]);
+        UserTitleState::factory()->create(['user_id' => $user->id, 'title_id' => $watched->id, 'watched' => true]);
+        UserTitleState::factory()->create(['title_id' => $someoneElsesLike->id, 'liked' => true]);
+
+        $this->actingAs($user)
+            ->get(route('user.title-lists'))
+            ->assertInertia(fn ($page) => $page
+                ->component('AllUserLists')
+                ->has('lists', 3)
+                ->where('lists.0.value', 'liked')
+                ->where('lists.0.titles', fn ($titles) => collect($titles)->pluck('id')->all() === [$liked->id])
+                ->where('lists.1.value', 'watched')
+                ->where('lists.1.titles', fn ($titles) => collect($titles)->pluck('id')->all() === [$watched->id])
+            );
+    }
+
+    public function test_show_title_list_paginates_a_single_list(): void
+    {
+        $user = User::factory()->create();
+        $inList = Title::factory()->create();
+        $notInList = Title::factory()->create();
+
+        UserTitleState::factory()->create(['user_id' => $user->id, 'title_id' => $inList->id, 'to_watch' => true]);
+        UserTitleState::factory()->create(['user_id' => $user->id, 'title_id' => $notInList->id, 'watched' => true]);
+
+        $this->actingAs($user)
+            ->get(route('user.show-title-list', 'to_watch'))
+            ->assertInertia(fn ($page) => $page
+                ->component('TitleByUserList')
+                ->where('list.value', 'to_watch')
+                ->has('titles.data', 1)
+                ->where('titles.data.0.id', $inList->id)
+            );
+    }
+
+    public function test_show_title_list_rejects_an_unknown_list(): void
+    {
+        $this->actingAs(User::factory()->create())
+            ->get(route('user.show-title-list', 'bookmarked'))
+            ->assertNotFound();
     }
 
     public function test_the_event_is_attributed_to_the_authenticated_user(): void

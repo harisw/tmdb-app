@@ -2,8 +2,11 @@
 
 namespace App\Domain\Enums;
 
+use App\Utils\Traits\EnumValues;
+
 enum TitleAction: string
 {
+    use EnumValues;
     case LIKE = 'like';
     case WATCHLIST = 'watchlist';
     case WATCHED = 'watched';

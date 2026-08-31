@@ -16,6 +16,6 @@ trait EnumValues
 
     public static function collection(): Collection
     {
-        return collect(self::values());
+        return collect(self::cases());
     }
 }

@@ -13,6 +13,7 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('user_title_states', function (Blueprint $table) {
+            $table->id();
             $table->foreignId('user_id')->references('id')->on('users');
             $table->foreignId('title_id')->references('id')->on('titles');
             $table->boolean('liked')->default(false);
@@ -21,7 +22,7 @@ return new class extends Migration
             $table->float('rate', 1)->nullable()->default(null);
             $table->timestamp('updated_at')->useCurrent();
 
-            $table->primary(['user_id', 'title_id']);
+            $table->unique(['user_id', 'title_id']);
         });
 
         DB::statement('ALTER TABLE user_title_states ADD CONSTRAINT valid_rate CHECK (rate >= 0 AND rate <= 5)');

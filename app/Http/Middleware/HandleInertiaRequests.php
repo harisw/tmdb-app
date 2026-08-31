@@ -66,7 +66,7 @@ class HandleInertiaRequests extends Middleware
             ],
             'enums' => [
                 'TitleType' => TitleType::collection(),
-                'TitleAction' => collect(TitleAction::cases())->mapWithKeys(fn (TitleAction $action) => [
+                'TitleAction' => TitleAction::collection()->mapWithKeys(fn (TitleAction $action) => [
                     $action->value => [
                         'on' => $action->events()['on']->value,
                         'off' => $action->events()['off']->value,

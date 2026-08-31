@@ -34,4 +34,7 @@ Route::middleware('auth')->group(function () {
         ->name('profile.update-country');
 
     Route::post('/user/title/event', [UserController::class, 'postTitleEvent'])->name('user.post-title-event');
+
+    Route::get('/user/titles', [UserController::class, 'titleLists'])->name('user.title-lists');
+    Route::get('/user/titles/{type}', [UserController::class, 'showTitleList'])->name('user.show-title-list');
 });
