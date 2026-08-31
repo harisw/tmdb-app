@@ -11,16 +11,13 @@ use Inertia\Response;
 
 class ProviderController extends Controller
 {
-    private const PAGINATE_SIZE = 30;
-
     public function index(): Response
     {
         $providers = Provider::with(['titles' => function ($query) {
             $query->select('titles.*')
-                ->with(Title::detailRelations())
                 ->groupBy(['titles.id', 'title_providers.title_id', 'title_providers.provider_id'])
-                ->orderByDesc('titles.created_at')
-                ->take(30);
+                ->listing()
+                ->paginate(self::PAGINATE_SIZE);
         }])->orderByDesc('count')->get()->map(fn (Provider $provider) => array_merge($provider->toArray(), [
             'titles' => TitleResource::collection($provider->titles)->resolve(),
         ]));
@@ -39,10 +36,7 @@ class ProviderController extends Controller
         return Inertia::render('TitleByProvider', [
             'provider' => $provider,
             'titles' => TitleResource::collection(
-                Title::whereIn('id', $titleIds)
-                    ->with(Title::detailRelations())
-                    ->latest()
-                    ->paginate(self::PAGINATE_SIZE)
+                Title::whereIn('id', $titleIds)->listing()->paginate(self::PAGINATE_SIZE)
             ),
         ]);
     }

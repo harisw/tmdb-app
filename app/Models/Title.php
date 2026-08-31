@@ -149,6 +149,16 @@ class Title extends Model
         return $this->extra_attributes->modelScope();
     }
 
+    /**
+     * A listing of titles: detail relations eager-loaded, newest first.
+     * Works on the model (`Title::listing()`) and on relations
+     * (`$genre->titles()->listing()`).
+     */
+    public function scopeListing(Builder $query): Builder
+    {
+        return $query->with(self::detailRelations())->latest();
+    }
+
     public function language(): BelongsTo
     {
         return $this->belongsTo(Language::class);
@@ -239,9 +249,6 @@ class Title extends Model
     }
 
     /**
-     * The eager loads needed to render a title in TitleModal. Shared by every
-     * endpoint that feeds the modal so the payloads can't drift apart.
-     *
      * @return array<int|string, mixed>
      */
     public static function detailRelations(): array

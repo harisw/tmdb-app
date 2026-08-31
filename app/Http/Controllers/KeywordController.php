@@ -4,15 +4,12 @@ namespace App\Http\Controllers;
 
 use App\Http\Resources\TitleResource;
 use App\Models\Keyword;
-use App\Models\Title;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
 
 class KeywordController extends Controller
 {
-    private const PAGINATE_SIZE = 30;
-
     public function index(Request $request): Response
     {
         $keyQuery = $request->query('tag');
@@ -28,10 +25,7 @@ class KeywordController extends Controller
             'selected' => $key,
             'titles' => $key
                 ? TitleResource::collection(
-                    $key->titles()
-                        ->with(Title::detailRelations())
-                        ->latest()
-                        ->paginate(self::PAGINATE_SIZE)
+                    $key->titles()->listing()->paginate(self::PAGINATE_SIZE)
                 )
                 : collect(),
         ]);
@@ -42,10 +36,7 @@ class KeywordController extends Controller
         return Inertia::render('TitleByKeyword', [
             'keyword' => $keyword,
             'titles' => TitleResource::collection(
-                $keyword->titles()
-                    ->with(Title::detailRelations())
-                    ->latest()
-                    ->paginate(self::PAGINATE_SIZE)
+                $keyword->titles()->listing()->paginate(self::PAGINATE_SIZE)
             ),
         ]);
     }

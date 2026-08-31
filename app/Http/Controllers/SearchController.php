@@ -17,8 +17,6 @@ use Inertia\Response;
 
 class SearchController extends Controller
 {
-    private const PAGINATE_SIZE = 30;
-
     private const SEARCH_LIMIT = 10;
 
     public function search(Request $request): JsonResponse
@@ -68,7 +66,7 @@ class SearchController extends Controller
 
     private function applyFilters(Collection $titleIds, ?string $lang, ?string $gen, ?string $tag): Builder
     {
-        $query = Title::query()->with(Title::detailRelations());
+        $query = Title::listing();
         $languageIds = $lang ? Language::whereCode($lang)->pluck('id') : [];
 
         if ($languageIds) {

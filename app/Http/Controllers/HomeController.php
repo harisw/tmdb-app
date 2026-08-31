@@ -9,16 +9,11 @@ use Inertia\Response;
 
 class HomeController extends Controller
 {
-    private const PAGINATE_SIZE = 30;
-
     public function index(): Response
     {
-        $titles = Title::with(Title::detailRelations())
-            ->latest()
-            ->paginate(self::PAGINATE_SIZE);
-
         return Inertia::render('Home', [
-            'titles' => TitleResource::collection($titles),
+            'titles' => TitleResource::collection(Title::listing()
+                ->paginate(self::PAGINATE_SIZE)),
         ]);
     }
 }
