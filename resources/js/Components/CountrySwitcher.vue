@@ -26,7 +26,7 @@ const { country: guestCountry } = storeToRefs(countryStore)
 
 const selectedIso2 = computed(() => (isAuthenticated.value ? user.value.country : guestCountry.value))
 
-const { content, item } = menu({ width: 'lg', pad: 'sm', offset: props.dropTop ? 'up' : 'gap' })
+const { item } = menu({ width: 'lg', pad: 'sm', offset: props.dropTop ? 'up' : 'gap' })
 
 function select(iso2) {
     if (iso2 === selectedIso2.value) {
@@ -51,7 +51,11 @@ function select(iso2) {
             <Globe :size="16" />
             <span class="text-xs font-medium uppercase">{{ selectedIso2 || '—' }}</span>
         </label>
-        <ul tabindex="0" :class="content()">
+        <ul
+            tabindex="0"
+            class="dropdown-content z-[100] p-2 shadow-lg bg-black border border-gray-800 rounded-box w-56 max-w-[70vw] max-h-72 text-white overflow-y-scroll"
+            :class="dropTop ? 'mb-3' : 'mt-3'"
+        >
             <li v-for="c in countries" :key="c.iso2">
                 <button
                     type="button"
