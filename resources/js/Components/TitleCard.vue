@@ -5,7 +5,10 @@ import { FilmIcon, TvIcon } from 'lucide-vue-next'
 import { computed } from 'vue'
 import ProvidersBadge from './ProvidersBadge.vue'
 import GenreBadges from './GenreBadges.vue'
-import UserTitleAction from './UserTitleAction.vue'
+import TitleActionBar from './TitleActionBar.vue'
+import TitleActionSheet from './TitleActionSheet.vue'
+import TitleRateModal from './Modals/TitleRateModal.vue'
+import useTitleActions from '../Composables/useTitleActions.js'
 import { badge } from '../variants/badge.js'
 
 const props = defineProps({
@@ -28,6 +31,10 @@ function onPosterError(e) {
     if (e.target.src.endsWith(POSTER_PLACEHOLDER)) return
     e.target.src = POSTER_PLACEHOLDER
 }
+
+// One instance per card, shared by the desktop bar and the mobile sheet so both
+// controls reflect the same like / watchlist / watched state.
+const { state, pending, likeCount, trigger, rate, resolveRating } = useTitleActions(props.item)
 </script>
 
 <template>
@@ -62,7 +69,7 @@ function onPosterError(e) {
 
                     <!-- bottom row: action group (left) + provider logos (right) -->
                     <div class="absolute inset-x-2 bottom-2 flex justify-end items-center gap-1">
-                        <UserTitleAction :title="item" />
+                        <TitleActionBar :state="state" :pending="pending" :like-count="likeCount" @action="trigger" />
                         <ProvidersBadge
                             v-if="item.title_providers?.length"
                             :title-providers="item.title_providers.slice(0, 3)"
@@ -72,10 +79,21 @@ function onPosterError(e) {
 
                 <!-- body -->
                 <div class="p-2 flex flex-col">
-                    <h2 class="text-base font-semibold text-white line-clamp-2">
+                    <h2 class="hidden md:block text-base font-semibold text-white line-clamp-2">
                         {{ item.name }}
                     </h2>
-
+                    <div class="md:hidden flex flex-row items-start justify-between gap-2">
+                        <h2 class="text-base font-semibold text-white line-clamp-2">
+                            {{ item.name }}
+                        </h2>
+                        <TitleActionSheet
+                            :title="item"
+                            :state="state"
+                            :pending="pending"
+                            :like-count="likeCount"
+                            @action="trigger"
+                        />
+                    </div>
                     <span v-if="item.release_date" class="mt-0.5 text-xs text-white/50">
                         {{ item.release_date }}
                     </span>
@@ -86,6 +104,14 @@ function onPosterError(e) {
                 </div>
             </div>
         </div>
+
+        <TitleRateModal
+            :show="rate.show"
+            :title-name="item.name"
+            :context="rate.context"
+            @confirm="resolveRating"
+            @close="resolveRating(null)"
+        />
     </div>
 </template>
 

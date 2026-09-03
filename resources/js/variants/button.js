@@ -10,13 +10,14 @@ import { tv } from './tv.js'
  *   wanted on toolbar/modal buttons.
  * - `circle` is the icon-only square.
  *
- * Anything genuinely one-off (see UserTitleAction's 3D hover buttons) keeps
+ * Anything genuinely one-off (see TitleActionBar's 3D hover buttons) keeps
  * its own local `tv()` instead of growing a variant here.
  */
 export const button = tv({
     base: 'btn border-none text-white',
     variants: {
         intent: {
+            soft: 'btn-soft bg-white/10',
             primary: 'bg-madder hover:bg-madder/85',
             ghost: 'btn-ghost hover:bg-white/10',
             link: 'btn-ghost hover:text-white/70',
