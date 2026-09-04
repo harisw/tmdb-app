@@ -18,7 +18,8 @@ const emit = defineEmits(['action'])
 const actionBtn = tv({
     base: `btn btn-xs relative h-7 rounded-md border-none bg-transparent text-white shadow-none transition-transform
     duration-300 ease-out will-change-transform hover:z-10 hover:bg-black hover:-translate-y-1 hover:scale-125
-    hover:rotate-x-12 hover:shadow-xl hover:shadow-black/60 active:scale-95`,
+    hover:rotate-x-12 hover:shadow-xl hover:shadow-black/60 active:scale-95
+    disabled:opacity-40 disabled:pointer-events-none`,
     variants: {
         withGap: { true: 'gap-1 ' },
         active: { true: 'text-madder' },
@@ -28,7 +29,7 @@ const actionBtn = tv({
 
 <template>
     <div
-        class="mr-auto hidden md:flex items-center gap-1 rounded-lg bg-black/70 p-0.5 backdrop-blur-sm [perspective:500px] [transform-style:preserve-3d] translate-y-8 opacity-0 pointer-events-none transition-all duration-300 ease-out group-hover:translate-y-0 group-hover:opacity-100 group-hover:pointer-events-auto"
+        class="mr-auto hidden md:flex items-center gap-1 rounded-lg bg-black/70 p-0.5 backdrop-blur-sm [perspective:500px] [transform-style:preserve-3d] translate-y-8 opacity-0 pointer-events-none transition-all duration-300 ease-out group-hover:translate-y-0 group-hover:opacity-100 group-hover:pointer-events-auto group-focus-within:translate-y-0 group-focus-within:opacity-100 group-focus-within:pointer-events-auto"
         @click.stop
     >
         <button

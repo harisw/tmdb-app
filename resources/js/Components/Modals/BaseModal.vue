@@ -1,5 +1,5 @@
 <script setup>
-import { onBeforeUnmount, onMounted, ref, watch } from 'vue'
+import { nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { X } from 'lucide-vue-next'
 import { button } from '../../variants/button.js'
 
@@ -8,11 +8,17 @@ const props = defineProps({
     to: { type: [String, Object], default: 'body' },
     maxWidth: { type: String, default: 'max-w-md' },
     align: { type: String, default: 'center' }, // 'center' | 'start' (tall content, e.g. scrolls from the top)
+    // Accessible name for the dialog. Pass `label` for a literal string, or
+    // `labelledby` with the id of a visible heading inside the modal.
+    label: { type: String, default: '' },
+    labelledby: { type: String, default: '' },
 })
 
 const emit = defineEmits(['close'])
 
 const containerRef = ref(null)
+const panelRef = ref(null)
+let lastFocused = null
 
 function close() {
     emit('close')
@@ -26,8 +32,48 @@ function scrollToTop() {
 
 defineExpose({ scrollToTop })
 
+const FOCUSABLE =
+    'a[href],button:not([disabled]),input:not([disabled]),select:not([disabled]),textarea:not([disabled]),[tabindex]:not([tabindex="-1"])'
+
+function focusables() {
+    const panel = panelRef.value
+    if (!panel) return []
+    return [...panel.querySelectorAll(FOCUSABLE)].filter((n) => n.getClientRects().length > 0)
+}
+
+// Escape to close, and keep Tab inside the panel while the dialog is open.
 function handleKeydown(e) {
-    if (e.key === 'Escape' && props.show) close()
+    if (!props.show) return
+
+    if (e.key === 'Escape') {
+        close()
+        return
+    }
+
+    if (e.key !== 'Tab') return
+
+    const nodes = focusables()
+    const panel = panelRef.value
+    if (!panel) return
+
+    if (nodes.length === 0) {
+        e.preventDefault()
+        panel.focus()
+        return
+    }
+
+    const first = nodes[0]
+    const last = nodes[nodes.length - 1]
+    const active = document.activeElement
+    const inside = panel.contains(active)
+
+    if (e.shiftKey && (active === first || !inside)) {
+        e.preventDefault()
+        last.focus()
+    } else if (!e.shiftKey && (active === last || !inside)) {
+        e.preventDefault()
+        first.focus()
+    }
 }
 
 // Locks the page behind the modal, restoring whatever overflow was there
@@ -39,10 +85,14 @@ watch(
     () => props.show,
     (show) => {
         if (show) {
+            lastFocused = document.activeElement
             previousOverflow = document.body.style.overflow
             document.body.style.overflow = 'hidden'
+            nextTick(() => panelRef.value?.focus())
         } else {
             document.body.style.overflow = previousOverflow
+            lastFocused?.focus?.()
+            lastFocused = null
         }
     }
 )
@@ -50,7 +100,10 @@ watch(
 onMounted(() => window.addEventListener('keydown', handleKeydown))
 onBeforeUnmount(() => {
     window.removeEventListener('keydown', handleKeydown)
-    if (props.show) document.body.style.overflow = previousOverflow
+    if (props.show) {
+        document.body.style.overflow = previousOverflow
+        lastFocused?.focus?.()
+    }
 })
 </script>
 
@@ -62,13 +115,17 @@ onBeforeUnmount(() => {
                 ref="containerRef"
                 class="fixed inset-0 z-[110] flex justify-center bg-black/70 overflow-y-auto p-4"
                 :class="align === 'start' ? 'items-start' : 'items-center'"
-                role="dialog"
-                aria-modal="true"
                 @click.self="close"
             >
                 <div
-                    class="modal-panel relative bg-licorice text-white rounded-2xl shadow-2xl ring-1 ring-white/10 w-full overflow-hidden"
+                    ref="panelRef"
+                    class="modal-panel relative bg-licorice text-white rounded-2xl shadow-2xl ring-1 ring-white/10 w-full overflow-hidden focus:outline-none"
                     :class="[maxWidth, align === 'start' ? 'my-10' : '']"
+                    role="dialog"
+                    aria-modal="true"
+                    :aria-label="label || undefined"
+                    :aria-labelledby="labelledby || undefined"
+                    tabindex="-1"
                 >
                     <slot :close="close" />
 

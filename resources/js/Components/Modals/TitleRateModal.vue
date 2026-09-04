@@ -31,10 +31,10 @@ const HINT = {
 </script>
 
 <template>
-    <BaseModal :show="show" max-width="max-w-sm" @close="emit('close')">
+    <BaseModal :show="show" max-width="max-w-sm" labelledby="rate-modal-heading" @close="emit('close')">
         <div class="space-y-5 p-6 text-center">
             <div class="space-y-1">
-                <h3 class="text-lg font-semibold">Rate this title</h3>
+                <h3 id="rate-modal-heading" class="text-lg font-semibold">Rate this title</h3>
                 <p v-if="titleName" class="line-clamp-1 text-sm text-white/60">{{ titleName }}</p>
             </div>
 

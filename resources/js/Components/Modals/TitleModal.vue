@@ -1,11 +1,12 @@
 <script setup>
 import { computed, ref, watch } from 'vue'
 import { usePage, Link } from '@inertiajs/vue3'
-import { X, Clock, Calendar, Share2, Eye, Bookmark, Star } from 'lucide-vue-next'
+import { X, Clock, Calendar, Waypoints, Eye, Bookmark, Star } from 'lucide-vue-next'
 import BaseModal from './BaseModal.vue'
 import RatingBadge from '../RatingBadge.vue'
 import ProvidersBadge from '../ProvidersBadge.vue'
 import GenreBadges from '../GenreBadges.vue'
+import { button } from '../../variants/button.js'
 import { PROVIDER_MODE_FULL } from '../../constants/ui.js'
 
 const props = defineProps({
@@ -19,6 +20,9 @@ defineEmits(['close'])
 
 const BACKDROP_PLACEHOLDER = '/backdrop-placeholder.svg'
 const POSTER_PLACEHOLDER = '/poster-placeholder.svg'
+
+// The small-caps section label, repeated for each body section below.
+const SECTION_LABEL = 'text-xs font-semibold uppercase tracking-wide text-white/60'
 
 const currentItem = ref(props.item)
 
@@ -94,10 +98,26 @@ watch(
 </script>
 
 <template>
-    <BaseModal ref="baseModal" :show="show" :to="to" max-width="max-w-3xl" align="start" @close="$emit('close')">
+    <BaseModal
+        ref="baseModal"
+        :show="show"
+        :to="to"
+        max-width="max-w-3xl"
+        align="start"
+        labelledby="title-modal-heading"
+        @close="$emit('close')"
+    >
         <template #close="{ close }">
             <button
-                class="btn btn-sm btn-circle btn-neutral absolute top-3 right-3 z-10 bg-black/50 border-0 hover:bg-black/70"
+                type="button"
+                :class="
+                    button({
+                        intent: 'soft',
+                        size: 'sm',
+                        circle: true,
+                        class: 'absolute top-3 right-3 z-10 bg-black/50 hover:bg-black/70',
+                    })
+                "
                 aria-label="Close"
                 @click="close"
             >
@@ -118,7 +138,9 @@ watch(
                     <div class="absolute inset-0 bg-gradient-to-t from-licorice via-licorice/40 to-transparent"></div>
 
                     <div class="absolute bottom-0 inset-x-0 p-5">
-                        <h2 class="text-2xl md:text-4xl font-bold drop-shadow-lg">{{ currentItem.name }}</h2>
+                        <h2 id="title-modal-heading" class="text-2xl md:text-4xl font-bold drop-shadow-lg">
+                            {{ currentItem.name }}
+                        </h2>
                         <div class="mt-2 flex flex-wrap items-center gap-3 text-sm text-white/80">
                             <RatingBadge :rating="currentItem.rating" />
                             <span v-if="currentItem.release_date" class="flex items-center gap-1">
@@ -144,7 +166,7 @@ watch(
                             </span>
                             <span
                                 v-if="Number(userState.rate) > 0"
-                                class="badge badge-sm gap-1 border-none bg-black/50 text-amber-300 tabular-nums"
+                                class="badge badge-sm gap-1 border-none bg-black/50 text-amber-400 tabular-nums"
                             >
                                 <Star :size="13" /> Your rating {{ userState.rate }}
                             </span>
@@ -154,25 +176,25 @@ watch(
 
                 <!-- Body -->
                 <div class="p-5 space-y-5">
-                    <p v-if="currentItem.overview" class="text-gray-300 leading-relaxed">
+                    <p v-if="currentItem.overview" class="max-w-prose leading-relaxed text-white/80">
                         {{ currentItem.overview }}
                     </p>
 
                     <div v-if="currentItem.title_providers?.length" class="space-y-2">
-                        <h3 class="text-xs font-semibold uppercase tracking-wide text-gray-400">Where to watch</h3>
+                        <h3 :class="SECTION_LABEL">Where to watch</h3>
                         <ProvidersBadge :title-providers="currentItem.title_providers" :mode="PROVIDER_MODE_FULL" />
                     </div>
 
                     <div v-if="currentItem.genres?.length" class="space-y-2">
-                        <h3 class="text-xs font-semibold uppercase tracking-wide text-gray-400">Genres</h3>
+                        <h3 :class="SECTION_LABEL">Genres</h3>
                         <GenreBadges :genres="currentItem.genres" />
                     </div>
 
                     <div v-if="currentItem.keywords?.length" class="space-y-2">
-                        <h3 class="text-xs font-semibold uppercase tracking-wide text-gray-400">Tags</h3>
+                        <h3 :class="SECTION_LABEL">Tags</h3>
                         <div class="flex flex-wrap gap-1.5">
                             <Link v-for="keyword in currentItem.keywords" :key="keyword.id" :href="keyword.url">
-                                <span class="badge badge-outline badge-sm px-2 bg-gray/20 text-gray-300">
+                                <span class="badge badge-outline badge-sm px-2 text-white/65">
                                     {{ keyword.name }}
                                 </span>
                             </Link>
@@ -182,13 +204,13 @@ watch(
                     <!-- More Like This -->
                     <div v-if="loadingSimilar || similar.length" class="space-y-3">
                         <div class="flex items-center justify-between gap-3">
-                            <h3 class="text-xs font-semibold uppercase tracking-wide text-gray-400">More Like This</h3>
+                            <h3 :class="SECTION_LABEL">More Like This</h3>
                             <Link
                                 v-if="currentItem.slug"
                                 :href="`/graph?title_slug=${currentItem.slug}`"
-                                class="btn btn-xs btn-neutral gap-1 border-0 bg-white/10 hover:bg-white/20"
+                                :class="button({ intent: 'soft', size: 'xs', class: 'gap-1' })"
                             >
-                                <Share2 :size="13" />
+                                <Waypoints :size="13" />
                                 Explore graph
                             </Link>
                         </div>

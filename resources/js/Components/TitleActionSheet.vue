@@ -1,7 +1,7 @@
 <script setup>
 import { computed, nextTick, onBeforeUnmount, ref, watch } from 'vue'
 import { usePage } from '@inertiajs/vue3'
-import { EllipsisVertical } from 'lucide-vue-next'
+import { Plus } from 'lucide-vue-next'
 import { FontAwesomeIcon } from '@fortawesome/vue-fontawesome'
 import { faBookmark, faEye, faHeart } from '@fortawesome/free-solid-svg-icons'
 import {
@@ -9,8 +9,7 @@ import {
     faEye as faEyeRegular,
     faHeart as faHeartRegular,
 } from '@fortawesome/free-regular-svg-icons'
-import { button } from '../variants/button.js'
-import ProvidersBadge from './ProvidersBadge.vue'
+import { tv } from '../variants/tv.js'
 
 const props = defineProps({
     title: { type: Object, required: true },
@@ -19,6 +18,19 @@ const props = defineProps({
     likeCount: { type: String, default: null },
 })
 const emit = defineEmits(['action'])
+
+// Bespoke trigger: a friendly "add this" affordance — a soft circular well that's
+// discoverable at rest on touch (no hover to reveal it), warming to madder on
+// press so the tap feels like it belongs to Chill. One-off look, not a `button()`
+// recipe case (cf. TitleActionBar's actionBtn).
+const triggerBtn = tv({
+    base: `grid size-8 shrink-0 -mr-1.5 place-items-center rounded-full md:hidden text-white/60
+    bg-white/5 ring-1 ring-inset ring-white/10 transition duration-200 ease-out
+    hover:bg-white/10 hover:text-white hover:ring-white/20
+    active:scale-90 active:bg-madder active:text-white active:ring-madder
+    focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-madder
+    motion-reduce:transition-none motion-reduce:active:scale-100`,
+})
 
 const page = usePage()
 const POSTER_PLACEHOLDER = '/poster-placeholder.svg'
@@ -52,20 +64,55 @@ const rows = computed(() => [
 
 const open = ref(false)
 const panel = ref(null)
+let lastFocused = null
 
-// Same lock-and-restore dance as BaseModal. When a ratable row closes the sheet
-// and hands off to TitleRateModal (hosted by TitleCard), that modal's own watcher
-// re-locks in the same flush; no repaint happens in between, so restoring here
-// is safe.
+const FOCUSABLE = 'a[href],button:not([disabled]),[tabindex]:not([tabindex="-1"])'
+
+function focusables() {
+    if (!panel.value) return []
+    return [...panel.value.querySelectorAll(FOCUSABLE)].filter((n) => n.getClientRects().length > 0)
+}
+
+// Same lock-and-restore dance as BaseModal: Escape closes, Tab stays inside the
+// sheet, and focus returns to the trigger on close. When a ratable row closes the
+// sheet and hands off to TitleRateModal (hosted by TitleCard), that modal's own
+// watcher re-locks in the same flush; no repaint happens in between, so restoring
+// here is safe.
 function handleKeydown(e) {
+    if (!open.value) return
+
     if (e.key === 'Escape') {
         open.value = false
+        return
+    }
+
+    if (e.key !== 'Tab') return
+
+    const nodes = focusables()
+    if (nodes.length === 0) {
+        e.preventDefault()
+        panel.value?.focus()
+        return
+    }
+
+    const first = nodes[0]
+    const last = nodes[nodes.length - 1]
+    const active = document.activeElement
+    const inside = panel.value?.contains(active)
+
+    if (e.shiftKey && (active === first || !inside)) {
+        e.preventDefault()
+        last.focus()
+    } else if (!e.shiftKey && (active === last || !inside)) {
+        e.preventDefault()
+        first.focus()
     }
 }
 
 let previousOverflow = ''
 watch(open, (isOpen) => {
     if (isOpen) {
+        lastFocused = document.activeElement
         previousOverflow = document.body.style.overflow
         document.body.style.overflow = 'hidden'
         window.addEventListener('keydown', handleKeydown)
@@ -73,6 +120,8 @@ watch(open, (isOpen) => {
     } else {
         document.body.style.overflow = previousOverflow
         window.removeEventListener('keydown', handleKeydown)
+        lastFocused?.focus?.()
+        lastFocused = null
     }
 })
 
@@ -80,6 +129,7 @@ onBeforeUnmount(() => {
     window.removeEventListener('keydown', handleKeydown)
     if (open.value) {
         document.body.style.overflow = previousOverflow
+        lastFocused?.focus?.()
     }
 })
 
@@ -96,17 +146,10 @@ function onRow(key) {
             aria-haspopup="dialog"
             :aria-expanded="open"
             :aria-label="`Actions for ${title.name}`"
-            :class="
-                button({
-                    intent: 'ghost',
-                    size: 'sm',
-                    circle: true,
-                    class: 'md:hidden shrink-0 -mr-1.5 text-white/40 hover:text-white',
-                })
-            "
+            :class="triggerBtn()"
             @click.stop="open = true"
         >
-            <EllipsisVertical :size="18" />
+            <Plus :size="20" :stroke-width="3" />
         </button>
 
         <Teleport to="body">
@@ -148,17 +191,6 @@ function onRow(key) {
                             <span v-if="title.release_date" class="text-xs text-white/50">{{
                                 title.release_date
                             }}</span>
-                            <!--                            <ProvidersBadge-->
-                            <!--                                v-if="title.title_providers?.length"-->
-                            <!--                                :title-providers="title.title_providers.slice(0, 3)"-->
-                            <!--                            />-->
-                            <!--                            <div class="mt-1 flex items-center gap-1.5 text-xs text-white/50">-->
-                            <!--                                <ProvidersBadge-->
-                            <!--                                    v-if="title.title_providers?.length"-->
-                            <!--                                    :title-providers="title.title_providers.slice(0, 1)"-->
-                            <!--                                />-->
-                            <!--                                <span v-if="title.release_date">{{ title.release_date }}</span>-->
-                            <!--                            </div>-->
                         </div>
                     </div>
 
@@ -169,7 +201,7 @@ function onRow(key) {
                             type="button"
                             :disabled="pending"
                             :aria-pressed="row.active"
-                            class="flex w-full items-center gap-4 rounded-lg px-2 py-3.5 text-left transition-colors active:bg-white/5 disabled:opacity-50"
+                            class="flex w-full items-center gap-4 rounded-lg px-2 py-3.5 text-left transition-colors hover:bg-white/5 active:bg-white/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-madder disabled:opacity-50"
                             :class="row.active ? 'text-madder' : 'text-white'"
                             @click="onRow(row.key)"
                         >
