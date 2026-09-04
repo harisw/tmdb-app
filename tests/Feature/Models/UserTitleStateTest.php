@@ -57,6 +57,6 @@ class UserTitleStateTest extends TestCase
     {
         $this->expectException(QueryException::class);
 
-        UserTitleState::factory()->create(['rate' => 5.1]);
+        UserTitleState::factory()->create(['rate' => 10.1]);
     }
 }

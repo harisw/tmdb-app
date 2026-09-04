@@ -44,7 +44,7 @@ const { state, pending, likeCount, trigger, rate, resolveRating } = useTitleActi
             :class="`${size} group [perspective:500px] mx-auto h-full hover:cursor-pointer`"
             @click="props.onClick(item)"
         >
-            <!-- animated card — ALL your transition / 3D classes are untouched -->
+            <!-- animated card: ALL your transition / 3D classes are untouched -->
             <div
                 class="relative bg-licorice/95 ring-1 ring-white/5 rounded-xl shadow-xl transition-transform duration-500 transform group-hover:rotate-y-3 group-hover:-rotate-x-1 group-hover:scale-105 [transform-style:preserve-3d] overflow-x-hidden h-full"
             >

@@ -25,8 +25,8 @@ watch(
 )
 
 const HINT = {
-    like: 'You liked it — how many stars?',
-    watched: 'Rate it now, or skip and rate later.',
+    like: 'You liked it. How many stars?',
+    watched: 'Rate it now, or skip.',
 }
 </script>
 
@@ -38,27 +38,31 @@ const HINT = {
                 <p v-if="titleName" class="line-clamp-1 text-sm text-white/60">{{ titleName }}</p>
             </div>
 
-            <div class="flex justify-center gap-1" @mouseleave="hover = 0">
-                <button
-                    v-for="n in 5"
-                    :key="n"
-                    type="button"
-                    :aria-label="`${n} of 5 stars`"
-                    :aria-pressed="rating === n"
-                    class="rounded p-1 transition-transform duration-150 hover:scale-125 active:scale-95 focus:outline-none focus-visible:ring-2 focus-visible:ring-madder"
-                    @mouseenter="hover = n"
-                    @focus="hover = n"
-                    @blur="hover = 0"
-                    @click="rating = rating === n ? 0 : n"
-                >
-                    <Star
-                        :size="36"
-                        :stroke-width="1.5"
-                        :class="n <= (hover || rating) ? 'fill-madder text-madder' : 'fill-transparent text-white/25'"
-                    />
-                </button>
+            <div class="flex flex-col gap-2">
+                <div class="flex justify-center gap-1" @mouseleave="hover = 0">
+                    <button
+                        v-for="n in 10"
+                        :key="n"
+                        type="button"
+                        :aria-label="`${n} of 10 stars`"
+                        :aria-pressed="rating === n"
+                        class="rounded p-1 transition-transform duration-150 hover:scale-125 active:scale-95 focus:outline-none focus-visible:ring-2 focus-visible:ring-madder"
+                        @mouseenter="hover = n"
+                        @focus="hover = n"
+                        @blur="hover = 0"
+                        @click="rating = rating === n ? 0 : n"
+                    >
+                        <Star
+                            :size="22"
+                            :stroke-width="1.5"
+                            :class="
+                                n <= (hover || rating) ? 'fill-madder text-madder' : 'fill-transparent text-white/25'
+                            "
+                        />
+                    </button>
+                </div>
+                <p class="text-xs text-white/60">{{ hover || rating }} out of 10</p>
             </div>
-
             <p class="text-xs text-white/40">{{ HINT[context] ?? HINT.watched }}</p>
 
             <div class="flex items-center justify-center gap-2">

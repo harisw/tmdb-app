@@ -51,7 +51,7 @@ function randomizeAvatar() {
 
 const submit = () => {
     // hide_adult drives a global title filter, so re-fetch the current page's
-    // data when it changes — otherwise the visible lists keep the old filter.
+    // data when it changes; otherwise the visible lists keep the old filter.
     const adultChanged = form.hide_adult !== (user.value?.hide_adult ?? true)
     form.patch('/profile', {
         preserveScroll: true,

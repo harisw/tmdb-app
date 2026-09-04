@@ -9,7 +9,7 @@ import { useCountryStore } from './stores/country.js'
 
 // Create the Pinia instance up front so it can be used both inside components
 // (via app.use below) and outside them (in the router hook here). Passing the
-// instance explicitly — useTitleTypeStore(pinia) — is how you reach a store
+// instance explicitly, useTitleTypeStore(pinia), is how you reach a store
 // from code that runs outside a component's setup().
 const pinia = createPinia()
 
@@ -21,7 +21,7 @@ router.on('before', (event) => {
 
         // Server prefers the authenticated user's stored country
         // (Title::detailRelations()), so the query param only matters for
-        // guests — sending it while logged in would just be a stale echo of
+        // guests; sending it while logged in would just be a stale echo of
         // whatever was last picked before login.
         const isGuest = !usePage().props.auth?.user
         const { country } = useCountryStore(pinia)

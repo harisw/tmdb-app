@@ -1,5 +1,7 @@
 <script setup>
 import { useForm } from '@inertiajs/vue3'
+import { field } from '../../variants/field.js'
+import { button } from '../../variants/button.js'
 
 const form = useForm({
     email: '',
@@ -15,76 +17,72 @@ const submit = () => {
 </script>
 
 <template>
-    <div class="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4">
-        <div class="max-w-md w-full space-y-8">
-            <div>
-                <h2 class="mt-6 text-center text-3xl font-extrabold text-gray-900">Sign in to your account</h2>
-            </div>
+    <div class="min-h-screen flex items-center justify-center bg-licorice text-white px-4 py-12">
+        <div class="w-full max-w-sm space-y-8">
+            <h1 class="text-center text-2xl font-bold">Sign in to your account</h1>
 
-            <form class="mt-8 space-y-6" @submit.prevent="submit">
-                <div class="rounded-md shadow-sm space-y-4">
-                    <div>
-                        <label for="email" class="block text-sm font-medium text-gray-700">Email</label>
-                        <input
-                            id="email"
-                            v-model="form.email"
-                            type="email"
-                            required
-                            class="mt-1 appearance-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                        />
-                        <div v-if="form.errors.email" class="text-red-600 text-sm mt-1">
-                            {{ form.errors.email }}
-                        </div>
-                    </div>
-
-                    <div>
-                        <label for="password" class="block text-sm font-medium text-gray-700">Password</label>
-                        <input
-                            id="password"
-                            v-model="form.password"
-                            type="password"
-                            required
-                            class="mt-1 appearance-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                        />
-                        <div v-if="form.errors.password" class="text-red-600 text-sm mt-1">
-                            {{ form.errors.password }}
-                        </div>
-                    </div>
-                </div>
-
-                <div class="flex items-center">
+            <form class="space-y-5" @submit.prevent="submit">
+                <div>
+                    <label for="email" class="mb-1 block text-sm text-white/60">Email</label>
                     <input
-                        id="remember"
-                        v-model="form.remember"
-                        type="checkbox"
-                        class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                        id="email"
+                        v-model="form.email"
+                        type="email"
+                        required
+                        autocomplete="email"
+                        :class="field({ state: form.errors.email ? 'error' : 'default', class: 'px-3 py-2' })"
                     />
-                    <label for="remember" class="ml-2 block text-sm text-gray-900"> Remember me </label>
+                    <p v-if="form.errors.email" class="mt-1 text-xs text-red-400">{{ form.errors.email }}</p>
                 </div>
 
                 <div>
-                    <button
-                        type="submit"
-                        :disabled="form.processing"
-                        class="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50"
-                    >
-                        Sign in
-                    </button>
+                    <label for="password" class="mb-1 block text-sm text-white/60">Password</label>
+                    <input
+                        id="password"
+                        v-model="form.password"
+                        type="password"
+                        required
+                        autocomplete="current-password"
+                        :class="field({ state: form.errors.password ? 'error' : 'default', class: 'px-3 py-2' })"
+                    />
+                    <p v-if="form.errors.password" class="mt-1 text-xs text-red-400">{{ form.errors.password }}</p>
                 </div>
 
-                <div class="text-center">
-                    <a href="/register" class="text-blue-600 hover:text-blue-500"> Don't have an account? Register </a>
+                <label class="flex items-center gap-2 text-sm text-white/60">
+                    <input
+                        v-model="form.remember"
+                        type="checkbox"
+                        class="h-4 w-4 rounded border-white/20 bg-white/5 accent-madder"
+                    />
+                    Remember me
+                </label>
+
+                <button
+                    type="submit"
+                    :disabled="form.processing"
+                    :class="button({ intent: 'primary', size: 'md', class: 'w-full' })"
+                >
+                    Sign in
+                </button>
+
+                <div class="flex items-center gap-3">
+                    <div class="h-px flex-1 bg-white/10" />
+                    <span class="text-xs text-white/40">or</span>
+                    <div class="h-px flex-1 bg-white/10" />
                 </div>
 
-                <div class="mt-4">
-                    <a
-                        href="/auth/google"
-                        class="w-full flex justify-center items-center gap-2 py-2 px-4 border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50"
-                    >
-                        <img src="https://www.svgrepo.com/show/475656/google-color.svg" class="w-5 h-5" alt="Google" />
-                        Continue with Google
-                    </a>
-                </div>
+                <a
+                    href="/auth/google"
+                    class="flex w-full items-center justify-center gap-2 rounded-field border border-white/10 bg-white/5 px-4 py-2 text-sm text-white/70 transition-colors hover:bg-white/10"
+                >
+                    <img src="https://www.svgrepo.com/show/475656/google-color.svg" class="h-5 w-5" alt="" />
+                    Continue with Google
+                </a>
+
+                <p class="text-center text-sm text-white/50">
+                    Don't have an account?
+                    <a href="/register" class="text-madder hover:underline">Register</a>
+                </p>
             </form>
         </div>
     </div>

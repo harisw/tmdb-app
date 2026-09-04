@@ -28,7 +28,7 @@ export default function useInfiniteScroll(source, options = {}) {
     // The reset watcher below reacts to the prop changing. But *our own*
     // pagination fetches also change the prop, and those are already applied by
     // hand in fetchItems (append). This flag marks a prop change as ours so the
-    // watcher skips it — otherwise appending page 2 would immediately be reset
+    // watcher skips it; otherwise appending page 2 would immediately be reset
     // back to just page 2's rows (a visible "snap"). Object-identity checks are
     // unreliable here because the watcher sees the reactive props proxy on the
     // next tick, not the object captured synchronously in onSuccess.
@@ -134,7 +134,7 @@ export default function useInfiniteScroll(source, options = {}) {
         if (newVal && observer.value) observer.value.observe(newVal)
     })
 
-    // When Inertia replaces the prop, rebuild the list — but only if the change
+    // When Inertia replaces the prop, rebuild the list, but only if the change
     // came from outside our own pagination (e.g. router.reload() after toggling
     // the adult filter). Our own fetches set internalUpdate and are skipped.
     watch(getResource, (res) => {

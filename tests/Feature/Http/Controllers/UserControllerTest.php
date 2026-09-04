@@ -63,7 +63,7 @@ class UserControllerTest extends TestCase
         $this->postEvent([
             'title_id' => $title->id,
             'type' => TitleEventType::WATCHED->value,
-            'value' => 9,
+            'value' => 13,
         ])->assertJsonValidationErrorFor('value');
     }
 

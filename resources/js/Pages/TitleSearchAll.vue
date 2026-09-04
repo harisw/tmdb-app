@@ -38,12 +38,12 @@
                         v-model="searchKey"
                         type="text"
                         placeholder="Enter query"
-                        class="w-full px-5 py-2 rounded-lg border bg-white focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-indigo-400 shadow-sm"
+                        :class="field({ class: 'px-5 py-2' })"
                         aria-label="Enter query"
                     />
                     <button
                         type="button"
-                        class="hover:cursor-pointer relative group pl-4 pr-8 py-2 bg-gradient-to-br from-[#A31621]/20 to-[#8B1219]/20 backdrop-blur-xl text-white font-bold text-lg rounded-2xl border-2 border-[#A31621]/30 shadow-[0_0_30px_rgba(163,22,33,0.2),0_12px_0_rgba(163,22,33,0.2),0_15px_40px_rgba(163,22,33,0.3)] hover:shadow-[0_0_40px_rgba(163,22,33,0.4),0_6px_0_rgba(163,22,33,0.3),0_10px_40px_rgba(163,22,33,0.5)] hover:translate-y-[6px] hover:from-[#A31621]/30 hover:to-[#8B1219]/30 active:shadow-[0_0_20px_rgba(163,22,33,0.5),0_0px_0_rgba(163,22,33,0.4)] active:translate-y-[12px] transition-all duration-200 overflow-hidden"
+                        :class="button({ intent: 'primary', size: 'md', class: 'px-6' })"
                         @click="searchOnClick"
                     >
                         Search
@@ -88,6 +88,8 @@ import LoadingSpinner from '../Components/LoadingSpinner.vue'
 import MultiSelect from '../Components/MultiSelect.vue'
 import useInfiniteScroll from '../Composables/useInfiniteScroll.js'
 import useModal from '../Composables/useModal.js'
+import { field } from '../variants/field.js'
+import { button } from '../variants/button.js'
 
 const props = defineProps({
     genres: Object,

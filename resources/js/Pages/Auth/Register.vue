@@ -1,5 +1,7 @@
 <script setup>
 import { useForm } from '@inertiajs/vue3'
+import { field } from '../../variants/field.js'
+import { button } from '../../variants/button.js'
 
 const form = useForm({
     email: '',
@@ -15,69 +17,61 @@ const submit = () => {
 </script>
 
 <template>
-    <div class="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4">
-        <div class="max-w-md w-full space-y-8">
-            <div>
-                <h2 class="mt-6 text-center text-3xl font-extrabold text-gray-900">Create your account</h2>
-            </div>
+    <div class="min-h-screen flex items-center justify-center bg-licorice text-white px-4 py-12">
+        <div class="w-full max-w-sm space-y-8">
+            <h1 class="text-center text-2xl font-bold">Create your account</h1>
 
-            <form class="mt-8 space-y-6" @submit.prevent="submit">
-                <div class="rounded-md shadow-sm space-y-4">
-                    <div>
-                        <label for="email" class="block text-sm font-medium text-gray-700">Email</label>
-                        <input
-                            id="email"
-                            v-model="form.email"
-                            type="email"
-                            required
-                            class="mt-1 appearance-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                        />
-                        <div v-if="form.errors.email" class="text-red-600 text-sm mt-1">
-                            {{ form.errors.email }}
-                        </div>
-                    </div>
-
-                    <div>
-                        <label for="password" class="block text-sm font-medium text-gray-700">Password</label>
-                        <input
-                            id="password"
-                            v-model="form.password"
-                            type="password"
-                            required
-                            class="mt-1 appearance-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                        />
-                        <div v-if="form.errors.password" class="text-red-600 text-sm mt-1">
-                            {{ form.errors.password }}
-                        </div>
-                    </div>
-
-                    <div>
-                        <label for="password_confirmation" class="block text-sm font-medium text-gray-700"
-                            >Confirm Password</label
-                        >
-                        <input
-                            id="password_confirmation"
-                            v-model="form.password_confirmation"
-                            type="password"
-                            required
-                            class="mt-1 appearance-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                        />
-                    </div>
+            <form class="space-y-5" @submit.prevent="submit">
+                <div>
+                    <label for="email" class="mb-1 block text-sm text-white/60">Email</label>
+                    <input
+                        id="email"
+                        v-model="form.email"
+                        type="email"
+                        required
+                        autocomplete="email"
+                        :class="field({ state: form.errors.email ? 'error' : 'default', class: 'px-3 py-2' })"
+                    />
+                    <p v-if="form.errors.email" class="mt-1 text-xs text-red-400">{{ form.errors.email }}</p>
                 </div>
 
                 <div>
-                    <button
-                        type="submit"
-                        :disabled="form.processing"
-                        class="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50"
-                    >
-                        Register
-                    </button>
+                    <label for="password" class="mb-1 block text-sm text-white/60">Password</label>
+                    <input
+                        id="password"
+                        v-model="form.password"
+                        type="password"
+                        required
+                        autocomplete="new-password"
+                        :class="field({ state: form.errors.password ? 'error' : 'default', class: 'px-3 py-2' })"
+                    />
+                    <p v-if="form.errors.password" class="mt-1 text-xs text-red-400">{{ form.errors.password }}</p>
                 </div>
 
-                <div class="text-center">
-                    <a href="/login" class="text-blue-600 hover:text-blue-500"> Already have an account? Login </a>
+                <div>
+                    <label for="password_confirmation" class="mb-1 block text-sm text-white/60">Confirm password</label>
+                    <input
+                        id="password_confirmation"
+                        v-model="form.password_confirmation"
+                        type="password"
+                        required
+                        autocomplete="new-password"
+                        :class="field({ class: 'px-3 py-2' })"
+                    />
                 </div>
+
+                <button
+                    type="submit"
+                    :disabled="form.processing"
+                    :class="button({ intent: 'primary', size: 'md', class: 'w-full' })"
+                >
+                    Register
+                </button>
+
+                <p class="text-center text-sm text-white/50">
+                    Already have an account?
+                    <a href="/login" class="text-madder hover:underline">Login</a>
+                </p>
             </form>
         </div>
     </div>

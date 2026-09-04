@@ -13,7 +13,7 @@ class PostTitleEventRequest extends FormRequest
         return [
             'title_id' => ['required', 'integer', 'exists:titles,id'],
             'type' => ['required', 'string', Rule::in(TitleEventType::values())],
-            'value' => ['nullable', 'numeric', 'between:0,5'],
+            'value' => ['nullable', 'numeric', 'between:0,10'],
         ];
     }
 }

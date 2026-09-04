@@ -5,7 +5,7 @@ import { tv } from './tv.js'
  * control and any future field. Replaces the scattered `focus:ring-indigo-400`
  * / `focus:ring-blue-500` / light-grey recipes.
  *
- * Horizontal padding stays at the call site — it varies (`pl-10` when there's
+ * Horizontal padding stays at the call site; it varies (`pl-10` when there's
  * a leading icon, `px-3` otherwise) and isn't a real variant.
  */
 export const field = tv({

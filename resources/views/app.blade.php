@@ -3,7 +3,7 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <meta name="description" content="Not sure what to watch? Get personalized title and TV show suggestions, explore trending titles, and find where to stream them — powered by TMDB.">
+    <meta name="description" content="Not sure what to watch? Get personalized title and TV show suggestions, explore trending titles, and find where to stream them, powered by TMDB.">
 
     <link rel="icon" href="{{ asset('favicon.ico') }}" type="image/x-icon">
     <link rel="icon" type="image/png" sizes="32x32" href="{{ asset('favicon-32x32.png') }}">

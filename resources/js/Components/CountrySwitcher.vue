@@ -49,7 +49,7 @@ function select(iso2) {
     <div class="dropdown dropdown-end" :class="{ 'dropdown-top': dropTop }">
         <label tabindex="0" :class="button({ intent: 'link', class: 'gap-1.5 px-2' })">
             <Globe :size="16" />
-            <span class="text-xs font-medium uppercase">{{ selectedIso2 || '—' }}</span>
+            <span class="text-xs font-medium uppercase">{{ selectedIso2 || '--' }}</span>
         </label>
         <ul
             tabindex="0"

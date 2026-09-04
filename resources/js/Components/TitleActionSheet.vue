@@ -55,7 +55,7 @@ const panel = ref(null)
 
 // Same lock-and-restore dance as BaseModal. When a ratable row closes the sheet
 // and hands off to TitleRateModal (hosted by TitleCard), that modal's own watcher
-// re-locks in the same flush — no repaint happens in between, so restoring here
+// re-locks in the same flush; no repaint happens in between, so restoring here
 // is safe.
 function handleKeydown(e) {
     if (e.key === 'Escape') {

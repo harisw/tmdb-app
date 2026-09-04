@@ -8,11 +8,11 @@ import { useUiStore } from '../stores/ui.js'
  * hand-off for ratable actions. Presentation is split across TitleActionBar
  * (desktop hover) and TitleActionSheet (mobile drawer).
  *
- * Call this ONCE per card — in TitleCard — and pass state / trigger down to both
+ * Call this ONCE per card (in TitleCard) and pass state / trigger down to both
  * views, so the two controls always agree. Calling it in each view instead would
  * give every view its own state.
  *
- * Pass the reactive `props.item` object straight through — do not destructure,
+ * Pass the reactive `props.item` object straight through; do not destructure it,
  * or the id watch below stops firing when a card is recycled in a v-for.
  */
 const STATE_KEY = { like: 'liked', watchlist: 'to_watch', watched: 'watched' }
