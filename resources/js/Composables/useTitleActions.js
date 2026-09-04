@@ -1,4 +1,4 @@
-import { computed, reactive, ref, watch } from 'vue'
+import { computed, ref, watch } from 'vue'
 import { usePage } from '@inertiajs/vue3'
 import { useUiStore } from '../stores/ui.js'
 
@@ -32,7 +32,7 @@ export default function useTitleActions(title) {
     )
 
     const pending = ref(false)
-    const rate = reactive({ show: false, context: 'watched', eventType: null, patch: null, settled: true })
+    const rate = ref({ show: false, context: 'watched', eventType: null, patch: null, settled: true })
 
     const likeCount = computed(() => {
         const n = title.likes_count ?? 0
@@ -54,19 +54,19 @@ export default function useTitleActions(title) {
 
         if (!isOn && action.ratable) {
             state.value = { ...state.value, ...patch } // optimistic toggle now; rating follows
-            Object.assign(rate, { show: true, context: key, eventType, patch, settled: false })
+            rate.value = { show: true, context: key, eventType, patch, settled: false }
             return
         }
         send(eventType, null, patch)
     }
 
     function resolveRating(value) {
-        if (rate.settled) {
+        if (rate.value.settled) {
             return
         }
-        rate.settled = true
-        rate.show = false
-        send(rate.eventType, value, { ...rate.patch, ...(value !== null ? { rate: value } : {}) })
+        const { eventType, patch } = rate.value
+        rate.value = { ...rate.value, show: false, settled: true }
+        send(eventType, value, { ...patch, ...(value !== null ? { rate: value } : {}) })
     }
 
     async function send(type, value, optimistic) {
