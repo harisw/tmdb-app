@@ -80,6 +80,7 @@ export default function useTitleActions(title) {
                 value,
             })
             state.value = { ...state.value, ...data.data }
+            title.user_state = state.value
         } catch (e) {
             state.value = snapshot
             if (e.response?.status === 401) {
