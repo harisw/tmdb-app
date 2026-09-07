@@ -1,7 +1,6 @@
 <script setup>
 import { Head, Link } from '@inertiajs/vue3'
-import { usePage } from '@inertiajs/vue3'
-import { ref, computed, onMounted, onBeforeUnmount, shallowRef } from 'vue'
+import { ref, onMounted, onBeforeUnmount, shallowRef } from 'vue'
 import { Maximize2, Minimize2 } from 'lucide-vue-next'
 import AppLayout from '../Layouts/AppLayout.vue'
 import LoadingSpinner from '../Components/LoadingSpinner.vue'
@@ -15,8 +14,6 @@ const props = defineProps({
 })
 const { openModal, closeModal, selectedItem, showModal } = useModal()
 let titleRequestId = 0
-const page = usePage()
-const POSTER_PLACEHOLDER = '/poster-placeholder.svg'
 
 const svgEl = ref(null)
 const container = ref(null)
@@ -30,8 +27,6 @@ const showEdgeModal = ref(false)
 const expanded = new Set()
 let graph = null
 let resizeObserver = null
-
-const posterBase = computed(() => page.props.base_url.poster)
 
 function openEdge(link) {
     selectedLink.value = link
@@ -130,8 +125,6 @@ function onKeydown(e) {
 
 onMounted(() => {
     graph = createForceGraph(svgEl.value, {
-        posterBase: posterBase.value,
-        placeholder: POSTER_PLACEHOLDER,
         onSelect: openTitle,
         onExpand: expandNode,
         onLinkClick: openEdge,

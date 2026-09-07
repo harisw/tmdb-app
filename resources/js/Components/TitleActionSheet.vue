@@ -1,6 +1,5 @@
 <script setup>
 import { computed, nextTick, onBeforeUnmount, ref, watch } from 'vue'
-import { usePage } from '@inertiajs/vue3'
 import { Plus } from 'lucide-vue-next'
 import { FontAwesomeIcon } from '@fortawesome/vue-fontawesome'
 import { faBookmark, faEye, faHeart } from '@fortawesome/free-solid-svg-icons'
@@ -10,6 +9,7 @@ import {
     faHeart as faHeartRegular,
 } from '@fortawesome/free-regular-svg-icons'
 import { tv } from '../variants/tv.js'
+import { onPosterError } from '../utils/img.js'
 
 const props = defineProps({
     title: { type: Object, required: true },
@@ -19,10 +19,6 @@ const props = defineProps({
 })
 const emit = defineEmits(['action'])
 
-// Bespoke trigger: a friendly "add this" affordance — a soft circular well that's
-// discoverable at rest on touch (no hover to reveal it), warming to madder on
-// press so the tap feels like it belongs to Chill. One-off look, not a `button()`
-// recipe case (cf. TitleActionBar's actionBtn).
 const triggerBtn = tv({
     base: `grid size-8 shrink-0 -mr-1.5 place-items-center rounded-full md:hidden text-white/60
     bg-white/5 ring-1 ring-inset ring-white/10 transition duration-200 ease-out
@@ -31,12 +27,6 @@ const triggerBtn = tv({
     focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-madder
     motion-reduce:transition-none motion-reduce:active:scale-100`,
 })
-
-const page = usePage()
-const POSTER_PLACEHOLDER = '/poster-placeholder.svg'
-const posterSrc = computed(() =>
-    props.title.poster_path ? page.props.base_url.poster + props.title.poster_path : POSTER_PLACEHOLDER
-)
 
 const rows = computed(() => [
     {
@@ -73,11 +63,6 @@ function focusables() {
     return [...panel.value.querySelectorAll(FOCUSABLE)].filter((n) => n.getClientRects().length > 0)
 }
 
-// Same lock-and-restore dance as BaseModal: Escape closes, Tab stays inside the
-// sheet, and focus returns to the trigger on close. When a ratable row closes the
-// sheet and hands off to TitleRateModal (hosted by TitleCard), that modal's own
-// watcher re-locks in the same flush; no repaint happens in between, so restoring
-// here is safe.
 function handleKeydown(e) {
     if (!open.value) return
 
@@ -182,9 +167,10 @@ function onRow(key) {
 
                     <div class="flex items-center gap-3 py-4">
                         <img
-                            :src="posterSrc"
+                            :src="title.poster_path"
                             :alt="`${title.name} poster`"
                             class="w-11 shrink-0 aspect-[2/3] rounded-md object-cover ring-1 ring-white/10"
+                            @error="onPosterError"
                         />
                         <div class="min-w-0">
                             <p class="truncate font-semibold leading-tight">{{ title.name }}</p>

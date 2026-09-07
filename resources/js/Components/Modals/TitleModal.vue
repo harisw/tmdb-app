@@ -1,13 +1,15 @@
 <script setup>
-import { computed, ref, watch } from 'vue'
-import { usePage, Link } from '@inertiajs/vue3'
-import { X, Clock, Calendar, Waypoints, Eye, Bookmark, Star } from 'lucide-vue-next'
+import { ref, watch } from 'vue'
+import { Link } from '@inertiajs/vue3'
+import { X, Clock, Calendar, Waypoints } from 'lucide-vue-next'
 import BaseModal from './BaseModal.vue'
 import RatingBadge from '../RatingBadge.vue'
 import ProvidersBadge from '../ProvidersBadge.vue'
 import GenreBadges from '../GenreBadges.vue'
 import { button } from '../../variants/button.js'
 import { PROVIDER_MODE_FULL } from '../../constants/ui.js'
+import { onBackdropError, onPosterError } from '../../utils/img.js'
+import TitleModalActions from './TitleModalActions.vue'
 
 const props = defineProps({
     show: { type: Boolean, required: true },
@@ -15,13 +17,8 @@ const props = defineProps({
     to: { type: [String, Object], default: 'body' },
 })
 
-const page = usePage()
 defineEmits(['close'])
 
-const BACKDROP_PLACEHOLDER = '/backdrop-placeholder.svg'
-const POSTER_PLACEHOLDER = '/poster-placeholder.svg'
-
-// The small-caps section label, repeated for each body section below.
 const SECTION_LABEL = 'text-xs font-semibold uppercase tracking-wide text-white/60'
 
 const currentItem = ref(props.item)
@@ -32,32 +29,6 @@ const loadingSimilar = ref(false)
 let requestId = 0
 
 const baseModal = ref(null)
-
-const backdropSrc = computed(() =>
-    currentItem.value?.backdrop_path
-        ? page.props.base_url.backdrop + currentItem.value.backdrop_path
-        : BACKDROP_PLACEHOLDER
-)
-
-function posterSrc(title) {
-    return title.poster_path ? page.props.base_url.poster + title.poster_path : POSTER_PLACEHOLDER
-}
-
-const userState = computed(() => currentItem.value?.user_state ?? null)
-const hasUserState = computed(() => {
-    const s = userState.value
-    return !!s && (s.watched || s.to_watch || Number(s.rate) > 0)
-})
-
-function onBackdropError(e) {
-    if (e.target.src.endsWith(BACKDROP_PLACEHOLDER)) return
-    e.target.src = BACKDROP_PLACEHOLDER
-}
-
-function onPosterError(e) {
-    if (e.target.src.endsWith(POSTER_PLACEHOLDER)) return
-    e.target.src = POSTER_PLACEHOLDER
-}
 
 async function fetchSimilar(title) {
     if (!title?.id) return
@@ -81,7 +52,6 @@ function selectSimilar(title) {
     fetchSimilar(title)
 }
 
-// Reset to the prop item and (re)load similars whenever a new title is opened.
 watch(
     () => [props.show, props.item?.id],
     ([show]) => {
@@ -127,10 +97,9 @@ watch(
 
         <template #default>
             <div v-if="currentItem">
-                <!-- Backdrop with scrim + overlaid title/meta -->
                 <div class="relative">
                     <img
-                        :src="backdropSrc"
+                        :src="currentItem.backdrop_path"
                         :alt="`${currentItem.name} backdrop`"
                         class="w-full h-64 md:h-96 object-cover"
                         @error="onBackdropError"
@@ -151,30 +120,10 @@ watch(
                             </span>
                         </div>
 
-                        <div v-if="hasUserState" class="mt-2 flex flex-wrap items-center gap-2 text-xs">
-                            <span
-                                v-if="userState.watched"
-                                class="badge badge-sm gap-1 border-none bg-madder/90 text-white"
-                            >
-                                <Eye :size="13" /> Watched
-                            </span>
-                            <span
-                                v-if="userState.to_watch"
-                                class="badge badge-sm gap-1 border-none bg-white/15 text-white"
-                            >
-                                <Bookmark :size="13" /> On watchlist
-                            </span>
-                            <span
-                                v-if="Number(userState.rate) > 0"
-                                class="badge badge-sm gap-1 border-none bg-black/50 text-amber-400 tabular-nums"
-                            >
-                                <Star :size="13" /> Your rating {{ userState.rate }}
-                            </span>
-                        </div>
+                        <TitleModalActions :item="currentItem" />
                     </div>
                 </div>
 
-                <!-- Body -->
                 <div class="p-5 space-y-5">
                     <p v-if="currentItem.overview" class="max-w-prose leading-relaxed text-white/80">
                         {{ currentItem.overview }}
@@ -201,7 +150,6 @@ watch(
                         </div>
                     </div>
 
-                    <!-- More Like This -->
                     <div v-if="loadingSimilar || similar.length" class="space-y-3">
                         <div class="flex items-center justify-between gap-3">
                             <h3 :class="SECTION_LABEL">More Like This</h3>
@@ -234,7 +182,7 @@ watch(
                                     class="relative overflow-hidden rounded-lg ring-1 ring-white/10 transition-transform duration-300 group-hover:scale-105 group-focus-visible:ring-2 group-focus-visible:ring-white/60"
                                 >
                                     <img
-                                        :src="posterSrc(title)"
+                                        :src="title.poster_path"
                                         :alt="`${title.name} poster`"
                                         loading="lazy"
                                         class="w-full aspect-[2/3] object-cover"
