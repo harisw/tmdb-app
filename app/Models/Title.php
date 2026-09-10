@@ -11,6 +11,7 @@ use App\Models\Scopes\TitleTypeScope;
 use Database\Factories\TitleFactory;
 use Illuminate\Database\Eloquent\Attributes\ObservedBy;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -126,6 +127,10 @@ class Title extends Model
 
     public const IMG_LARGE_URL = 'w1280';
 
+    private const BACKDROP_PLACEHOLDER = '/backdrop-placeholder.svg';
+
+    private const POSTER_PLACEHOLDER = '/poster-placeholder.svg';
+
     protected $guarded = [];
 
     protected $hidden = ['embedding'];
@@ -142,6 +147,22 @@ class Title extends Model
     public function getRuntimeAttribute($value): ?string
     {
         return $this->type === TitleType::MOVIE ? DateTimeHelper::minutesToHours($value) : null;
+    }
+
+    public function posterPath(): Attribute
+    {
+        return Attribute::make(
+            get: fn (?string $val) => $val ? config('services.tmdb.img_url').self::IMG_SMALL_URL.$val
+                : self::POSTER_PLACEHOLDER
+        );
+    }
+
+    public function backdropPath(): Attribute
+    {
+        return Attribute::make(
+            get: fn (?string $val) => $val ? config('services.tmdb.img_url').self::IMG_LARGE_URL.$val
+                : self::BACKDROP_PLACEHOLDER
+        );
     }
 
     public function scopeWithExtraAttributes(): Builder

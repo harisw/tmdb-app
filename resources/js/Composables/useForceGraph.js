@@ -2,6 +2,7 @@ import { forceSimulation, forceManyBody, forceLink, forceCenter, forceCollide } 
 import { select } from 'd3-selection'
 import { zoom, zoomIdentity } from 'd3-zoom'
 import { drag } from 'd3-drag'
+import { POSTER_PLACEHOLDER } from '../utils/img.js'
 
 const NODE_R = 26
 const POSTER_R = 24
@@ -14,15 +15,8 @@ const DOUBLE_TAP_MS = 260
  * The node/link arrays are deliberately plain (not Vue refs): d3-force mutates
  * every node with x/y/vx/vy on each tick, so wrapping them in reactivity would
  * be both wasteful and a source of update loops.
- *
- * @param {SVGSVGElement} svgEl
- * @param {object} opts
- * @param {string} opts.posterBase   base URL to prefix poster_path with
- * @param {string} opts.placeholder  fallback poster src
- * @param {(node) => void} opts.onSelect  called when a node is clicked (not dragged)
- * @param {(node) => void} opts.onExpand
  */
-export function createForceGraph(svgEl, { posterBase, placeholder, onSelect, onExpand, onLinkClick }) {
+export function createForceGraph(svgEl, { onSelect, onExpand, onLinkClick }) {
     const nodes = []
     const links = []
     const nodeById = new Map()
@@ -69,7 +63,7 @@ export function createForceGraph(svgEl, { posterBase, placeholder, onSelect, onE
     }
 
     function posterSrc(d) {
-        return d.poster_path ? posterBase + d.poster_path : placeholder
+        return d.poster_path || POSTER_PLACEHOLDER
     }
 
     function dragBehavior() {
@@ -171,7 +165,7 @@ export function createForceGraph(svgEl, { posterBase, placeholder, onSelect, onE
                     .attr('clip-path', (d) => `url(#clip-${d.id})`)
                     .attr('href', posterSrc)
                     .on('error', function () {
-                        select(this).attr('href', placeholder)
+                        select(this).attr('href', POSTER_PLACEHOLDER)
                     })
 
                 g.append('text')

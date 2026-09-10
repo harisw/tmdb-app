@@ -1,14 +1,13 @@
 <script setup>
-import { usePage } from '@inertiajs/vue3'
 import RatingBadge from './RatingBadge.vue'
 import { FilmIcon, TvIcon } from 'lucide-vue-next'
-import { computed } from 'vue'
 import ProvidersBadge from './ProvidersBadge.vue'
 import GenreBadges from './GenreBadges.vue'
 import TitleActionBar from './TitleActionBar.vue'
 import TitleActionSheet from './TitleActionSheet.vue'
 import TitleRateModal from './Modals/TitleRateModal.vue'
 import useTitleActions from '../Composables/useTitleActions.js'
+import { onPosterError } from '../utils/img.js'
 import { badge } from '../variants/badge.js'
 
 const props = defineProps({
@@ -18,41 +17,21 @@ const props = defineProps({
     size: { type: String, default: '' },
 })
 
-const page = usePage()
-const base_url = computed(() => page.props.base_url)
-
-const POSTER_PLACEHOLDER = '/poster-placeholder.svg'
-
-const posterSrc = computed(() =>
-    props.item.poster_path ? base_url.value.poster + props.item.poster_path : POSTER_PLACEHOLDER
-)
-
-function onPosterError(e) {
-    if (e.target.src.endsWith(POSTER_PLACEHOLDER)) return
-    e.target.src = POSTER_PLACEHOLDER
-}
-
-// One instance per card, shared by the desktop bar and the mobile sheet so both
-// controls reflect the same like / watchlist / watched state.
-const { state, pending, likeCount, trigger, rate, resolveRating } = useTitleActions(props.item)
+const { state, pending, likeCount, trigger, rate, resolveRating } = useTitleActions(() => props.item)
 </script>
 
 <template>
-    <!-- #4a: dark card base instead of bg-white -->
     <div class="bg-licorice rounded-xl shadow">
         <div
             :class="`${size} group [perspective:500px] mx-auto h-full hover:cursor-pointer`"
             @click="props.onClick(item)"
         >
-            <!-- animated card: ALL your transition / 3D classes are untouched -->
             <div
                 class="relative bg-licorice/95 ring-1 ring-white/5 rounded-xl shadow-xl transition-transform duration-500 transform group-hover:rotate-y-3 group-hover:-rotate-x-1 group-hover:scale-105 [transform-style:preserve-3d] overflow-x-hidden h-full"
             >
-                <!-- #3: poster + overlays wrapped in one relative container.
-                     overflow-hidden masks the action group while it slides up. -->
                 <div class="relative overflow-hidden rounded-t-xl">
                     <img
-                        :src="posterSrc"
+                        :src="item.poster_path"
                         :alt="`${item.name} Poster`"
                         class="w-full aspect-[2/3] object-cover rounded-t-xl"
                         @error="onPosterError"
