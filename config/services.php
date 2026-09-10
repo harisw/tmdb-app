@@ -49,4 +49,14 @@ return [
     'openai' => [
         'key' => env('OPENAI_API_KEY'),
     ],
+    'providers' => [
+        'movie_night' => [
+            'base_url' => env('MOVIE_NIGHT_BASE_URL'),
+            'api_key' => env('MOVIE_NIGHT_API_KEY'),
+        ],
+        'watchmode' => [
+            'base_url' => env('WATCHMODE_BASE_URL'),
+            'api_key' => env('WATCHMODE_API_KEY'),
+        ],
+    ],
 ];

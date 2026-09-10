@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Carbon;
@@ -95,5 +96,10 @@ class Provider extends Model
     {
         return $this->belongsToMany(Country::class, 'country_providers')
             ->withPivot('priority');
+    }
+
+    public function mainProvider(): BelongsTo
+    {
+        return $this->belongsTo(self::class, 'main_provider_id');
     }
 }
