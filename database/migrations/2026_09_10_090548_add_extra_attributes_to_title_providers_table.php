@@ -12,7 +12,7 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('title_providers', function (Blueprint $table) {
-            $table->schemalessAttributes('extra_attributes')->nullable();
+            $table->schemalessAttributes('extra_attributes')->nullable()->after('priority');
         });
     }
 

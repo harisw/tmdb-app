@@ -33,6 +33,12 @@ class AppServiceProvider extends ServiceProvider
                 baseUrl: config('services.tmdb.base_url')
             );
         });
+        $this->app->singleton(TmdbApiService::class, function () {
+            return new TmdbApiService(
+                apiKey: config('services.providers.watchmode.api_key'),
+                baseUrl: config('services.providers.watchmode.base_url')
+            );
+        });
         $this->app->bind(TitleService::class, function () {
             return new TitleService;
         });
@@ -52,9 +58,6 @@ class AppServiceProvider extends ServiceProvider
             'email' => $user->email,
         ]);
 
-        // Anchored to a column, not to the username: usernames are editable at
-        // /profile, so deriving admin from one meant anyone could rename their
-        // way into it on any database where the name was still unclaimed.
         Gate::define('admin', fn ($user) => (bool) $user->is_admin);
         Gate::define('viewPulse', fn ($user) => Gate::forUser($user)->allows('admin'));
 

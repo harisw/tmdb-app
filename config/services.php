@@ -51,12 +51,12 @@ return [
     ],
     'providers' => [
         'movie_night' => [
-            'base_url' => env('MOVIE_NIGHT_BASE_URL'),
             'api_key' => env('MOVIE_NIGHT_API_KEY'),
+            'base_url' => env('MOVIE_NIGHT_BASE_URL'),
         ],
         'watchmode' => [
-            'base_url' => env('WATCHMODE_BASE_URL'),
             'api_key' => env('WATCHMODE_API_KEY'),
+            'base_url' => env('WATCHMODE_BASE_URL'),
         ],
     ],
 ];

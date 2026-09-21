@@ -21,6 +21,7 @@
         "laravel/socialite": "^5.27",
         "laravel/tinker": "^3.0",
         "league/flysystem-aws-s3-v3": "^3.32",
+        "mike-bronner/laravel-model-caching": "^13.1",
         "resend/resend-php": "^1.4",
         "spatie/laravel-data": "*",
         "spatie/laravel-schemaless-attributes": "^2.6"
