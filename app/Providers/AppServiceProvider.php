@@ -6,6 +6,9 @@ use App\Repositories\Contracts\PersonRepository;
 use App\Repositories\Contracts\TitlePersonRepository;
 use App\Repositories\EloquentPersonRepository;
 use App\Repositories\EloquentTitlePersonRepository;
+use App\Services\ProviderServices\ProviderCatalog;
+use App\Services\ProviderServices\StreamingAvailabilityService;
+use App\Services\ProviderServices\WatchmodeService;
 use App\Services\TitleService;
 use App\Services\TmdbApiService;
 use App\Utils\Enum\FeatureFlag;
@@ -33,15 +36,23 @@ class AppServiceProvider extends ServiceProvider
                 baseUrl: config('services.tmdb.base_url')
             );
         });
-        $this->app->singleton(TmdbApiService::class, function () {
-            return new TmdbApiService(
-                apiKey: config('services.providers.watchmode.api_key'),
-                baseUrl: config('services.providers.watchmode.base_url')
-            );
-        });
         $this->app->bind(TitleService::class, function () {
             return new TitleService;
         });
+
+        $this->app->singleton(ProviderCatalog::class, fn () => new ProviderCatalog);
+
+        $this->app->singleton(StreamingAvailabilityService::class, fn ($app) => new StreamingAvailabilityService(
+            apiKey: config('services.providers.movie_night.api_key'),
+            baseUrl: config('services.providers.movie_night.base_url'),
+            catalog: $app->make(ProviderCatalog::class),
+        ));
+
+        $this->app->singleton(WatchmodeService::class, fn ($app) => new WatchmodeService(
+            apiKey: config('services.providers.watchmode.api_key'),
+            baseUrl: config('services.providers.watchmode.base_url'),
+            catalog: $app->make(ProviderCatalog::class),
+        ));
     }
 
     /**

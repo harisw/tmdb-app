@@ -2,7 +2,6 @@
 
 namespace App\Domain\Casts;
 
-use App\Domain\Enums\CreditJob;
 use App\Domain\Enums\StreamType;
 use Spatie\LaravelData\Casts\Cast;
 use Spatie\LaravelData\Support\Creation\CreationContext;
@@ -25,7 +24,7 @@ class ProviderStreamTypeCast implements Cast
             return null;
         }
 
-        if ($enum = CreditJob::tryFrom($value)) {
+        if ($enum = StreamType::tryFrom($value)) {
             return $enum;
         }
 

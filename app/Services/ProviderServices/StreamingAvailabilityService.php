@@ -2,102 +2,114 @@
 
 namespace App\Services\ProviderServices;
 
+use App\Data\DTOs\TitleProviderData;
 use App\Domain\Enums\StreamQuality;
-use App\Domain\Enums\TitleType;
+use App\Domain\Enums\StreamType;
 use App\Models\Country;
-use App\Models\CountryProvider;
 use App\Models\Provider;
 use App\Models\Title;
+use Arr;
 use Illuminate\Http\Client\PendingRequest;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Http;
-use Str;
+use Illuminate\Support\Facades\Log;
 
 class StreamingAvailabilityService
 {
+    private const APP_SLUG_BY_SERVICE_ID = [
+        'netflix' => 'netflix',
+        'prime' => 'amazon-prime-video',
+        'disney' => 'disney-plus',
+        'apple' => 'apple-tv',
+        'hbo' => 'hbo-max',
+        'crunchyroll' => 'crunchyroll',
+        'crave' => 'crave',
+        'hulu' => 'hulu',
+        'roku' => 'the-roku-channel',
+        'starz' => 'starz',
+        'paramount' => 'paramount-plus',
+        'peacock' => 'peacock-premium',
+    ];
+
     private PendingRequest $client;
+
+    private Country $country;
 
     public function __construct(
         string $apiKey,
         string $baseUrl,
-    )
-    {
+        private ProviderCatalog $catalog,
+    ) {
         $this->client = Http::baseUrl($baseUrl)
             ->withHeaders([
                 'accept' => 'application/json',
-                'X-API-Key' => $apiKey
+                'X-API-Key' => $apiKey,
             ])
             ->timeout(30);
     }
 
-    public function getTopShows(Country $country, Provider $provider)
+    public function getTopShows(Country $country, Provider $provider): Collection
     {
-        $topShowsWithProviders = $this->get("shows/top?country={$country->iso2}&service={$this->getProviderKey($provider)}");
+        $this->country = $country;
 
-        $titlesWithProvidersData = collect();
-        foreach ($topShowsWithProviders as $showWithProviders) {
-            $title = Title::where('')
-            $titlesWithProvidersData->push(
-                $this->toDTOCollections()
-            )
-        }
+        $shows = $this->get("shows/top?country={$country->iso2}&service={$this->getProviderKey($provider)}") ?? [];
+
+        return collect($shows)->flatMap(function (array $show) {
+            $title = $this->getTitle($show);
+            if (! $title) {
+                Log::warning('Title not found', $show);
+
+                return [];
+            }
+
+            return $this->toDTOs($show['streamingOptions'] ?? [], $title);
+        });
     }
 
-    public function getProviders(Title $title): array
+    private function toDTOs(array $streamingOptions, Title $title): Collection
     {
-        if ($title->tmdb_id === null && $title->imdb_id === null) {
-            return [];
-        }
-        $providers = $this->get("title/{$this->getIdentifier($title)}/sources");
-
-        return $this->toDTOCollections($providers, $title);
+        return collect($streamingOptions[strtolower($this->country->iso2)] ?? [])
+            ->reject(fn ($option) => $option['type'] === StreamType::ADDON->value)
+            ->map(fn ($option) => $this->toDTO($option, $title))
+            ->filter()
+            ->values();
     }
 
-    private function getIdentifier(Title $title): string
+    private function toDTO(array $option, Title $title): ?TitleProviderData
     {
-        if ($title->imdb_id) {
-            return $title->imdb_id;
+        $providerId = $this->catalog->providerId(self::APP_SLUG_BY_SERVICE_ID[$option['service']['id']] ?? null);
+        if (! $providerId) {
+            return null;
         }
-        return match ($title->type) {
-                TitleType::MOVIE => 'movie',
-                TitleType::TV => 'tv'
-            } . "-{$title->tmdb_id}";
+
+        return TitleProviderData::from([
+            'type' => $option['type'],
+            'country_id' => $this->country->id,
+            'provider_id' => $providerId,
+            'title_id' => $title->id,
+            'link' => $option['link'],
+            'quality' => StreamQuality::mapString($option['quality'] ?? ''),
+        ]);
+    }
+
+    private function getProviderKey(Provider $provider): string
+    {
+        return array_search($provider->slug, self::APP_SLUG_BY_SERVICE_ID, strict: true)
+            ?: throw new \RuntimeException('Provider is not supported: '.$provider->toJson());
+    }
+
+    private function getTitle(array $showWithProviders): ?Title
+    {
+        $imdbId = Arr::get($showWithProviders, 'imdbId');
+        [$type, $tmdbId] = explode('/', Arr::get($showWithProviders, 'tmdbId', ''));
+
+        return Title::where('imdb_id', $imdbId)
+            ->orWhere(fn ($q) => $q->where('type', $type)->where('tmdb_id', $tmdbId))
+            ->first();
     }
 
     private function get(string $url): ?array
     {
         return $this->client->get($url)->json();
-    }
-
-    private function toDTOCollections(?array $providers, Title $title): Collection
-    {
-        $providersDict = Provider::with('mainProvider')->get()->keyBy('slug');
-        $countryDict = Country::pluck('id', 'iso2');
-        return collect($providers)
-            ->unique(fn($item) => $item['name'] . $item['type'] . $item['region'] . $item['format'])
-            ->map(function ($item) use ($providersDict, $countryDict, $title) {
-                $item['country_id'] = $countryDict->get($item['region']);
-                $provider = $providersDict->get(Str::slug($item['name']));
-                $item['provider_id'] = $provider->isMainProvider() ? $provider->id : $provider->mainProvider->id;
-                $item['title_id'] = $title->id;
-                $item['quality'] = StreamQuality::mapString($item['format']);
-                return $item;
-            });
-
-    }
-
-    private function getProviderKey(Provider $provider): string
-    {
-        return match ($provider->slug) {
-            'netflix' => 'netflix',
-            'amazon-prime-video' => 'prime',
-            'disney-plus' => 'disney',
-            'apple-tv' => 'apple',
-            'hbo-max' => 'hbo',
-            'crunchyroll' => 'crunchyroll',
-            'crave' => 'crave',
-            'hulu' => 'hulu',
-            default => throw new \RuntimeException('Provider is not supported: '.$provider->toJson())
-        };
     }
 }

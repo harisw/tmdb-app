@@ -37,13 +37,14 @@ class WatchProviderSyncService
         $missingProviders = $this->findMissingProviders($entries);
         if ($missingProviders) {
             Provider::upsert(array_values($missingProviders), ['slug'], ['name', 'tmdb_id', 'img_logo', 'priority']);
-            $this->providersMap = Provider::pluck('id', 'slug');
+            $this->providersMap = Provider::disableCache()->pluck('id', 'slug');
         }
 
         $missingCountryProviders = $this->findMissingCountryProviders($entries);
         if ($missingCountryProviders) {
             CountryProvider::upsert(array_values($missingCountryProviders), ['country_id', 'provider_id'], ['priority']);
-            $this->countryProvidersMap = CountryProvider::select('id', 'country_id', 'provider_id')
+            $this->countryProvidersMap = CountryProvider::disableCache()
+                ->select('id', 'country_id', 'provider_id')
                 ->get()
                 ->keyBy(fn ($cp) => "{$cp->country_id}-{$cp->provider_id}");
         }

@@ -12,15 +12,14 @@ enum StreamQuality: string
     case HD = 'HD';
     case FOUR_K = '4k';
 
-    private const UHD = 'uhd';
-
     public static function mapString(string $value): ?string
     {
-        $uppered = strtoupper($value);
-        if (CreditJob::tryFrom($uppered)) {
-            return $uppered;
-        }
+        $normalized = strtoupper($value);
 
-        return $value === self::UHD ? $uppered : null;
+        return match ($normalized) {
+            self::SD->value, self::HD->value => $normalized,
+            '4K', 'UHD' => self::FOUR_K->value,
+            default => null,
+        };
     }
 }

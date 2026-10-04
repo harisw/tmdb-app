@@ -16,7 +16,7 @@ class TitleProviderData extends Data
         public readonly int $provider_id,
         public readonly int $title_id,
         public readonly string $link,
-        public readonly string $quality
+        public readonly ?string $quality
     ) {}
 
     public function toUpsertArray(): array
