@@ -33,8 +33,6 @@ class StreamingAvailabilityService
 
     private PendingRequest $client;
 
-    private Country $country;
-
     public function __construct(
         string $apiKey,
         string $baseUrl,
@@ -50,41 +48,44 @@ class StreamingAvailabilityService
 
     public function getTopShows(Country $country, Provider $provider): Collection
     {
-        $this->country = $country;
-
         $shows = $this->get("shows/top?country={$country->iso2}&service={$this->getProviderKey($provider)}") ?? [];
 
-        return collect($shows)->flatMap(function (array $show) {
+        return collect($shows)->flatMap(function (array $show) use ($country) {
             $title = $this->getTitle($show);
             if (! $title) {
                 Log::warning('Title not found', $show);
 
                 return [];
             }
+            Log::info("Found {$title->slug}", $show);
 
-            return $this->toDTOs($show['streamingOptions'] ?? [], $title);
+            return $this->toDTOs($show['streamingOptions'] ?? [], $title, $country);
         });
     }
 
-    private function toDTOs(array $streamingOptions, Title $title): Collection
+    private function toDTOs(array $streamingOptions, Title $title, Country $country): Collection
     {
-        return collect($streamingOptions[strtolower($this->country->iso2)] ?? [])
+        return collect($streamingOptions[strtolower($country->iso2)] ?? [])
             ->reject(fn ($option) => $option['type'] === StreamType::ADDON->value)
-            ->map(fn ($option) => $this->toDTO($option, $title))
+            ->map(fn ($option) => $this->toDTO($option, $title, $country))
             ->filter()
             ->values();
     }
 
-    private function toDTO(array $option, Title $title): ?TitleProviderData
+    private function toDTO(array $option, Title $title, Country $country): ?TitleProviderData
     {
         $providerId = $this->catalog->providerId(self::APP_SLUG_BY_SERVICE_ID[$option['service']['id']] ?? null);
-        if (! $providerId) {
+        $countryProviderId = $providerId
+            ? $this->catalog->countryProviderId($country->id, $providerId)
+            : null;
+        if (! $countryProviderId) {
             return null;
         }
 
         return TitleProviderData::from([
             'type' => $option['type'],
-            'country_id' => $this->country->id,
+            'country_id' => $country->id,
+            'country_provider_id' => $countryProviderId,
             'provider_id' => $providerId,
             'title_id' => $title->id,
             'link' => $option['link'],
@@ -101,7 +102,7 @@ class StreamingAvailabilityService
     private function getTitle(array $showWithProviders): ?Title
     {
         $imdbId = Arr::get($showWithProviders, 'imdbId');
-        [$type, $tmdbId] = explode('/', Arr::get($showWithProviders, 'tmdbId', ''));
+        [$type, $tmdbId] = array_pad(explode('/', Arr::get($showWithProviders, 'tmdbId', '')), 2, null);
 
         return Title::where('imdb_id', $imdbId)
             ->orWhere(fn ($q) => $q->where('type', $type)->where('tmdb_id', $tmdbId))
@@ -110,6 +111,6 @@ class StreamingAvailabilityService
 
     private function get(string $url): ?array
     {
-        return $this->client->get($url)->json();
+        return $this->client->get($url)->throw()->json();
     }
 }

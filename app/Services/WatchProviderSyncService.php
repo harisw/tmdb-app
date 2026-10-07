@@ -163,7 +163,7 @@ class WatchProviderSyncService
     private function persistTitleProviders(int $titleId, array $rows): void
     {
         if (empty($rows)) {
-            TitleProvider::where('title_id', $titleId)->delete();
+            TitleProvider::where('title_id', $titleId)->whereNull('link')->delete();
 
             return;
         }
@@ -186,6 +186,7 @@ class WatchProviderSyncService
             ->pluck('id');
 
         TitleProvider::where('title_id', $titleId)
+            ->whereNull('link')
             ->whereNotIn('id', $survivingIds)
             ->delete();
     }

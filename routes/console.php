@@ -52,3 +52,11 @@ Schedule::job(new EnrichTitleCreditsBatchJob)
 Schedule::job(new EnrichTitleKnowledgeGraphsJob(100))
     ->everyThreeHours()->withoutOverlapping()
     ->when(fn () => Feature::for('global')->active(FeatureFlag::KnowledgeGraphEnrichment));
+
+Schedule::job(new EnrichTitleProvidersBatchJob)
+    ->thursdays()
+    ->at('08:00');
+
+Schedule::job(new EnrichTitleProvidersBatchJob)
+    ->wednesdays()
+    ->at('08:00');

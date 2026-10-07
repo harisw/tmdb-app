@@ -195,9 +195,6 @@ watch(
                                 <p class="mt-1.5 text-xs font-medium text-white/90 line-clamp-1">
                                     {{ title.name }}
                                 </p>
-                                <p v-if="title.release_date" class="text-[11px] text-white/45">
-                                    {{ title.release_date }}
-                                </p>
                             </button>
                         </div>
                     </div>

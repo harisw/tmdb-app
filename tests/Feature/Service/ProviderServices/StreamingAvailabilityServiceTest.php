@@ -4,6 +4,7 @@ namespace Tests\Feature\Service\ProviderServices;
 
 use App\Domain\Enums\TitleType;
 use App\Models\Country;
+use App\Models\CountryProvider;
 use App\Models\Provider;
 use App\Models\Title;
 use App\Services\ProviderServices\ProviderCatalog;
@@ -49,6 +50,7 @@ class StreamingAvailabilityServiceTest extends TestCase
     {
         $country = Country::factory()->create(['iso2' => 'US']);
         $amazonProvider = Provider::factory()->create(['slug' => 'amazon-prime-video']);
+        CountryProvider::factory()->create(['country_id' => $country->id, 'provider_id' => $amazonProvider->id]);
         $requestingProvider = Provider::factory()->create(['slug' => 'netflix']);
         $title = Title::factory()->create(['imdb_id' => 'tt1234567']);
 
@@ -115,7 +117,8 @@ class StreamingAvailabilityServiceTest extends TestCase
     public function test_matches_title_by_tmdb_id_and_type_when_imdb_id_is_absent(): void
     {
         $country = Country::factory()->create(['iso2' => 'US']);
-        Provider::factory()->create(['slug' => 'amazon-prime-video']);
+        $amazon = Provider::factory()->create(['slug' => 'amazon-prime-video']);
+        CountryProvider::factory()->create(['country_id' => $country->id, 'provider_id' => $amazon->id]);
         $requestingProvider = Provider::factory()->create(['slug' => 'netflix']);
         $title = Title::factory()->create(['imdb_id' => null, 'tmdb_id' => 1234567, 'type' => TitleType::MOVIE->value]);
 
@@ -127,6 +130,20 @@ class StreamingAvailabilityServiceTest extends TestCase
 
         $this->assertCount(1, $result);
         $this->assertSame($title->id, $result->first()->title_id);
+    }
+
+    public function test_skips_options_for_a_provider_not_linked_to_the_country(): void
+    {
+        $country = Country::factory()->create(['iso2' => 'US']);
+        Provider::factory()->create(['slug' => 'amazon-prime-video']);
+        $requestingProvider = Provider::factory()->create(['slug' => 'netflix']);
+        Title::factory()->create(['imdb_id' => 'tt1234567']);
+
+        Http::fake(['movie-night.test/*' => Http::response([
+            $this->makeShow(['us' => [$this->makeOption()]]),
+        ])]);
+
+        $this->assertCount(0, $this->service()->getTopShows($country, $requestingProvider));
     }
 
     public function test_throws_for_an_unsupported_provider(): void

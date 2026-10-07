@@ -4,6 +4,7 @@ namespace Tests\Feature\Service\ProviderServices;
 
 use App\Domain\Enums\StreamType;
 use App\Models\Country;
+use App\Models\CountryProvider;
 use App\Models\Provider;
 use App\Models\Title;
 use App\Services\ProviderServices\ProviderCatalog;
@@ -45,6 +46,7 @@ class WatchmodeServiceTest extends TestCase
     {
         $country = Country::factory()->create(['iso2' => 'US']);
         $provider = Provider::factory()->create(['slug' => 'apple-tv']);
+        CountryProvider::factory()->create(['country_id' => $country->id, 'provider_id' => $provider->id]);
         $title = Title::factory()->create(['tmdb_id' => 1550569, 'imdb_id' => null]);
 
         Http::fake(['watchmode.test/*' => Http::response([$this->makeSource()])]);
@@ -64,8 +66,9 @@ class WatchmodeServiceTest extends TestCase
     #[DataProvider('sourceMappings')]
     public function test_normalizes_type_and_quality(array $source, StreamType $type, string $quality): void
     {
-        Country::factory()->create(['iso2' => 'US']);
-        Provider::factory()->create(['slug' => 'peacock-premium']);
+        $country = Country::factory()->create(['iso2' => 'US']);
+        $provider = Provider::factory()->create(['slug' => 'peacock-premium']);
+        CountryProvider::factory()->create(['country_id' => $country->id, 'provider_id' => $provider->id]);
         $title = Title::factory()->create(['tmdb_id' => 1550569]);
 
         Http::fake(['watchmode.test/*' => Http::response([
@@ -119,8 +122,9 @@ class WatchmodeServiceTest extends TestCase
 
     public function test_deduplicates_identical_rows(): void
     {
-        Country::factory()->create(['iso2' => 'US']);
-        Provider::factory()->create(['slug' => 'apple-tv']);
+        $country = Country::factory()->create(['iso2' => 'US']);
+        $provider = Provider::factory()->create(['slug' => 'apple-tv']);
+        CountryProvider::factory()->create(['country_id' => $country->id, 'provider_id' => $provider->id]);
         $title = Title::factory()->create(['tmdb_id' => 1550569]);
 
         Http::fake(['watchmode.test/*' => Http::response([

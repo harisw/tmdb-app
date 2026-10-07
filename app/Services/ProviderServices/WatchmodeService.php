@@ -4,7 +4,6 @@ namespace App\Services\ProviderServices;
 
 use App\Data\DTOs\TitleProviderData;
 use App\Domain\Enums\StreamQuality;
-use App\Domain\Enums\TitleType;
 use App\Models\Title;
 use Illuminate\Http\Client\PendingRequest;
 use Illuminate\Support\Collection;
@@ -58,13 +57,17 @@ class WatchmodeService
         $providerId = $this->catalog->providerId(self::APP_SLUG_BY_PROVIDER_NAME[$item['name']] ?? null);
         $countryId = $this->catalog->countryId($item['region']);
 
-        if (! $providerId || ! $countryId) {
+        $countryProviderId = $providerId && $countryId
+            ? $this->catalog->countryProviderId($countryId, $providerId)
+            : null;
+        if (! $countryProviderId) {
             return null;
         }
 
         return TitleProviderData::from([
             'type' => $item['type'],
             'country_id' => $countryId,
+            'country_provider_id' => $countryProviderId,
             'provider_id' => $providerId,
             'title_id' => $title->id,
             'link' => $item['web_url'],
@@ -78,10 +81,7 @@ class WatchmodeService
             return $title->imdb_id;
         }
 
-        return match ($title->type) {
-            TitleType::MOVIE => 'movie',
-            TitleType::TV => 'tv',
-        }."-{$title->tmdb_id}";
+        return "{$title->type->value}-{$title->tmdb_id}";
     }
 
     private function get(string $url): ?array

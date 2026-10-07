@@ -3,6 +3,7 @@
 namespace App\Services\ProviderServices;
 
 use App\Models\Country;
+use App\Models\CountryProvider;
 use App\Models\Provider;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Log;
@@ -12,6 +13,9 @@ class ProviderCatalog
     private Collection $providersBySlug;
 
     private Collection $countryIdsByIso2;
+
+    /** @var array<int, Collection<int, int>> */
+    private array $countryProviderIdsByCountry = [];
 
     public function __construct()
     {
@@ -29,6 +33,19 @@ class ProviderCatalog
         }
 
         return $provider->main_provider_id ?? $provider->id;
+    }
+
+    public function countryProviderId(int $countryId, int $providerId): ?int
+    {
+        $this->countryProviderIdsByCountry[$countryId] ??= CountryProvider::where('country_id', $countryId)
+            ->pluck('id', 'provider_id');
+
+        $countryProviderId = $this->countryProviderIdsByCountry[$countryId]->get($providerId);
+        if (! $countryProviderId) {
+            Log::warning("Provider [$providerId] is not linked to country [$countryId]");
+        }
+
+        return $countryProviderId;
     }
 
     public function countryId(string $iso2): ?int
