@@ -80,6 +80,8 @@ return [
 
     'timezone' => 'UTC',
 
+    'schedule_timezone' => 'Asia/Seoul',
+
     /*
     |--------------------------------------------------------------------------
     | Application Locale Configuration
