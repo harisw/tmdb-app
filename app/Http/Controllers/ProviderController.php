@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Resources\TitleResource;
 use App\Models\Provider;
 use App\Models\Title;
 use App\Models\TitleProvider;
@@ -10,17 +11,16 @@ use Inertia\Response;
 
 class ProviderController extends Controller
 {
-    private const PAGINATE_SIZE = 30;
-
     public function index(): Response
     {
         $providers = Provider::with(['titles' => function ($query) {
             $query->select('titles.*')
-                ->with(['genres', 'keywords'])
                 ->groupBy(['titles.id', 'title_providers.title_id', 'title_providers.provider_id'])
-                ->orderByDesc('titles.created_at')
-                ->take(30);
-        }])->orderByDesc('count')->get();
+                ->listing()
+                ->paginate(self::PAGINATE_SIZE);
+        }])->orderByDesc('count')->get()->map(fn (Provider $provider) => array_merge($provider->toArray(), [
+            'titles' => TitleResource::collection($provider->titles)->resolve(),
+        ]));
 
         return Inertia::render('AllProviders', [
             'allProviders' => $providers,
@@ -35,10 +35,9 @@ class ProviderController extends Controller
 
         return Inertia::render('TitleByProvider', [
             'provider' => $provider,
-            'titles' => Title::whereIn('id', $titleIds)
-                ->with(['genres', 'keywords'])
-                ->latest()
-                ->paginate(self::PAGINATE_SIZE),
+            'titles' => TitleResource::collection(
+                Title::whereIn('id', $titleIds)->listing()->paginate(self::PAGINATE_SIZE)
+            ),
         ]);
     }
 }

@@ -37,13 +37,14 @@ class WatchProviderSyncService
         $missingProviders = $this->findMissingProviders($entries);
         if ($missingProviders) {
             Provider::upsert(array_values($missingProviders), ['slug'], ['name', 'tmdb_id', 'img_logo', 'priority']);
-            $this->providersMap = Provider::pluck('id', 'slug');
+            $this->providersMap = Provider::disableCache()->pluck('id', 'slug');
         }
 
         $missingCountryProviders = $this->findMissingCountryProviders($entries);
         if ($missingCountryProviders) {
             CountryProvider::upsert(array_values($missingCountryProviders), ['country_id', 'provider_id'], ['priority']);
-            $this->countryProvidersMap = CountryProvider::select('id', 'country_id', 'provider_id')
+            $this->countryProvidersMap = CountryProvider::disableCache()
+                ->select('id', 'country_id', 'provider_id')
                 ->get()
                 ->keyBy(fn ($cp) => "{$cp->country_id}-{$cp->provider_id}");
         }
@@ -162,7 +163,7 @@ class WatchProviderSyncService
     private function persistTitleProviders(int $titleId, array $rows): void
     {
         if (empty($rows)) {
-            TitleProvider::where('title_id', $titleId)->delete();
+            TitleProvider::where('title_id', $titleId)->whereNull('link')->delete();
 
             return;
         }
@@ -185,6 +186,7 @@ class WatchProviderSyncService
             ->pluck('id');
 
         TitleProvider::where('title_id', $titleId)
+            ->whereNull('link')
             ->whereNotIn('id', $survivingIds)
             ->delete();
     }

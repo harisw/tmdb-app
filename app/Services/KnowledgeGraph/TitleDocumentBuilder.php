@@ -26,13 +26,9 @@ class TitleDocumentBuilder
 
         $this->buildCastDoc($title, $parts);
 
-        collect([CreditJob::DIRECTOR,
-            CreditJob::PRODUCER,
-            CreditJob::COMPOSER,
-            CreditJob::WRITER,
-            CreditJob::ART_DIRECTOR])->each(function ($job) use ($title, &$parts) {
-                $this->buildCrewDoc($title, $job, $parts);
-            });
+        collect(CreditJob::getCrewJobs())->each(function ($job) use ($title, &$parts) {
+            $this->buildCrewDoc($title, $job, $parts);
+        });
 
         // Contextual signals
         if ($title->release_date) {

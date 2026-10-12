@@ -7,26 +7,6 @@ use Spatie\LaravelData\Casts\Cast;
 use Spatie\LaravelData\Support\Creation\CreationContext;
 use Spatie\LaravelData\Support\DataProperty;
 
-/**
- * Maps TMDB's raw `job` strings (crew) onto our internal CreditJob taxonomy.
- *
- * TMDB has ~700 distinct job titles across departments. Most are noise for a
- * similarity graph — stunt doubles, assistant accountants, third assistant
- * directors, etc. This cast is intentionally a denylist-by-omission: only
- * jobs that are meaningful signal for "titles a user might like because of
- * this person" are mapped. Anything else resolves to null, which the import
- * service treats as "skip this credit."
- *
- * Producer tiers are deliberately narrow (Producer / Executive Producer only)
- * — Co-Producer, Line Producer, Consulting Producer, Associate Producer are
- * high-fanout, low-signal credits that dilute similarity edges more than
- * they help.
- *
- * Art Direction includes Production Design + Supervising Art Director + plain
- * Art Direction. Expect several people per title (TMDB lists it per
- * season/unit for TV) — filter by episode_count in the import service rather
- * than trying to exclude it here.
- */
 class TmdbCreditJobCast implements Cast
 {
     private const JOB_MAP = [

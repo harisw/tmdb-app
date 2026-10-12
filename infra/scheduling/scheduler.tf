@@ -1,7 +1,7 @@
-resource "aws_scheduler_schedule" "start" {
-    name    = "chill-start-resources"
+resource "aws_scheduler_schedule" "start_weekday" {
+    name    = "chill-start-resources-weekday"
 
-    schedule_expression             = var.start_cron
+    schedule_expression             = var.start_cron_weekday
     schedule_expression_timezone    = "Asia/Seoul"
 
     flexible_time_window {
@@ -14,10 +14,10 @@ resource "aws_scheduler_schedule" "start" {
     }
 }
 
-resource "aws_scheduler_schedule" "stop" {
-    name    = "chill-stop-resources"
+resource "aws_scheduler_schedule" "stop_weekday" {
+    name    = "chill-stop-resources-weekday"
 
-    schedule_expression             = var.stop_cron
+    schedule_expression             = var.stop_cron_weekday
     schedule_expression_timezone    = "Asia/Seoul"
 
     flexible_time_window {

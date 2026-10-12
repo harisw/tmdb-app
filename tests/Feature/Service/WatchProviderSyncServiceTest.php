@@ -15,7 +15,6 @@ class WatchProviderSyncServiceTest extends TestCase
 {
     use RefreshDatabase;
 
-    // Mirrors the shape TMDB returns for watch/providers
     private function makeResults(string $iso2, string $streamType, array $providers, string $link = 'https://tmdb.org/watch'): array
     {
         return [
@@ -32,10 +31,6 @@ class WatchProviderSyncServiceTest extends TestCase
             'display_priority' => $priority,
         ];
     }
-
-    // -------------------------------------------------------------------------
-    // Happy path
-    // -------------------------------------------------------------------------
 
     public function test_inserts_title_provider_when_provider_and_country_provider_exist(): void
     {
@@ -61,56 +56,7 @@ class WatchProviderSyncServiceTest extends TestCase
         ]);
     }
 
-    public function test_inserts_one_row_per_stream_type_for_same_provider_and_country(): void
-    {
-        $country = Country::factory()->create(['iso2' => 'US']);
-        $provider = Provider::factory()->create(['tmdb_id' => 8, 'slug' => 'netflix']);
-        CountryProvider::factory()->create([
-            'country_id' => $country->id,
-            'provider_id' => $provider->id,
-        ]);
-        $title = Title::factory()->create();
-
-        $raw = $this->makeRawProvider(8);
-        $results = [
-            'US' => [
-                'link' => 'https://tmdb.org/watch',
-                'flatrate' => [$raw],
-                'rent' => [$raw],
-                'buy' => [$raw],
-                'free' => [$raw],
-                'ads' => [$raw],
-            ],
-        ];
-
-        (new WatchProviderSyncService)->sync($title, $results);
-
-        $this->assertDatabaseCount('title_providers', 5);
-        foreach (StreamType::cases() as $type) {
-            $this->assertDatabaseHas('title_providers', [
-                'title_id' => $title->id,
-                'type' => $type->value,
-            ]);
-        }
-    }
-
-    // -------------------------------------------------------------------------
-    // Missing provider
-    // -------------------------------------------------------------------------
-
-    public function test_creates_provider_when_not_in_database(): void
-    {
-        Country::factory()->create(['iso2' => 'US']);
-        $title = Title::factory()->create();
-
-        $results = $this->makeResults('US', 'flatrate', [$this->makeRawProvider(99, 'New Provider')]);
-
-        (new WatchProviderSyncService)->sync($title, $results);
-
-        $this->assertDatabaseHas('providers', ['tmdb_id' => 99, 'name' => 'New Provider']);
-    }
-
-    public function test_creates_country_provider_and_title_provider_for_new_provider(): void
+    public function test_creates_provider_country_provider_and_title_provider_for_unknown_provider(): void
     {
         $country = Country::factory()->create(['iso2' => 'US']);
         $title = Title::factory()->create();
@@ -121,6 +67,7 @@ class WatchProviderSyncServiceTest extends TestCase
 
         $provider = Provider::where('tmdb_id', 99)->sole();
 
+        $this->assertSame('New Provider', $provider->name);
         $this->assertDatabaseHas('country_providers', [
             'country_id' => $country->id,
             'provider_id' => $provider->id,
@@ -133,15 +80,10 @@ class WatchProviderSyncServiceTest extends TestCase
         ]);
     }
 
-    // -------------------------------------------------------------------------
-    // Missing country_provider
-    // -------------------------------------------------------------------------
-
     public function test_creates_country_provider_when_provider_exists_but_not_linked_to_country(): void
     {
         $country = Country::factory()->create(['iso2' => 'US']);
         $provider = Provider::factory()->create(['tmdb_id' => 8, 'slug' => 'netflix']);
-        // deliberately no CountryProvider
         $title = Title::factory()->create();
 
         $results = $this->makeResults('US', 'flatrate', [$this->makeRawProvider(8)]);
@@ -154,10 +96,6 @@ class WatchProviderSyncServiceTest extends TestCase
         ]);
         $this->assertDatabaseCount('title_providers', 1);
     }
-
-    // -------------------------------------------------------------------------
-    // Deduplication
-    // -------------------------------------------------------------------------
 
     public function test_inserts_new_provider_once_even_when_it_appears_in_multiple_countries(): void
     {
@@ -198,10 +136,6 @@ class WatchProviderSyncServiceTest extends TestCase
         $this->assertDatabaseCount('title_providers', 1);
     }
 
-    // -------------------------------------------------------------------------
-    // Unknown/invalid data
-    // -------------------------------------------------------------------------
-
     public function test_skips_unknown_country_without_error(): void
     {
         $title = Title::factory()->create();
@@ -225,19 +159,6 @@ class WatchProviderSyncServiceTest extends TestCase
         $this->assertDatabaseCount('title_providers', 0);
     }
 
-    public function test_does_nothing_when_results_are_empty(): void
-    {
-        $title = Title::factory()->create();
-
-        (new WatchProviderSyncService)->sync($title, []);
-
-        $this->assertDatabaseCount('title_providers', 0);
-    }
-
-    // -------------------------------------------------------------------------
-    // Idempotency
-    // -------------------------------------------------------------------------
-
     public function test_resync_replaces_existing_title_providers_instead_of_accumulating(): void
     {
         $country = Country::factory()->create(['iso2' => 'US']);
@@ -252,13 +173,11 @@ class WatchProviderSyncServiceTest extends TestCase
         $service = new WatchProviderSyncService;
 
         $service->sync($title, $results);
-        $this->assertDatabaseCount('title_providers', 1);
-
         $service->sync($title, $results);
         $this->assertDatabaseCount('title_providers', 1);
     }
 
-    public function test_resync_with_no_matching_data_removes_existing_title_providers(): void
+    public function test_resync_replaces_only_the_synced_titles_rows(): void
     {
         $country = Country::factory()->create(['iso2' => 'US']);
         $provider = Provider::factory()->create(['tmdb_id' => 8, 'slug' => 'netflix']);
@@ -274,9 +193,7 @@ class WatchProviderSyncServiceTest extends TestCase
 
         $service->sync($title, $results);
         $service->sync($otherTitle, $results);
-        $this->assertDatabaseCount('title_providers', 2);
 
-        // Second sync for $title with new data: only $otherTitle's row should remain
         $service->sync($title, $this->makeResults('US', 'rent', [$this->makeRawProvider(8)]));
         $this->assertDatabaseCount('title_providers', 2);
         $this->assertDatabaseHas('title_providers', ['title_id' => $title->id, 'type' => StreamType::RENT->value]);

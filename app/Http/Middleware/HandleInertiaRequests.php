@@ -3,6 +3,7 @@
 namespace App\Http\Middleware;
 
 use App\Data\DTOs\UserData;
+use App\Domain\Enums\TitleAction;
 use App\Domain\Enums\TitleType;
 use App\Models\Country;
 use App\Models\Genre;
@@ -44,14 +45,14 @@ class HandleInertiaRequests extends Middleware
     public function share(Request $request): array
     {
         return array_merge(parent::share($request), [
-            'genres' => Cache::remember('top-genres', 7200, static function () {
-                return Genre::orderByDesc('count')->take(7)->get();
+            'topGenres' => Cache::remember('top-genres', 7200, static function () {
+                return Genre::orderByDesc('count')->take(7)->get()->toArray();
             }),
             'countries' => Cache::rememberForever('countries', static function () {
-                return Country::get();
+                return Country::orderBy('name')->get()->toArray();
             }),
-            'providers' => Cache::remember('top-providers', 7200, static function () {
-                return Provider::orderByDesc('count')->take(7)->get();
+            'topProviders' => Cache::remember('top-providers', 7200, static function () {
+                return Provider::orderByDesc('count')->take(7)->get()->toArray();
             }),
             'base_url' => [
                 'poster' => config('services.tmdb.img_url').Title::IMG_SMALL_URL,
@@ -64,7 +65,14 @@ class HandleInertiaRequests extends Middleware
                     : null,
             ],
             'enums' => [
-                'TitleType' => collect(TitleType::cases())->map(fn ($c) => $c->value),
+                'TitleType' => TitleType::collection(),
+                'TitleAction' => TitleAction::collection()->mapWithKeys(fn (TitleAction $action) => [
+                    $action->value => [
+                        'on' => $action->events()['on']->value,
+                        'off' => $action->events()['off']->value,
+                        'ratable' => $action->ratable(),
+                    ],
+                ]),
             ],
             'flash' => [
                 'message' => fn () => $request->session()->get('message'),

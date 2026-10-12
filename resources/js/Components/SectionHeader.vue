@@ -29,7 +29,7 @@ const tag = computed(() => (props.href ? Link : 'div'))
             {{ title }}
         </h1>
         <!-- Sole affordance that the heading is clickable, so it stays visible
-             rather than appearing on hover — there is no hover on touch. -->
+             rather than appearing on hover; there is no hover on touch. -->
         <svg
             v-if="href"
             aria-hidden="true"

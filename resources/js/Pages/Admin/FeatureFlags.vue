@@ -46,9 +46,9 @@ function toggle(flag) {
     <AppLayout>
         <div class="w-full max-w-3xl">
             <SectionHeader title="Feature Flags" />
-            <p class="-mt-2 mb-8 text-sm text-gray-400 leading-relaxed">
-                Runtime kill switches for scheduled work. A change applies from the next scheduler tick onward —
-                anything already queued still runs to completion.
+            <p class="-mt-2 mb-8 text-sm text-white/50 leading-relaxed">
+                Runtime kill switches for scheduled work. A change applies from the next scheduler tick onward. Anything
+                already queued still runs to completion.
             </p>
 
             <ul class="flex flex-col gap-3">
@@ -65,16 +65,16 @@ function toggle(flag) {
                                 :class="
                                     state[flag.key]
                                         ? 'text-tea-green border-tea-green/30 bg-tea-green/10'
-                                        : 'text-gray-400 border-white/10 bg-white/5'
+                                        : 'text-white/50 border-white/10 bg-white/5'
                                 "
                             >
                                 {{ state[flag.key] ? 'Active' : 'Disabled' }}
                             </span>
                         </div>
-                        <p class="mt-1.5 text-sm text-gray-400 leading-relaxed">
+                        <p class="mt-1.5 text-sm text-white/50 leading-relaxed">
                             {{ flag.description }}
                         </p>
-                        <code class="mt-2 inline-block text-[11px] text-gray-500">{{ flag.key }}</code>
+                        <code class="mt-2 inline-block text-[11px] text-white/40">{{ flag.key }}</code>
                     </div>
 
                     <input

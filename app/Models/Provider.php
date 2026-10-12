@@ -2,10 +2,13 @@
 
 namespace App\Models;
 
+use GeneaLabs\LaravelModelCaching\CachedModel;
+use Illuminate\Database\Eloquent\Attributes\Scope;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Carbon;
@@ -47,7 +50,7 @@ use Illuminate\Support\Carbon;
  *
  * @mixin \Eloquent
  */
-class Provider extends Model
+class Provider extends CachedModel
 {
     use HasFactory;
 
@@ -57,6 +60,7 @@ class Provider extends Model
         'name',
         'img_logo',
         'priority',
+        'main_provider_id',
     ];
 
     protected $appends = ['url'];
@@ -67,6 +71,7 @@ class Provider extends Model
         'name' => 'string',
         'img_logo' => 'string',
         'priority' => 'integer',
+        'main_provider_id' => 'integer',
     ];
 
     public function getRouteKeyName(): string
@@ -95,5 +100,21 @@ class Provider extends Model
     {
         return $this->belongsToMany(Country::class, 'country_providers')
             ->withPivot('priority');
+    }
+
+    public function mainProvider(): BelongsTo
+    {
+        return $this->belongsTo(self::class, 'main_provider_id');
+    }
+
+    #[Scope]
+    public function scopeWhereMainProvider(Builder $query): void
+    {
+        $query->whereNull('main_provider_id');
+    }
+
+    public function isMainProvider(): bool
+    {
+        return $this->main_provider_id === null;
     }
 }

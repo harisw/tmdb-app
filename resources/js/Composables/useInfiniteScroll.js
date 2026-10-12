@@ -20,7 +20,7 @@ export default function useInfiniteScroll(source, options = {}) {
 
     const items = ref(resource?.data || [])
     const page = ref(1)
-    const hasMore = ref(true)
+    const hasMore = ref(!!resource?.links?.next)
     const query = ref({})
     // const nextPageUrl = ref(resource.next_page_url);
     const loading = ref(false)
@@ -28,7 +28,7 @@ export default function useInfiniteScroll(source, options = {}) {
     // The reset watcher below reacts to the prop changing. But *our own*
     // pagination fetches also change the prop, and those are already applied by
     // hand in fetchItems (append). This flag marks a prop change as ours so the
-    // watcher skips it — otherwise appending page 2 would immediately be reset
+    // watcher skips it; otherwise appending page 2 would immediately be reset
     // back to just page 2's rows (a visible "snap"). Object-identity checks are
     // unreliable here because the watcher sees the reactive props proxy on the
     // next tick, not the object captured synchronously in onSuccess.
@@ -73,7 +73,7 @@ export default function useInfiniteScroll(source, options = {}) {
                 if (!res || !data) return
                 if (reset) items.value = data
                 else items.value.push(...data)
-                hasMore.value = !!res.next_page_url
+                hasMore.value = !!res.links?.next
             },
             onFinish: () => (loading.value = false),
         })
@@ -134,7 +134,7 @@ export default function useInfiniteScroll(source, options = {}) {
         if (newVal && observer.value) observer.value.observe(newVal)
     })
 
-    // When Inertia replaces the prop, rebuild the list — but only if the change
+    // When Inertia replaces the prop, rebuild the list, but only if the change
     // came from outside our own pagination (e.g. router.reload() after toggling
     // the adult filter). Our own fetches set internalUpdate and are skipped.
     watch(getResource, (res) => {
@@ -144,7 +144,7 @@ export default function useInfiniteScroll(source, options = {}) {
         }
         items.value = res?.data || []
         page.value = 1
-        hasMore.value = !!res?.next_page_url
+        hasMore.value = !!res?.links?.next
     })
 
     return {

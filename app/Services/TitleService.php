@@ -31,11 +31,6 @@ class TitleService
         return (new self)->insert($data, $headers);
     }
 
-    /**
-     * Insert a batch of rows, reusing the in-memory caches held by this
-     * instance. Returns the number of rows inserted by this call only, so it
-     * can be called repeatedly (e.g. once per batch) without reloading caches.
-     */
     public function insert(array $data, array $headers): int
     {
         $before = $this->insertedRowCount;

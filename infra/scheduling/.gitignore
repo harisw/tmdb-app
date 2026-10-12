@@ -6,3 +6,4 @@
 *.tfvars
 crash.log
 .terraform.tfvars
+functions/*.zip

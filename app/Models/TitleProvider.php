@@ -11,6 +11,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Carbon;
+use Spatie\SchemalessAttributes\Casts\SchemalessAttributes;
 
 /**
  * @property int $id
@@ -66,6 +67,7 @@ class TitleProvider extends Model
 
     protected $casts = [
         'type' => StreamType::class,
+        'extra_attributes' => SchemalessAttributes::class,
         'audio_languages' => 'array',
         'subtitle_languages' => 'array',
     ];

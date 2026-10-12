@@ -32,10 +32,22 @@
     "resources/js/**/*.{vue,js}": "prettier --write"
   },
   "dependencies": {
+    "@fortawesome/fontawesome-svg-core": "^7.3.1",
+    "@fortawesome/free-brands-svg-icons": "^7.3.1",
+    "@fortawesome/free-regular-svg-icons": "^7.3.1",
+    "@fortawesome/free-solid-svg-icons": "^7.3.1",
+    "@fortawesome/vue-fontawesome": "^3.3.3",
     "@inertiajs/vue3": "^2.0.17",
+    "d3-drag": "^3.0.0",
+    "d3-force": "^3.0.0",
+    "d3-scale": "^4.0.2",
+    "d3-selection": "^3.0.0",
+    "d3-zoom": "^3.0.0",
+    "es-toolkit": "^1.51.0",
     "flag-icons": "^7.5.0",
     "lucide-vue-next": "^0.539.0",
     "pinia": "^3.0.4",
+    "tailwind-variants": "^3.3.1",
     "vue": "^3.5.17"
   }
 }

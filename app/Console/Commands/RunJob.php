@@ -6,10 +6,13 @@ use App\Domain\Enums\TitleType;
 use App\Jobs\EnrichTitleCreditsBatchJob;
 use App\Jobs\EnrichTitleKnowledgeGraphsJob;
 use App\Jobs\EnrichTitleProvidersBatchJob;
+use App\Jobs\EnrichTitleProvidersLinkBatchJob;
+use App\Jobs\EnrichTopTitlesProvidersBatchJob;
 use App\Jobs\FetchPopularTitlesJob;
 use App\Jobs\FetchTitlesJob;
 use App\Jobs\FetchTrendingTitlesJob;
 use App\Jobs\FetchUpcomingTitlesJob;
+use App\Jobs\MaterializeTitleSimilaritiesBatchJob;
 use App\Jobs\TitlesBatchInsertJob;
 use App\Utils\Enum\TimeWindow;
 use Illuminate\Console\Command;
@@ -39,7 +42,8 @@ class RunJob extends Command
         $jobClass = $this->choice('Which job class do you want to run?',
             [FetchTrendingTitlesJob::class, FetchPopularTitlesJob::class, FetchUpcomingTitlesJob::class,
                 EnrichTitleProvidersBatchJob::class, TitlesBatchInsertJob::class,
-                EnrichTitleCreditsBatchJob::class, EnrichTitleKnowledgeGraphsJob::class],
+                EnrichTitleCreditsBatchJob::class, EnrichTitleKnowledgeGraphsJob::class,
+                MaterializeTitleSimilaritiesBatchJob::class, EnrichTitleProvidersLinkBatchJob::class, EnrichTopTitlesProvidersBatchJob::class],
         );
         switch ($jobClass) {
             case FetchTrendingTitlesJob::class:
@@ -60,6 +64,15 @@ class RunJob extends Command
                 break;
             case EnrichTitleKnowledgeGraphsJob::class:
                 $this->runEnrichTitleKnowledgeGraphs();
+                break;
+            case MaterializeTitleSimilaritiesBatchJob::class:
+                $this->runMaterializeSimilarities();
+                break;
+            case EnrichTitleProvidersLinkBatchJob::class:
+                $this->runEnrichTitleProvidersLink();
+                break;
+            case EnrichTopTitlesProvidersBatchJob::class:
+                EnrichTopTitlesProvidersBatchJob::dispatch();
                 break;
             default:
                 $this->error('Unknown job class');
@@ -107,6 +120,12 @@ class RunJob extends Command
         EnrichTitleProvidersBatchJob::dispatch($limit);
     }
 
+    private function runEnrichTitleProvidersLink(): void
+    {
+        $limit = (int) $this->ask('Limit titles?', 100);
+        EnrichTitleProvidersLinkBatchJob::dispatch($limit);
+    }
+
     private function runTitleBatchInsert(): void
     {
         $batchSize = (int) $this->ask('Size of batch?', 10_000);
@@ -123,5 +142,12 @@ class RunJob extends Command
     {
         $limit = (int) $this->ask('Limit titles?', 10);
         EnrichTitleKnowledgeGraphsJob::dispatch($limit);
+    }
+
+    private function runMaterializeSimilarities(): void
+    {
+        $limit = (int) $this->ask('Limit titles?', 1000);
+        $onlyMissing = $this->confirm('Only titles missing similarities? (No = rebuild all embedded titles)', false);
+        MaterializeTitleSimilaritiesBatchJob::dispatch($limit, $onlyMissing);
     }
 }

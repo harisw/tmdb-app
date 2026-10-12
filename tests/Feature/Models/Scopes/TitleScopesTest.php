@@ -8,11 +8,19 @@ use App\Models\Scopes\TitleTypeScope;
 use App\Models\Title;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Bus;
 use Tests\TestCase;
 
 class TitleScopesTest extends TestCase
 {
     use RefreshDatabase;
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        Bus::fake();
+    }
 
     // ---------------------------------------------------------------------
     // TitleTypeScope — filters by the `title_type` request query param

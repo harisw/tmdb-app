@@ -1,5 +1,5 @@
 # terraform.tfvars.example
 ec2_instance_id         = "i-xxxxxxxxxxxxxxxxx"
 rds_instance_identifier = "your-rds-identifier"
-start_cron              = "cron(0 23 * * ? *)"
-stop_cron               = "cron(0 17 * * ? *)"
+start_cron_weekday      = "cron(0 17 ? * MON-FRI *)"
+stop_cron_weekday       = "cron(0 3 ? * MON-FRI *)"

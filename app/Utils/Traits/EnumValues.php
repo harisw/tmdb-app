@@ -2,6 +2,8 @@
 
 namespace App\Utils\Traits;
 
+use Illuminate\Support\Collection;
+
 trait EnumValues
 {
     public static function values(): array
@@ -10,5 +12,10 @@ trait EnumValues
             static fn ($case) => $case->value,
             self::cases()
         );
+    }
+
+    public static function collection(): Collection
+    {
+        return collect(self::cases());
     }
 }

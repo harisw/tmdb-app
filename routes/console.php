@@ -14,34 +14,36 @@ use Laravel\Pennant\Feature;
 Schedule::command('pulse:check')->everyMinute()->withoutOverlapping();
 
 Schedule::command('db:seed --class=CountsSeeder --force')
-    ->everyThreeHours(1)->withoutOverlapping();
+    ->everySixHours()->withoutOverlapping();
 
 Schedule::command('titles:refresh-searchable --force')
     ->everySixHours()->withoutOverlapping();
 
 Schedule::job(new FetchTrendingTitlesJob(TimeWindow::DAY, TitleType::MOVIE, 30))
-    ->dailyAt('02:00');
+    ->dailyAt('18:00');
 
 Schedule::job(new FetchTrendingTitlesJob(TimeWindow::DAY, TitleType::TV, 30))
-    ->dailyAt('04:00');
+    ->dailyAt('20:00');
 
 Schedule::job(new FetchTrendingTitlesJob(TimeWindow::WEEK, TitleType::MOVIE))
-    ->fridays();
+    ->fridays()
+    ->at('19:30');
 
 Schedule::job(new FetchTrendingTitlesJob(TimeWindow::WEEK, TitleType::TV))
-    ->saturdays();
+    ->saturdays()
+    ->at('19:30');
 
 Schedule::job(new FetchPopularTitlesJob(TitleType::MOVIE))
-    ->dailyAt('03:00');
+    ->dailyAt('19:00');
 
 Schedule::job(new FetchPopularTitlesJob(TitleType::TV))
-    ->dailyAt('05:00');
+    ->dailyAt('21:00');
 
 Schedule::job(new FetchUpcomingTitlesJob(TitleType::MOVIE))
-    ->dailyAt('07:00');
+    ->dailyAt('22:00');
 
 Schedule::job(new FetchUpcomingTitlesJob(TitleType::TV))
-    ->dailyAt('09:00');
+    ->dailyAt('23:00');
 
 Schedule::job(new EnrichTitleProvidersBatchJob)
     ->hourly()->withoutOverlapping();
@@ -52,3 +54,11 @@ Schedule::job(new EnrichTitleCreditsBatchJob)
 Schedule::job(new EnrichTitleKnowledgeGraphsJob(100))
     ->everyThreeHours()->withoutOverlapping()
     ->when(fn () => Feature::for('global')->active(FeatureFlag::KnowledgeGraphEnrichment));
+
+Schedule::job(new EnrichTitleProvidersBatchJob)
+    ->thursdays()
+    ->at('18:30');
+
+Schedule::job(new EnrichTitleProvidersBatchJob)
+    ->wednesdays()
+    ->at('18:30');

@@ -24,12 +24,17 @@
                 />
             </div>
 
-            <TitleGrid title="Latest Titles">
+            <TitleGrid title="Latest Titles" heading-tag="h2">
                 <TitleCard v-for="item in items" :key="item.id" :on-click="openModal" :item="item" />
             </TitleGrid>
-            <div ref="sentinel" class="flex justify-center items-center py-4 text-white">
+
+            <p v-if="!items.length && !loading" class="py-16 text-center text-sm text-white/60">
+                No titles to show yet. Check back soon.
+            </p>
+
+            <div ref="sentinel" class="flex justify-center items-center py-6 text-white/60 text-sm">
                 <LoadingSpinner v-if="loading" text="Loading more" :size="8" color="white" />
-                <span v-else-if="!hasMore">No more results</span>
+                <span v-else-if="items.length && !hasMore">No more results</span>
             </div>
         </div>
     </AppLayout>
@@ -40,7 +45,7 @@
 import { Head } from '@inertiajs/vue3'
 import { ref } from 'vue'
 import AppLayout from '../Layouts/AppLayout.vue'
-import TitleModal from '../Components/TitleModal.vue'
+import TitleModal from '../Components/Modals/TitleModal.vue'
 import TitleCard from '../Components/TitleCard.vue'
 import LoadingSpinner from '../Components/LoadingSpinner.vue'
 import RotatingHeader from '../Components/RotatingHeader.vue'
@@ -53,12 +58,12 @@ const props = defineProps({
     titles: { type: Object },
 })
 
-const { items, loading, sentinel, _, hasMore } = useInfiniteScroll({ titles: () => props.titles })
+const { items, loading, sentinel, hasMore } = useInfiniteScroll({ titles: () => props.titles })
 const { openModal, closeModal, selectedItem, showModal } = useModal()
 
 const headlines = [
     'Looking for some action or romance?',
-    'Search with title, genre, or even some keywords',
+    'Search by title, genre, or even a keyword',
     'Something to spice your weekend?',
     "Don't waste your time, start watching now!",
 ]

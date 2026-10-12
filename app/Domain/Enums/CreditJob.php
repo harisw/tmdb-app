@@ -15,4 +15,13 @@ enum CreditJob: string
     case COMPOSER = 'composer';
     case WRITER = 'writer';
     case ART_DIRECTOR = 'art_director';
+
+    public static function getCrewJobs(): array
+    {
+        return [CreditJob::DIRECTOR,
+            CreditJob::PRODUCER,
+            CreditJob::COMPOSER,
+            CreditJob::WRITER,
+            CreditJob::ART_DIRECTOR];
+    }
 }

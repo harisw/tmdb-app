@@ -1,5 +1,6 @@
 <script setup>
 import { Star } from 'lucide-vue-next'
+import { badge } from '../variants/badge.js'
 
 const props = defineProps({
     rating: { type: [Number, String], required: true },
@@ -7,10 +8,7 @@ const props = defineProps({
 </script>
 
 <template>
-    <span
-        v-if="typeof rating === 'number' && rating > 0"
-        class="flex items-center gap-1 bg-black/60 text-amber-400 tabular-nums text-xs font-medium px-2 py-1 rounded-full"
-    >
+    <span v-if="typeof rating === 'number' && rating > 0" :class="badge({ tone: 'rating' })">
         <Star absolute-stroke-width :size="16" />
         {{ rating.toFixed(1) }}
     </span>

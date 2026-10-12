@@ -9,7 +9,7 @@
 // Nothing here may create a stacking context on the root: the grain's
 // `mix-blend-overlay` has to blend against the page's licorice background, which
 // only happens while the root stays `z-auto`. That also rules out `position:
-// fixed` on this wrapper — fixed always forms a stacking context. Page content
+// fixed` on this wrapper; `fixed` always forms a stacking context. Page content
 // sits above via AppLayout's `z-10`.
 </script>
 

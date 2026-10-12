@@ -15,6 +15,7 @@ class TitleEnrichmentServiceTest extends TestCase
 
     public function test_enqueues_an_embedding_batch_for_the_title(): void
     {
+        $this->app->forgetInstance(TitleEnrichmentService::class);
         Bus::fake();
         $title = Title::factory()->create();
 

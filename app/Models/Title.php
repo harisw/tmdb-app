@@ -2,20 +2,23 @@
 
 namespace App\Models;
 
-use App\Casts\RoundFloat;
 use App\Domain\Enums\CreditJob;
 use App\Domain\Enums\TitleType;
 use App\Helpers\DateTimeHelper;
+use App\Infrastructure\Observers\TitleObserver;
 use App\Models\Scopes\AdultContentScope;
 use App\Models\Scopes\TitleTypeScope;
 use Database\Factories\TitleFactory;
+use Illuminate\Database\Eloquent\Attributes\ObservedBy;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Support\Carbon;
 use Spatie\SchemalessAttributes\Casts\SchemalessAttributes;
 
@@ -106,6 +109,7 @@ use Spatie\SchemalessAttributes\Casts\SchemalessAttributes;
  *
  * @mixin \Eloquent
  */
+#[ObservedBy([TitleObserver::class])]
 class Title extends Model
 {
     /** @use HasFactory<TitleFactory> */
@@ -123,12 +127,18 @@ class Title extends Model
 
     public const IMG_LARGE_URL = 'w1280';
 
+    private const BACKDROP_PLACEHOLDER = '/backdrop-placeholder.svg';
+
+    private const POSTER_PLACEHOLDER = '/poster-placeholder.svg';
+
     protected $guarded = [];
+
+    protected $hidden = ['embedding'];
 
     protected $casts = [
         'runtime' => 'string',
         'release_date' => 'datetime:Y',
-        'rating' => RoundFloat::class,
+        'rating' => 'float',
         'type' => TitleType::class,
         'is_adult' => 'boolean',
         'extra_attributes' => SchemalessAttributes::class,
@@ -139,9 +149,35 @@ class Title extends Model
         return $this->type === TitleType::MOVIE ? DateTimeHelper::minutesToHours($value) : null;
     }
 
+    public function posterPath(): Attribute
+    {
+        return Attribute::make(
+            get: fn (?string $val) => $val ? config('services.tmdb.img_url').self::IMG_SMALL_URL.$val
+                : self::POSTER_PLACEHOLDER
+        );
+    }
+
+    public function backdropPath(): Attribute
+    {
+        return Attribute::make(
+            get: fn (?string $val) => $val ? config('services.tmdb.img_url').self::IMG_LARGE_URL.$val
+                : self::BACKDROP_PLACEHOLDER
+        );
+    }
+
     public function scopeWithExtraAttributes(): Builder
     {
         return $this->extra_attributes->modelScope();
+    }
+
+    /**
+     * A listing of titles: detail relations eager-loaded, newest first.
+     * Works on the model (`Title::listing()`) and on relations
+     * (`$genre->titles()->listing()`).
+     */
+    public function scopeListing(Builder $query): Builder
+    {
+        return $query->with(self::detailRelations())->latest();
     }
 
     public function language(): BelongsTo
@@ -179,6 +215,13 @@ class Title extends Model
         return $this->hasMany(TitleProvider::class);
     }
 
+    public function similarTitles(): BelongsToMany
+    {
+        return $this->belongsToMany(__CLASS__, 'title_similarities', 'title_id', 'similar_title_id')
+            ->withPivot(['score', 'reasons'])
+            ->orderByPivot('score', 'desc');
+    }
+
     public function people(): BelongsToMany
     {
         return $this->belongsToMany(Person::class, 'title_person')
@@ -187,9 +230,29 @@ class Title extends Model
             ->withTimestamps();
     }
 
+    public function topCasts(): BelongsToMany
+    {
+        return $this->people()
+            ->wherePivot('job', CreditJob::CAST)
+            ->wherePivot('order', '<=', 5)
+            ->orderByPivot('order');
+    }
+
+    public function keyCrews(): BelongsToMany
+    {
+        return $this->people()
+            ->wherePivotIn('job', CreditJob::getCrewJobs())
+            ->orderByPivot('order');
+    }
+
     public function credits(): HasMany
     {
         return $this->hasMany(TitlePerson::class);
+    }
+
+    public function userState(): HasOne
+    {
+        return $this->hasOne(UserTitleState::class);
     }
 
     public function cast(): HasMany
@@ -204,5 +267,28 @@ class Title extends Model
     public function crew(): HasMany
     {
         return $this->credits()->whereNot('job', CreditJob::CAST);
+    }
+
+    /**
+     * @return array<int|string, mixed>
+     */
+    public static function detailRelations(): array
+    {
+        $countryId = auth()->user()?->country_id;
+        if (! $countryId && request('country')) {
+            $countryId = Country::whereIso2(request('country'))->first()?->id;
+        }
+
+        $relations = ['genres', 'keywords', 'titleProviders' => function ($q) use ($countryId) {
+            $q->when($countryId, function ($q) use ($countryId) {
+                $q->where('country_id', $countryId);
+            })->with('provider')->uniqueByProvider();
+        }];
+
+        if ($userId = auth()->id()) {
+            $relations['userState'] = fn ($q) => $q->where('user_id', $userId);
+        }
+
+        return $relations;
     }
 }

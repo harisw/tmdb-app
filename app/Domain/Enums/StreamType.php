@@ -13,4 +13,5 @@ enum StreamType: string
     case FLATRATE = 'flatrate';
     case FREE = 'free';
     case ADS = 'ads';
+    case ADDON = 'addon';
 }

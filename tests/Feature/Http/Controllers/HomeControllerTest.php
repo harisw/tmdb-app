@@ -6,9 +6,12 @@ use App\Models\Genre;
 use App\Models\Keyword;
 use App\Models\Language;
 use App\Models\ProductionCompany;
+use App\Models\Provider;
 use App\Models\Title;
+use App\Models\TitleProvider;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Artisan;
+use Illuminate\Support\Facades\Bus;
 use Tests\TestCase;
 
 class HomeControllerTest extends TestCase
@@ -19,158 +22,131 @@ class HomeControllerTest extends TestCase
     {
         parent::setUp();
         $this->withoutVite();
+
+        Bus::fake();
     }
 
-    public function test_index_returns_ok(): void
+    public function test_shared_props_expose_the_title_action_map(): void
     {
-        Title::factory(3)->create();
-
-        $this->get('/')->assertOk();
+        $this->get('/')->assertInertia(fn ($page) => $page
+            ->where('enums.TitleAction.like.on', 'like')
+            ->where('enums.TitleAction.like.off', 'unlike')
+            ->where('enums.TitleAction.like.ratable', true)
+            ->where('enums.TitleAction.watchlist.ratable', false)
+            ->where('enums.TitleAction.watched.off', 'watched_removed')
+        );
     }
 
-    public function test_index_renders_home_component_with_props(): void
-    {
-        Title::factory(2)->create();
-
-        $this->get('/')
-            ->assertInertia(fn ($page) => $page
-                ->component('Home')
-                ->has('titles')
-            );
-    }
-
-    public function test_index_paginates_titles(): void
+    public function test_index_renders_home_with_paginated_titles(): void
     {
         Title::factory(35)->create();
 
         $this->get('/')
+            ->assertOk()
             ->assertInertia(fn ($page) => $page
                 ->component('Home')
                 ->has('titles.data', 30)
+                ->where('titles.meta.current_page', 1)
+                ->where('titles.meta.per_page', 30)
+                ->where('titles.meta.total', 35)
+                ->whereNot('titles.links.next', null)
             );
     }
 
-    public function test_get_all_genres_renders_genres_page(): void
-    {
-        Genre::factory(3)->create();
-
-        $this->get('/genre/all')
-            ->assertOk()
-            ->assertInertia(fn ($page) => $page
-                ->component('AllGenres')
-                ->has('allGenres', 3)
-            );
-    }
-
-    public function test_get_all_genres_eager_loads_titles(): void
+    public function test_all_genres_page_renders_genres_with_their_titles(): void
     {
         $genre = Genre::factory()->create();
         $titles = Title::factory(2)->create();
         $genre->titles()->attach($titles->pluck('id'));
 
         $this->get('/genre/all')
+            ->assertOk()
             ->assertInertia(fn ($page) => $page
                 ->component('AllGenres')
+                ->has('allGenres', 1)
                 ->has('allGenres.0.titles', 2)
             );
     }
 
-    public function test_get_by_genre_renders_title_by_genre_component(): void
+    public function test_all_providers_page_renders_providers_with_their_titles(): void
     {
-        $genre = Genre::factory()->create(['slug' => 'action']);
-        Title::factory(2)->create()->each(fn ($title) => $title->genres()->attach($genre));
+        $title = Title::factory()->create();
+        $titleProvider = TitleProvider::factory()->create(['title_id' => $title->id]);
+        Provider::whereKey($titleProvider->provider_id)->update(['count' => 1000]);
 
-        $this->get('/genre/action')
+        $this->get('/provider/all')
             ->assertOk()
             ->assertInertia(fn ($page) => $page
-                ->component('TitleByGenre')
-                ->has('genre')
-                ->has('titles')
+                ->component('AllProviders')
+                ->where('allProviders.0.titles.0.id', $title->id)
             );
     }
 
-    public function test_get_by_genre_returns_only_titles_for_that_genre(): void
+    public function test_titles_by_genre_returns_only_that_genres_titles(): void
     {
         $genre = Genre::factory()->create(['slug' => 'drama']);
         $other = Genre::factory()->create(['slug' => 'comedy']);
 
-        $matched = Title::factory(2)->create()->each(fn ($m) => $m->genres()->attach($genre));
+        Title::factory(2)->create()->each(fn ($m) => $m->genres()->attach($genre));
         Title::factory()->create()->each(fn ($m) => $m->genres()->attach($other));
 
         $this->get('/genre/drama')
+            ->assertOk()
             ->assertInertia(fn ($page) => $page
                 ->component('TitleByGenre')
+                ->has('genre')
                 ->has('titles.data', 2)
             );
     }
 
-    public function test_get_by_language_renders_language_page(): void
+    public function test_languages_page_lists_languages_with_titles_and_filters_by_lang_param(): void
     {
-        Language::factory(2)->create();
-        $languageWithTitle = Language::factory(1)->create();
-        Title::factory()->create(['language_id' => $languageWithTitle->first()->id]);
-        $this->get('/languages')
-            ->assertOk()
-            ->assertInertia(fn ($page) => $page
-                ->component('TitleByLanguage')
-                ->has('languages', 1)
-            );
-    }
-
-    public function test_get_by_language_without_lang_param_returns_null_titles(): void
-    {
-        $this->get('/languages')
-            ->assertInertia(fn ($page) => $page
-                ->component('TitleByLanguage')
-                ->where('titles', [])
-            );
-    }
-
-    public function test_get_by_language_with_lang_param_returns_titles(): void
-    {
-        $language = Language::factory()->create(['code' => 'en']);
-        Title::factory(2)->create(['language_id' => $language->id]);
-        Title::factory()->create(); // different language
+        $en = Language::factory()->create(['code' => 'en']);
+        $fr = Language::factory()->create(['code' => 'fr']);
+        Title::factory(2)->create(['language_id' => $en->id]);
+        Title::factory()->create(['language_id' => $fr->id]);
+        Language::factory(2)->create(); // no titles -> excluded from the list
 
         $this->get('/languages?lang=en')
+            ->assertOk()
             ->assertInertia(fn ($page) => $page
                 ->component('TitleByLanguage')
+                ->has('languages', 2)
                 ->has('titles.data', 2)
             );
     }
 
-    public function test_get_by_tag_renders_keyword_page(): void
+    public function test_languages_page_returns_no_titles_without_a_lang_param(): void
     {
-        Keyword::factory(5)->create(['count' => 10]);
-
-        $this->get('/tags')
-            ->assertOk()
+        $this->get('/languages')
             ->assertInertia(fn ($page) => $page
-                ->component('AllKeywords')
-                ->has('tags')
-            );
-    }
-
-    public function test_get_by_tag_without_tag_param_returns_null_titles(): void
-    {
-        $this->get('/tags')
-            ->assertInertia(fn ($page) => $page
-                ->component('AllKeywords')
+                ->component('TitleByLanguage')
                 ->where('titles', [])
             );
     }
 
-    public function test_get_by_tag_with_tag_param_returns_titles(): void
+    public function test_tags_page_lists_keywords_and_filters_by_tag_param(): void
     {
-        $keyword = Keyword::factory()->create(['slug' => 'space-opera']);
+        $keyword = Keyword::factory()->create(['slug' => 'space-opera', 'count' => 10]);
         $titles = Title::factory(3)->create();
         $keyword->titles()->attach($titles->pluck('id'));
         Title::factory()->create(); // no keyword
 
         $this->get('/tags?tag=space-opera')
+            ->assertOk()
             ->assertInertia(fn ($page) => $page
                 ->component('AllKeywords')
+                ->has('tags')
                 ->has('titles.data', 3)
+            );
+    }
+
+    public function test_tags_page_returns_no_titles_without_a_tag_param(): void
+    {
+        $this->get('/tags')
+            ->assertInertia(fn ($page) => $page
+                ->component('AllKeywords')
+                ->where('titles', [])
             );
     }
 

@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Resources\TitleResource;
 use App\Models\Keyword;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -9,8 +10,6 @@ use Inertia\Response;
 
 class KeywordController extends Controller
 {
-    private const PAGINATE_SIZE = 30;
-
     public function index(Request $request): Response
     {
         $keyQuery = $request->query('tag');
@@ -24,7 +23,10 @@ class KeywordController extends Controller
         return Inertia::render('AllKeywords', [
             'tags' => $tags,
             'selected' => $key,
-            'titles' => $key ? $key->titles()->with(['genres', 'keywords'])->latest()->paginate(self::PAGINATE_SIZE)
+            'titles' => $key
+                ? TitleResource::collection(
+                    $key->titles()->listing()->paginate(self::PAGINATE_SIZE)
+                )
                 : collect(),
         ]);
     }
@@ -33,9 +35,9 @@ class KeywordController extends Controller
     {
         return Inertia::render('TitleByKeyword', [
             'keyword' => $keyword,
-            'titles' => $keyword->titles()->with(['genres', 'keywords', 'titleProviders' => function ($q) {
-                $q->with('provider')->uniqueByProvider();
-            }])->latest()->paginate(self::PAGINATE_SIZE),
+            'titles' => TitleResource::collection(
+                $keyword->titles()->listing()->paginate(self::PAGINATE_SIZE)
+            ),
         ]);
     }
 }

@@ -2,7 +2,7 @@
 import { computed } from 'vue'
 import { Head, usePage } from '@inertiajs/vue3'
 import AppLayout from '../Layouts/AppLayout.vue'
-import TitleModal from '../Components/TitleModal.vue'
+import TitleModal from '../Components/Modals/TitleModal.vue'
 import TitleCard from '../Components/TitleCard.vue'
 import LoadingSpinner from '../Components/LoadingSpinner.vue'
 import useInfiniteScroll from '../Composables/useInfiniteScroll.js'

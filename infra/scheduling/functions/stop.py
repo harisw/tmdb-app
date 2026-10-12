@@ -3,9 +3,6 @@ import boto3, os
 ec2 = boto3.client('ec2', region_name='ap-northeast-2')
 rds = boto3.client('rds', region_name='ap-northeast-2')
 
-#Each resource is handled independently so a failure on one no longer
-#skips the other. Errors are collected and re-raised at the end so the
-#Errors metric still fires, but only after both calls have been tried.
 def lambda_handler(event, context):
     errors = []
 
