@@ -51,7 +51,7 @@ FROM php:8.4-fpm-alpine AS app
 WORKDIR /var/www
 
 # Runtime libs only — no dev headers needed, extensions copied from builder
-RUN apk add --no-cache libpq libzip oniguruma
+RUN apk add --no-cache libpq libzip oniguruma bash jq aws-cli postgresql17-client
 
 COPY --from=builder /usr/local/lib/php/extensions/ /usr/local/lib/php/extensions/
 COPY --from=builder /usr/local/etc/php/conf.d/ /usr/local/etc/php/conf.d/

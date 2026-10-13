@@ -19,6 +19,9 @@ Schedule::command('db:seed --class=CountsSeeder --force')
 Schedule::command('titles:refresh-searchable --force')
     ->everySixHours()->withoutOverlapping();
 
+Schedule::command('db:export')
+    ->cron('0 23 */3 * *')->withoutOverlapping();
+
 Schedule::job(new FetchTrendingTitlesJob(TimeWindow::DAY, TitleType::MOVIE, 30))
     ->dailyAt('18:00');
 

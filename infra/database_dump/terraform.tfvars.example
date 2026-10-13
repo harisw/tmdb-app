@@ -1,0 +1,3 @@
+export_bucket = "your-app-bucket"
+ec2_role_name = "ec2_role"
+alert_email   = "you@example.com"
