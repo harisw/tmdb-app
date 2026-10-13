@@ -138,4 +138,5 @@ return [
         'store' => env('APP_MAINTENANCE_STORE', 'database'),
     ],
 
+    'export_log_group' => env('DB_EXPORT_LOG_GROUP', '/tmdb/db-export'),
 ];
