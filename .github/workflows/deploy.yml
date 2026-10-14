@@ -16,7 +16,7 @@ jobs:
 
     services:
       postgres:
-        image: pgvector/pgvector:pg15
+        image: pgvector/pgvector:pg17
         env:
           POSTGRES_DB: tmdb_test
           POSTGRES_USER: user

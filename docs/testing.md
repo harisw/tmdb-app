@@ -37,10 +37,10 @@ The default Laravel setup uses SQLite in-memory for tests (`DB_CONNECTION=sqlite
 <env name="DB_PASSWORD" value="password"/>
 ```
 
-**Local setup:** create the test database once against your local Docker PostgreSQL:
+**Local setup:** the Docker PostgreSQL container creates `tmdb_test` on first start via `docker/postgres/init-test-db.sql`. Init scripts only run against an empty data volume, so on an existing volume create it once by hand:
 
 ```bash
-docker exec -it <postgres-container> psql -U user -c "CREATE DATABASE tmdb_test;"
+docker exec -it <postgres-container> psql -U user -d tmdb -c "CREATE DATABASE tmdb_test;"
 ```
 
 **CI (GitHub Actions):** a PostgreSQL service container spins up automatically per run — no external database needed. See `.github/workflows/deploy.yml`.
@@ -217,7 +217,7 @@ Tests run in GitHub Actions with a PostgreSQL service container. No external dat
 ```yaml
 services:
     postgres:
-        image: postgres:15
+        image: pgvector/pgvector:pg17
         env:
             POSTGRES_DB: tmdb_test
             POSTGRES_USER: user
