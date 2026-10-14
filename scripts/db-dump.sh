@@ -24,13 +24,13 @@ S3_PREFIX="${S3_PREFIX:-db-exports}"
 
 # Tables whose rows are exported. `migrations` lets `php artisan migrate` work locally.
 DATA_TABLES=(
-  migrations
   languages
   titles
   genres
-  genre_titles
+  genre_title
   production_companies
   title_production_company
+    providers
   keywords
   keyword_title
   people
