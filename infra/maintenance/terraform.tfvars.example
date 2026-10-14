@@ -1,0 +1,5 @@
+cloudflare_account_id = "your-account-id"
+cloudflare_api_token = "api_token"
+zone_name             = "example.com"
+route_patterns        = ["example.com/*", "www.example.com/*"]
+site_name             = "Chill"

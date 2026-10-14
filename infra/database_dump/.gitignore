@@ -1,8 +1,0 @@
-# Terraform
-.terraform/
-.terraform.lock.hcl   # optional — some teams commit this, personal project don't bother
-*.tfstate
-*.tfstate.backup
-*.tfvars
-crash.log
-.terraform.tfvars

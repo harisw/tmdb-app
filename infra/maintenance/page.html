@@ -1,0 +1,654 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>Back soon</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Shantell+Sans:wght,BNCE,INFM@300..800,-100..100,0..100&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --sky: #17143a;
+    --sky-deep: #0b0a20;
+    --sky-glow: #2a2361;
+    --lilac: #d9d4ff;
+    --pillow: #574c9e;
+    --blanket: #8ea2ff;
+    --blanket-dots: #b4c1ff;
+    --sheet: #f1ecff;
+    --moon: #ffe29a;
+    --moon-shadow: #c9a654;
+    --blush: #ff9eb5;
+    --led: #7cf0b5;
+    --ink: #f1ecff;
+    --muted: #bdb4e6;
+    --line: #1c173d;
+  }
+
+  * { box-sizing: border-box; }
+
+  html, body { margin: 0; }
+
+  body {
+    min-height: 100vh;
+    min-height: 100dvh;
+    display: grid;
+    place-items: center;
+    padding: max(80px, env(safe-area-inset-top)) max(16px, env(safe-area-inset-right)) max(40px, env(safe-area-inset-bottom)) max(16px, env(safe-area-inset-left));
+    overflow-x: hidden;
+    background: radial-gradient(120% 80% at 50% 0%, var(--sky-glow) 0%, var(--sky) 45%, var(--sky-deep) 100%) fixed;
+    background-color: var(--sky-deep);
+    color: var(--ink);
+    font-family: "Shantell Sans", ui-rounded, "Comic Sans MS", system-ui, sans-serif;
+    font-variation-settings: "BNCE" 0, "INFM" 15;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .sky {
+    position: fixed;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+  }
+
+  main {
+    position: relative;
+    z-index: 1;
+    width: 100%;
+    max-width: 34rem;
+    text-align: center;
+  }
+
+  .stage {
+    position: relative;
+    width: min(100%, clamp(190px, 42svh, 320px));
+    margin: 0 auto;
+  }
+
+  .sleeper {
+    display: block;
+    width: 100%;
+    padding: 0;
+    border: 0;
+    border-radius: 32px;
+    background: none;
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  .sleeper:focus-visible {
+    outline: 3px dashed var(--moon);
+    outline-offset: 6px;
+  }
+
+  .sleeper svg {
+    display: block;
+    width: 100%;
+    height: auto;
+    overflow: visible;
+  }
+
+  .breathing {
+    transform-box: view-box;
+    transform-origin: 120px 150px;
+    animation: breathe 4.2s ease-in-out infinite;
+  }
+
+  .led {
+    fill: var(--led);
+    animation: led-pulse 4.2s ease-in-out infinite;
+  }
+
+  .led + .led { animation-delay: .3s; }
+
+  .awake-only { opacity: 0; }
+
+  .stage.is-awake .awake-only { opacity: 1; }
+  .stage.is-awake .asleep-only { opacity: 0; }
+  .stage.is-awake .breathing { animation-play-state: paused; }
+  .stage.is-awake .led { fill: var(--moon); animation: led-flash .25s steps(2) infinite; }
+
+  .stage.is-jiggling svg { animation: jiggle .45s cubic-bezier(.3, 1.6, .5, 1); }
+
+  .bubble {
+    position: absolute;
+    left: 50%;
+    top: 4px;
+    z-index: 2;
+    width: max-content;
+    max-width: min(16rem, calc(100vw - 32px));
+    margin: 0;
+    padding: 10px 16px 12px;
+    border-radius: 20px;
+    background: var(--sheet);
+    color: var(--sky);
+    font-size: 1rem;
+    font-weight: 600;
+    line-height: 1.35;
+    opacity: 0;
+    transform: translate(-50%, -90%) scale(.85);
+    transition: opacity .18s ease, transform .25s cubic-bezier(.3, 1.6, .5, 1);
+    pointer-events: none;
+  }
+
+  .bubble::after {
+    content: "";
+    position: absolute;
+    left: 50%;
+    bottom: -7px;
+    width: 14px;
+    height: 14px;
+    background: inherit;
+    border-radius: 3px;
+    transform: translateX(-50%) rotate(45deg);
+  }
+
+  .bubble.is-visible {
+    opacity: 1;
+    transform: translate(-50%, -100%) scale(1);
+  }
+
+  .z-layer {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+  }
+
+  .z {
+    position: absolute;
+    left: 78%;
+    top: 26%;
+    color: var(--lilac);
+    font-weight: 700;
+    line-height: 1;
+    pointer-events: auto;
+    cursor: pointer;
+    user-select: none;
+    animation: float 5.5s linear forwards;
+  }
+
+  .z > span { display: block; padding: 6px; }
+
+  .z.is-popped { animation-play-state: paused; }
+  .z.is-popped > span { color: var(--moon); animation: pop .35s ease-out forwards; }
+
+  .z.is-static { animation: none; opacity: .8; }
+
+  .hint {
+    min-height: 1.5em;
+    margin: 4px 0 0;
+    color: var(--muted);
+    font-size: .95rem;
+  }
+
+  h1 {
+    margin: 20px 0 12px;
+    font-size: clamp(2rem, 1.3rem + 3.2vw, 3.25rem);
+    font-weight: 700;
+    line-height: 1.1;
+    letter-spacing: -.01em;
+    text-wrap: balance;
+    overflow-wrap: anywhere;
+    font-variation-settings: "BNCE" 0, "INFM" 30;
+    transition: font-variation-settings .5s ease;
+  }
+
+  body.is-bouncy h1 { font-variation-settings: "BNCE" 100, "INFM" 100; }
+
+  .message {
+    max-width: 30rem;
+    margin: 0 auto;
+    color: var(--muted);
+    font-size: 1.125rem;
+    line-height: 1.6;
+    text-wrap: pretty;
+  }
+
+  .wake {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    margin: 28px 0 0;
+  }
+
+  .wake-time {
+    color: var(--moon);
+    font-size: 1.6rem;
+    font-weight: 700;
+  }
+
+  .wake-in {
+    color: var(--muted);
+    font-size: 1rem;
+  }
+
+  .check {
+    margin-top: 24px;
+    padding: 12px 24px;
+    border: 0;
+    border-radius: 999px;
+    background: var(--moon);
+    color: var(--sky);
+    font: inherit;
+    font-size: 1.05rem;
+    font-weight: 700;
+    box-shadow: 0 4px 0 var(--moon-shadow);
+    cursor: pointer;
+    transition: transform .08s ease, box-shadow .08s ease;
+  }
+
+  .check:hover { transform: translateY(-1px); box-shadow: 0 5px 0 var(--moon-shadow); }
+  .check:active { transform: translateY(3px); box-shadow: 0 1px 0 var(--moon-shadow); }
+  .check:disabled { cursor: progress; opacity: .7; }
+
+  .check:focus-visible {
+    outline: 3px dashed var(--moon);
+    outline-offset: 5px;
+  }
+
+  .status {
+    min-height: 1.5em;
+    margin: 12px 0 0;
+    color: var(--muted);
+    font-size: .95rem;
+  }
+
+  @keyframes breathe {
+    0%, 100% { transform: translateY(0) scale(1, 1); }
+    50% { transform: translateY(-2px) scale(1.012, 1.03); }
+  }
+
+  @keyframes led-pulse {
+    0%, 100% { opacity: .35; }
+    50% { opacity: 1; }
+  }
+
+  @keyframes led-flash {
+    to { opacity: .3; }
+  }
+
+  @keyframes jiggle {
+    0% { transform: scale(1, 1); }
+    30% { transform: scale(1.06, .94); }
+    60% { transform: scale(.97, 1.04); }
+    100% { transform: scale(1, 1); }
+  }
+
+  @keyframes float {
+    0% { transform: translate(0, 0) rotate(0) scale(.5); opacity: 0; }
+    15% { opacity: 1; }
+    100% { transform: translate(var(--drift, 30px), -110px) rotate(-14deg) scale(1.25); opacity: 0; }
+  }
+
+  @keyframes pop {
+    0% { transform: scale(1); opacity: 1; }
+    100% { transform: scale(2.2); opacity: 0; }
+  }
+
+  @media (max-height: 640px) {
+    body { padding-top: max(64px, env(safe-area-inset-top)); padding-bottom: 24px; }
+    h1 { margin: 12px 0 8px; }
+    .message { font-size: 1rem; line-height: 1.5; }
+    .wake { margin-top: 16px; }
+    .wake-time { font-size: 1.35rem; }
+    .check { margin-top: 16px; }
+  }
+
+  @media (max-width: 380px) {
+    .message { font-size: 1rem; }
+    .check { width: 100%; }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .breathing,
+    .led,
+    .stage.is-awake .led,
+    .stage.is-jiggling svg { animation: none; }
+    .led { opacity: .8; }
+    .bubble, h1, .check { transition: none; }
+  }
+</style>
+</head>
+<body>
+<canvas class="sky" id="sky" aria-hidden="true"></canvas>
+<main>
+  <div class="stage" id="stage">
+    <p class="bubble" id="bubble" role="status" aria-live="polite"></p>
+    <button class="sleeper" id="sleeper" type="button" aria-label="Poke the sleeping server">
+      <svg viewBox="0 0 240 210" aria-hidden="true" focusable="false">
+        <ellipse cx="120" cy="118" rx="102" ry="32" fill="var(--pillow)" stroke="var(--line)" stroke-width="4"/>
+
+        <g class="breathing">
+          <rect x="72" y="62" width="96" height="96" rx="26" fill="var(--lilac)" stroke="var(--line)" stroke-width="4"/>
+          <circle class="led" cx="144" cy="90" r="4"/>
+          <circle class="led" cx="156" cy="90" r="4"/>
+
+          <ellipse cx="96" cy="118" rx="8" ry="4.5" fill="var(--blush)" opacity=".85"/>
+          <ellipse cx="144" cy="118" rx="8" ry="4.5" fill="var(--blush)" opacity=".85"/>
+
+          <g class="asleep-only" fill="none" stroke="var(--line)" stroke-width="4" stroke-linecap="round">
+            <path d="M96 106 q8 7 16 0"/>
+            <path d="M128 106 q8 7 16 0"/>
+          </g>
+          <ellipse class="asleep-only" cx="120" cy="124" rx="4" ry="5" fill="var(--line)"/>
+
+          <g class="awake-only">
+            <circle cx="104" cy="108" r="6" fill="var(--line)"/>
+            <circle cx="136" cy="108" r="6" fill="var(--line)"/>
+            <circle cx="106" cy="106" r="2" fill="#fff"/>
+            <circle cx="138" cy="106" r="2" fill="#fff"/>
+            <path d="M95 96 l14 4 M145 96 l-14 4 M112 127 q8 -6 16 0" fill="none" stroke="var(--line)" stroke-width="4" stroke-linecap="round"/>
+          </g>
+
+          <path d="M64 86 C68 50 110 28 152 36 C176 41 194 56 198 80 C178 68 150 64 120 68 C100 71 82 77 64 86 Z" fill="var(--blanket)" stroke="var(--line)" stroke-width="4" stroke-linejoin="round"/>
+          <path d="M66 88 C98 72 140 64 172 69" fill="none" stroke="var(--sheet)" stroke-width="9" stroke-linecap="round"/>
+          <circle cx="200" cy="86" r="10" fill="var(--moon)" stroke="var(--line)" stroke-width="4"/>
+        </g>
+
+        <path d="M18 146 C60 126 180 126 222 146 L222 160 C180 142 60 142 18 160 Z" fill="var(--sheet)" stroke="var(--line)" stroke-width="4" stroke-linejoin="round"/>
+        <path d="M18 158 C60 142 180 142 222 158 C228 174 226 188 218 198 C160 208 80 208 22 198 C14 188 12 174 18 158 Z" fill="var(--blanket)" stroke="var(--line)" stroke-width="4" stroke-linejoin="round"/>
+        <g fill="var(--blanket-dots)">
+          <circle cx="48" cy="176" r="3"/>
+          <circle cx="82" cy="188" r="3"/>
+          <circle cx="120" cy="174" r="3"/>
+          <circle cx="158" cy="188" r="3"/>
+          <circle cx="192" cy="176" r="3"/>
+        </g>
+        <ellipse cx="98" cy="146" rx="10" ry="7.5" fill="var(--lilac)" stroke="var(--line)" stroke-width="4"/>
+        <ellipse cx="142" cy="146" rx="10" ry="7.5" fill="var(--lilac)" stroke="var(--line)" stroke-width="4"/>
+      </svg>
+    </button>
+    <div class="z-layer" id="z-layer" aria-hidden="true"></div>
+  </div>
+  <p class="hint" id="hint">Psst. You can poke it.</p>
+
+  <h1 id="title"></h1>
+  <p class="message" id="message"></p>
+
+  <p class="wake">
+    <span class="wake-time" id="wake-time"></span>
+    <span class="wake-in" id="wake-in"></span>
+  </p>
+
+  <button class="check" id="check" type="button">Check again</button>
+  <p class="status" id="status" aria-live="polite"></p>
+</main>
+
+<script>
+  (() => {
+    const canvas = document.getElementById('sky');
+    const context = canvas.getContext('2d');
+    const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const colors = ['#ffffff', '#ffffff', '#ffffff', '#dcd6ff', '#ffe29a'];
+    const frameInterval = 1000 / 30;
+    let stars = [];
+    let width = 0;
+    let height = 0;
+    let lastFrame = 0;
+
+    function createStar() {
+      const depth = Math.random();
+      return {
+        x: Math.random() * width,
+        y: Math.random() * height,
+        radius: .35 + depth * 1.25,
+        alpha: .35 + depth * .6,
+        speed: 1.5 + depth * 6,
+        twinkleSpeed: .4 + Math.random() * 1.6,
+        phase: Math.random() * Math.PI * 2,
+        color: colors[Math.floor(Math.random() * colors.length)],
+      };
+    }
+
+    function resize() {
+      const ratio = Math.min(window.devicePixelRatio || 1, 2);
+      width = canvas.clientWidth;
+      height = canvas.clientHeight;
+      canvas.width = Math.round(width * ratio);
+      canvas.height = Math.round(height * ratio);
+      context.setTransform(ratio, 0, 0, ratio, 0, 0);
+
+      const count = Math.min(420, Math.round((width * height) / 3200));
+      stars = stars.slice(0, count);
+      while (stars.length < count) {
+        stars.push(createStar());
+      }
+      draw(performance.now(), 0);
+    }
+
+    function draw(time, elapsedSeconds) {
+      context.clearRect(0, 0, width, height);
+      for (const star of stars) {
+        star.x = (star.x - star.speed * elapsedSeconds + width) % width;
+        star.y = (star.y - star.speed * .35 * elapsedSeconds + height) % height;
+        const twinkle = reduceMotion ? 1 : .6 + .4 * Math.sin(time / 1000 * star.twinkleSpeed + star.phase);
+        context.globalAlpha = star.alpha * twinkle;
+        context.fillStyle = star.color;
+        context.beginPath();
+        context.arc(star.x, star.y, star.radius, 0, Math.PI * 2);
+        context.fill();
+      }
+      context.globalAlpha = 1;
+    }
+
+    function tick(time) {
+      requestAnimationFrame(tick);
+      if (time - lastFrame < frameInterval) {
+        return;
+      }
+      const elapsedSeconds = Math.min((time - lastFrame) / 1000, .1);
+      lastFrame = time;
+      draw(time, elapsedSeconds);
+    }
+
+    let resizeTimer = null;
+    window.addEventListener('resize', () => {
+      clearTimeout(resizeTimer);
+      resizeTimer = setTimeout(resize, 120);
+    });
+
+    resize();
+    if (!reduceMotion) {
+      requestAnimationFrame((time) => {
+        lastFrame = time;
+        requestAnimationFrame(tick);
+      });
+    }
+  })();
+
+  (() => {
+    const config = Object.assign({
+      siteName: 'This site',
+      mode: 'scheduled',
+      nextOpenAt: null,
+      title: null,
+      message: null,
+    }, window.__MAINTENANCE__);
+
+    const isScheduled = config.mode === 'scheduled';
+    const nextOpenAt = config.nextOpenAt ? new Date(config.nextOpenAt) : null;
+    const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const $ = (id) => document.getElementById(id);
+
+    const stage = $('stage');
+    const bubble = $('bubble');
+    const hint = $('hint');
+    const zLayer = $('z-layer');
+    const wakeTime = $('wake-time');
+    const wakeIn = $('wake-in');
+    const checkButton = $('check');
+    const status = $('status');
+
+    const timeFormat = new Intl.DateTimeFormat(undefined, { hour: 'numeric', minute: '2-digit' });
+    const dayFormat = new Intl.DateTimeFormat(undefined, { weekday: 'long' });
+
+    document.title = isScheduled ? `${config.siteName} is asleep` : `${config.siteName} is down`;
+    $('title').textContent = config.title || (isScheduled ? `Shh, ${config.siteName} is asleep` : `${config.siteName} dozed off`);
+    $('message').textContent = config.message || (isScheduled
+      ? 'The server sleeps on a schedule to keep hosting costs down. Nothing is broken.'
+      : 'It went down when it wasn\'t supposed to. This page checks every minute and reloads once it\'s back.');
+
+    function wakeLabel(date) {
+      const today = new Date();
+      const tomorrow = new Date(today.getFullYear(), today.getMonth(), today.getDate() + 1);
+      const time = timeFormat.format(date);
+      if (date.toDateString() === today.toDateString()) {
+        return `Back at ${time}`;
+      }
+      if (date.toDateString() === tomorrow.toDateString()) {
+        return `Back tomorrow at ${time}`;
+      }
+      return `Back ${dayFormat.format(date)} at ${time}`;
+    }
+
+    function plural(count, word) {
+      return `${count} ${word}${count === 1 ? '' : 's'}`;
+    }
+
+    function timeUntil(ms) {
+      const minutes = Math.ceil(ms / 60000);
+      if (minutes <= 1) {
+        return 'in under a minute';
+      }
+      const hours = Math.floor(minutes / 60);
+      const rest = minutes % 60;
+      if (hours === 0) {
+        return `in ${plural(rest, 'minute')}`;
+      }
+      return rest === 0 ? `in ${plural(hours, 'hour')}` : `in ${plural(hours, 'hour')} ${plural(rest, 'minute')}`;
+    }
+
+    let nextAutoCheckAt = isScheduled ? null : Date.now() + 60000;
+
+    function renderWake() {
+      const now = Date.now();
+      if (!isScheduled) {
+        const seconds = Math.max(0, Math.ceil((nextAutoCheckAt - now) / 1000));
+        wakeTime.textContent = 'Back soon';
+        wakeIn.textContent = `Checking again in ${seconds}s`;
+        if (seconds === 0) {
+          nextAutoCheckAt = now + 60000;
+          check(true);
+        }
+        return;
+      }
+      if (!nextOpenAt) {
+        wakeTime.textContent = 'Back soon';
+        wakeIn.textContent = '';
+        return;
+      }
+      if (now < nextOpenAt) {
+        wakeTime.textContent = wakeLabel(nextOpenAt);
+        wakeIn.textContent = `Your time, ${timeUntil(nextOpenAt - now)}`;
+        return;
+      }
+      wakeTime.textContent = 'Waking up now';
+      wakeIn.textContent = 'Booting takes a few minutes. This page reloads when it\'s ready.';
+      if (!nextAutoCheckAt || now >= nextAutoCheckAt) {
+        nextAutoCheckAt = now + 20000;
+        check(true);
+      }
+    }
+
+    async function check(isAutomatic) {
+      if (!isAutomatic) {
+        checkButton.disabled = true;
+        checkButton.textContent = 'Checking…';
+      }
+      try {
+        const response = await fetch(window.location.href, { method: 'HEAD', cache: 'no-store' });
+        if (response.status < 500) {
+          window.location.reload();
+          return;
+        }
+      } catch {}
+      if (!isAutomatic) {
+        status.textContent = 'Still asleep. Try again later.';
+        checkButton.disabled = false;
+        checkButton.textContent = 'Check again';
+      }
+    }
+
+    checkButton.addEventListener('click', () => check(false));
+    renderWake();
+    setInterval(renderWake, 1000);
+
+    const wakeUpLine = nextOpenAt ? `I work nights. See you at ${timeFormat.format(nextOpenAt)}.` : 'I work nights. Come back later.';
+    const grumbles = isScheduled
+      ? ['Five more minutes…', wakeUpLine, 'The database is asleep too. Let it rest.', 'Shh. I\'m dreaming about cache hits.', 'Zero requests, zero worries.', 'Poke me again and I\'m adding latency.']
+      : ['Ugh, I don\'t feel so good.', 'Give me a few minutes.', 'Too many requests, not enough naps.', 'I\'ll be fine. Probably.'];
+    const fedUpLine = 'Fine, I\'m awake. I\'m just not getting up.';
+
+    let pokes = 0;
+    let lastGrumble = -1;
+    let sleepTimer = null;
+
+    function pickGrumble() {
+      let index = Math.floor(Math.random() * grumbles.length);
+      if (index === lastGrumble) {
+        index = (index + 1) % grumbles.length;
+      }
+      lastGrumble = index;
+      return grumbles[index];
+    }
+
+    function fallAsleep() {
+      stage.classList.remove('is-awake');
+      bubble.classList.remove('is-visible');
+      document.body.classList.remove('is-bouncy');
+    }
+
+    $('sleeper').addEventListener('click', () => {
+      pokes += 1;
+      const isFedUp = pokes >= 8;
+
+      stage.classList.add('is-awake');
+      stage.classList.remove('is-jiggling');
+      void stage.offsetWidth;
+      stage.classList.add('is-jiggling');
+      document.body.classList.add('is-bouncy');
+
+      bubble.textContent = isFedUp ? fedUpLine : pickGrumble();
+      bubble.classList.add('is-visible');
+      hint.textContent = pokes === 1 ? 'Poked once. It noticed.' : `Poked ${pokes} times. It's keeping count.`;
+
+      clearTimeout(sleepTimer);
+      sleepTimer = setTimeout(fallAsleep, isFedUp ? 4000 : 2400);
+    });
+
+    function addZ(isStatic, offset) {
+      const z = document.createElement('span');
+      const letter = document.createElement('span');
+      z.className = isStatic ? 'z is-static' : 'z';
+      letter.textContent = Math.random() < .5 ? 'z' : 'Z';
+      z.style.fontSize = `${1.1 + Math.random() * .9}rem`;
+      z.style.setProperty('--drift', `${16 + Math.random() * 40}px`);
+      if (isStatic) {
+        z.style.transform = `translate(${offset * 14}px, ${offset * -26}px)`;
+      }
+      z.append(letter);
+      z.addEventListener('pointerdown', () => {
+        letter.textContent = '✦';
+        z.classList.add('is-popped');
+      });
+      z.addEventListener('animationend', () => z.remove());
+      zLayer.append(z);
+    }
+
+    if (reduceMotion) {
+      [0, 1, 2].forEach((offset) => addZ(true, offset));
+    } else {
+      setInterval(() => {
+        if (!document.hidden && !stage.classList.contains('is-awake')) {
+          addZ(false, 0);
+        }
+      }, 1700);
+      addZ(false, 0);
+    }
+  })();
+</script>
+</body>
+</html>
