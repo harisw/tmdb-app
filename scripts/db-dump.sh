@@ -2,7 +2,8 @@
 #
 # db-dump.sh — export Chill's catalog data to S3 for local restores.
 #
-#   * Full schema is dumped; only DATA_TABLES have their rows exported.
+#   * Data only: rows of DATA_TABLES, no DDL. Restore into a schema built by
+#     `php artisan migrate` with `pg_restore --data-only`.
 #   * Refuses to run if an exported table has a foreign key to a table whose
 #     rows are NOT exported (child without its parent). A parent without its
 #     children is fine: those child tables are restored empty.
@@ -22,7 +23,7 @@ set -euo pipefail
 SCHEMA="${SCHEMA:-public}"
 S3_PREFIX="${S3_PREFIX:-db-exports}"
 
-# Tables whose rows are exported. `migrations` lets `php artisan migrate` work locally.
+# Tables whose rows are exported.
 DATA_TABLES=(
   languages
   titles
@@ -30,7 +31,7 @@ DATA_TABLES=(
   genre_title
   production_companies
   title_production_company
-    providers
+  providers
   keywords
   keyword_title
   people
@@ -83,31 +84,20 @@ SQL
 )"
   [[ -z "$orphans" ]] || die "exported tables reference parents that are not exported: ${orphans//$'\n'/; }"
 
-  # 3. Exclude the rows of every other table. Names are double-quoted so
-  #    pg_dump matches them exactly. Captured into a variable first, because a
-  #    failure inside <(...) would not trip set -e.
-  local exclude_list
-  exclude_list="$(run_sql <<'SQL'
-SELECT format('--exclude-table-data="%s"."%s"',
-              replace(n.nspname, '"', '""'), replace(c.relname, '"', '""'))
-FROM pg_class c
-JOIN pg_namespace n ON n.oid = c.relnamespace
-WHERE c.relkind IN ('r', 'p')
-  AND n.nspname NOT IN ('pg_catalog', 'information_schema')
-  AND n.nspname NOT LIKE 'pg\_toast%'
-  AND NOT (n.nspname = :'schema' AND c.relname = ANY (string_to_array(:'tables', ',')))
-ORDER BY 1;
-SQL
-)"
-  local -a exclude_args=()
-  [[ -n "$exclude_list" ]] && mapfile -t exclude_args <<< "$exclude_list"
-  log "exporting rows of ${#DATA_TABLES[@]} tables, schema only for ${#exclude_args[@]} others"
+  # 3. Select exactly the exported tables. Names are double-quoted so pg_dump
+  #    matches them exactly; owned sequences come along with their tables.
+  local -a table_args=()
+  local t
+  for t in "${DATA_TABLES[@]}"; do
+    table_args+=("--table=\"${SCHEMA//\"/\"\"}\".\"${t//\"/\"\"}\"")
+  done
+  log "exporting rows of ${#DATA_TABLES[@]} tables (data only)"
 
   # 4. Dump locally, check the archive is readable, then upload.
   #    pg_dump itself refuses servers newer than its own major version.
   local dump_file="$WORKDIR/export.dump"
-  pg_dump --format=custom --no-owner --no-acl --lock-wait-timeout=60s \
-    "${exclude_args[@]}" --file="$dump_file"
+  pg_dump --format=custom --data-only --no-owner --no-acl --lock-wait-timeout=60s \
+    "${table_args[@]}" --file="$dump_file"
   pg_restore --list "$dump_file" > /dev/null
   log "dump OK ($(du -h "$dump_file" | cut -f1))"
 
