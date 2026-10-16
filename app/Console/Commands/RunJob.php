@@ -3,6 +3,7 @@
 namespace App\Console\Commands;
 
 use App\Domain\Enums\TitleType;
+use App\Jobs\EnrichSearchEmbeddingsBatchJob;
 use App\Jobs\EnrichTitleCreditsBatchJob;
 use App\Jobs\EnrichTitleKnowledgeGraphsJob;
 use App\Jobs\EnrichTitleProvidersBatchJob;
@@ -43,7 +44,8 @@ class RunJob extends Command
             [FetchTrendingTitlesJob::class, FetchPopularTitlesJob::class, FetchUpcomingTitlesJob::class,
                 EnrichTitleProvidersBatchJob::class, TitlesBatchInsertJob::class,
                 EnrichTitleCreditsBatchJob::class, EnrichTitleKnowledgeGraphsJob::class,
-                MaterializeTitleSimilaritiesBatchJob::class, EnrichTitleProvidersLinkBatchJob::class, EnrichTopTitlesProvidersBatchJob::class],
+                MaterializeTitleSimilaritiesBatchJob::class, EnrichTitleProvidersLinkBatchJob::class, EnrichTopTitlesProvidersBatchJob::class,
+                EnrichSearchEmbeddingsBatchJob::class],
         );
         switch ($jobClass) {
             case FetchTrendingTitlesJob::class:
@@ -73,6 +75,9 @@ class RunJob extends Command
                 break;
             case EnrichTopTitlesProvidersBatchJob::class:
                 EnrichTopTitlesProvidersBatchJob::dispatch();
+                break;
+            case EnrichSearchEmbeddingsBatchJob::class:
+                $this->runEnrichSearchEmbeddings();
                 break;
             default:
                 $this->error('Unknown job class');
@@ -142,6 +147,12 @@ class RunJob extends Command
     {
         $limit = (int) $this->ask('Limit titles?', 10);
         EnrichTitleKnowledgeGraphsJob::dispatch($limit);
+    }
+
+    private function runEnrichSearchEmbeddings(): void
+    {
+        $limit = (int) $this->ask('Limit titles?', 1000);
+        EnrichSearchEmbeddingsBatchJob::dispatch($limit);
     }
 
     private function runMaterializeSimilarities(): void

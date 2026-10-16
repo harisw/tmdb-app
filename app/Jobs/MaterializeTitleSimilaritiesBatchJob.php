@@ -30,6 +30,7 @@ class MaterializeTitleSimilaritiesBatchJob implements ShouldQueue
     public function handle(): void
     {
         $titleIds = Title::query()
+            ->withoutGlobalScopes()
             ->whereNotNull('embedding')
             ->when($this->onlyMissing, function ($query) {
                 $query->whereNotExists(function ($sub) {

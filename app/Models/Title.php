@@ -255,6 +255,11 @@ class Title extends Model
         return $this->hasOne(UserTitleState::class);
     }
 
+    public function searchEmbedding(): HasOne
+    {
+        return $this->hasOne(TitleSearchEmbedding::class);
+    }
+
     public function cast(): HasMany
     {
         return $this->credits()->where('job', CreditJob::CAST)->orderBy('order');

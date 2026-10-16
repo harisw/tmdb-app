@@ -9,9 +9,14 @@ use App\Models\ProductionCompany;
 use App\Models\Provider;
 use App\Models\Title;
 use App\Models\TitleProvider;
+use App\Models\TitleSearchEmbedding;
+use App\Utils\Enum\FeatureFlag;
+use Database\Factories\TitleSearchEmbeddingFactory;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Bus;
+use Illuminate\Support\Facades\Http;
+use Laravel\Pennant\Feature;
 use Tests\TestCase;
 
 class HomeControllerTest extends TestCase
@@ -162,6 +167,20 @@ class HomeControllerTest extends TestCase
             ->assertJsonCount(1, 'results');
     }
 
+    public function test_search_orders_results_by_relevance_rank(): void
+    {
+        $genreMatch = $this->createSearchableTitle(['name' => 'Unrelated Film']);
+        $genreMatch->genres()->attach(Genre::factory()->create(['name' => 'Galaxy']));
+        $nameMatch = $this->createSearchableTitle(['name' => 'Galaxy Quest']);
+        $this->refreshSearchIndex();
+
+        $this->get('/search?q=galaxy')
+            ->assertOk()
+            ->assertJsonCount(2, 'results')
+            ->assertJsonPath('results.0.id', $nameMatch->id)
+            ->assertJsonPath('results.1.id', $genreMatch->id);
+    }
+
     public function test_search_sets_has_more_when_results_exceed_limit(): void
     {
         $genre = Genre::factory()->create(['name' => 'Space Adventure']);
@@ -253,6 +272,72 @@ class HomeControllerTest extends TestCase
                 ->has('titles.data', 1)
                 ->where('titles.data.0.id', $match->id)
             );
+    }
+
+    public function test_search_requires_a_query(): void
+    {
+        $this->getJson('/search')->assertUnprocessable()->assertJsonValidationErrors('q');
+    }
+
+    public function test_search_all_with_unmatched_text_query_returns_no_titles(): void
+    {
+        $this->createSearchableTitle(['name' => 'Galaxy Quest']);
+        $this->refreshSearchIndex();
+
+        $this->get('/search-all?q=nonexistentword')
+            ->assertOk()
+            ->assertInertia(fn ($page) => $page->has('titles.data', 0));
+    }
+
+    public function test_search_all_orders_text_results_by_relevance(): void
+    {
+        $nameMatch = $this->createSearchableTitle(['name' => 'Galaxy Quest']);
+        $genreMatch = $this->createSearchableTitle(['name' => 'Unrelated Film']);
+        $genreMatch->genres()->attach(Genre::factory()->create(['name' => 'Galaxy']));
+        $nameMatch->update(['created_at' => now()->subYear()]);
+        $this->refreshSearchIndex();
+
+        $this->get('/search-all?q=galaxy')
+            ->assertOk()
+            ->assertInertia(fn ($page) => $page
+                ->where('titles.data.0.id', $nameMatch->id)
+                ->where('titles.data.1.id', $genreMatch->id)
+            );
+    }
+
+    public function test_search_all_uses_semantic_results_when_hybrid_search_is_active(): void
+    {
+        Feature::for('global')->activate(FeatureFlag::HybridSearch);
+        Http::fake(['api.openai.com/*' => Http::response([
+            'data' => [['index' => 0, 'embedding' => TitleSearchEmbeddingFactory::unitVector(3)]],
+        ])]);
+        $textMatch = $this->createSearchableTitle(['name' => 'Galaxy Quest']);
+        $semanticMatch = TitleSearchEmbedding::factory()->pointingAt(3)->create();
+        $this->refreshSearchIndex();
+
+        $this->get('/search-all?q=galaxy')
+            ->assertOk()
+            ->assertInertia(fn ($page) => $page
+                ->has('titles.data', 2)
+                ->where('titles.data.0.id', $textMatch->id)
+                ->where('titles.data.1.id', $semanticMatch->title_id)
+            );
+
+        Http::assertSentCount(1);
+    }
+
+    public function test_search_all_skips_semantic_search_when_hybrid_search_is_inactive(): void
+    {
+        Http::fake();
+        $this->createSearchableTitle(['name' => 'Galaxy Quest']);
+        TitleSearchEmbedding::factory()->pointingAt(3)->create();
+        $this->refreshSearchIndex();
+
+        $this->get('/search-all?q=galaxy')
+            ->assertOk()
+            ->assertInertia(fn ($page) => $page->has('titles.data', 1));
+
+        Http::assertNothingSent();
     }
 
     // Helpers

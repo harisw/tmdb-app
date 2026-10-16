@@ -25,6 +25,7 @@ class EnrichTitleKnowledgeGraphsJob implements ShouldQueue
     public function handle(): void
     {
         $titleIds = Title::whereNull('embedding')
+            ->withoutGlobalScopes()
             ->whereHas('credits')
             ->limit($this->limit)
             ->pluck('id');

@@ -1,6 +1,7 @@
 <?php
 
 use App\Domain\Enums\TitleType;
+use App\Jobs\EnrichSearchEmbeddingsBatchJob;
 use App\Jobs\EnrichTitleCreditsBatchJob;
 use App\Jobs\EnrichTitleKnowledgeGraphsJob;
 use App\Jobs\EnrichTitleProvidersBatchJob;
@@ -65,3 +66,5 @@ Schedule::job(new EnrichTitleProvidersBatchJob)
 Schedule::job(new EnrichTitleProvidersBatchJob)
     ->wednesdays()
     ->at('18:30');
+
+Schedule::job(new EnrichSearchEmbeddingsBatchJob(500))->hourly()->withoutOverlapping();

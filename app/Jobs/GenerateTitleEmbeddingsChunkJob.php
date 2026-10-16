@@ -30,7 +30,8 @@ class GenerateTitleEmbeddingsChunkJob implements ShouldQueue
             return;
         }
 
-        $titles = Title::with(['genres', 'keywords', 'people', 'collection'])
+        $titles = Title::withoutGlobalScopes()
+            ->with(['genres', 'keywords', 'people', 'collection'])
             ->whereIn('id', $this->titleIds)
             ->get()
             ->values(); // guarantee a 0-indexed order that matches the embeddings

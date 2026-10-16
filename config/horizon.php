@@ -232,7 +232,7 @@ return [
                 'balance' => 'simple',
                 'minProcesses' => 1,
                 'maxProcesses' => 5,
-                'tries' => 3,
+                'tries' => 1,
                 'timeout' => 60,
             ],
             'embeddings' => [

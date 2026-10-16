@@ -41,6 +41,19 @@ class OpenAIEmbeddingServiceTest extends TestCase
             && $request['input'] === ['hello']);
     }
 
+    public function test_sends_dimensions_only_when_requested(): void
+    {
+        Http::fake([
+            'api.openai.com/*' => Http::response(['data' => [['index' => 0, 'embedding' => [0.1]]]]),
+        ]);
+
+        app(OpenAIEmbeddingService::class)->embedOne('hello', 512);
+        app(OpenAIEmbeddingService::class)->embedOne('hello');
+
+        Http::assertSent(fn ($request) => ($request->data()['dimensions'] ?? null) === 512);
+        Http::assertSent(fn ($request) => ! isset($request['dimensions']));
+    }
+
     public function test_throws_when_openai_responds_with_an_error(): void
     {
         Http::fake(['api.openai.com/*' => Http::response('rate limited', 429)]);
