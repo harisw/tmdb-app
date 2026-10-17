@@ -28,12 +28,7 @@ class GenerateSearchEmbeddingsChunkJob implements ShouldQueue
         SearchDocumentBuilder $documentBuilder
     ): void {
         $titles = Title::withoutGlobalScopes()
-            ->with([
-                'genres',
-                'keywords',
-                'collection',
-                'people' => fn ($query) => $query->wherePivotIn('job', SearchDocumentBuilder::CREDIT_JOBS),
-            ])
+            ->with(SearchDocumentBuilder::relations())
             ->whereIn('id', $this->titleIds)
             ->get()
             ->values();

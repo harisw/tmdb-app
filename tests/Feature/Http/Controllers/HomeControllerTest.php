@@ -169,9 +169,9 @@ class HomeControllerTest extends TestCase
 
     public function test_search_orders_results_by_relevance_rank(): void
     {
-        $genreMatch = $this->createSearchableTitle(['name' => 'Unrelated Film']);
+        $genreMatch = $this->createSearchableTitle(['name' => 'Unrelated Film', 'popularity' => 10]);
         $genreMatch->genres()->attach(Genre::factory()->create(['name' => 'Galaxy']));
-        $nameMatch = $this->createSearchableTitle(['name' => 'Galaxy Quest']);
+        $nameMatch = $this->createSearchableTitle(['name' => 'Galaxy Quest', 'popularity' => 10]);
         $this->refreshSearchIndex();
 
         $this->get('/search?q=galaxy')
@@ -291,8 +291,8 @@ class HomeControllerTest extends TestCase
 
     public function test_search_all_orders_text_results_by_relevance(): void
     {
-        $nameMatch = $this->createSearchableTitle(['name' => 'Galaxy Quest']);
-        $genreMatch = $this->createSearchableTitle(['name' => 'Unrelated Film']);
+        $nameMatch = $this->createSearchableTitle(['name' => 'Galaxy Quest', 'popularity' => 10]);
+        $genreMatch = $this->createSearchableTitle(['name' => 'Unrelated Film', 'popularity' => 10]);
         $genreMatch->genres()->attach(Genre::factory()->create(['name' => 'Galaxy']));
         $nameMatch->update(['created_at' => now()->subYear()]);
         $this->refreshSearchIndex();

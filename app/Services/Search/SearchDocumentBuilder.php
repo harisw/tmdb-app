@@ -8,41 +8,52 @@ use App\Models\Title;
 
 class SearchDocumentBuilder
 {
-    public const VERSION = 1;
+    public const VERSION = 2;
+
+    private const KEYWORD_LIMIT = 10;
+
+    private const CREW_LIMIT = 2;
+
+    private const CAST_LIMIT = 5;
 
     public const CREDIT_JOBS = [CreditJob::CAST, CreditJob::DIRECTOR, CreditJob::WRITER];
 
-    private const CAST_LIMIT_ORDER = 5;
+    /**
+     * @return array<int|string, string|\Closure>
+     */
+    public static function relations(): array
+    {
+        return [
+            'genres',
+            'keywords',
+            'collection',
+            'people' => fn ($query) => $query->wherePivotIn('job', self::CREDIT_JOBS),
+        ];
+    }
 
     public function build(Title $title): string
     {
+        $directors = $this->peopleFor($title, CreditJob::DIRECTOR, self::CREW_LIMIT);
+        $writers = $this->peopleFor($title, CreditJob::WRITER, self::CREW_LIMIT);
+        $cast = $this->peopleFor($title, CreditJob::CAST, self::CAST_LIMIT);
+
         return collect([
-            'Title' => $title->name,
-            'Original title' => $title->original_name !== $title->name ? $title->original_name : null,
-            'Type' => $title->type->value,
-            'Tagline' => $title->tagline,
-            'Overview' => $title->overview,
-            'Genres' => $title->genres->pluck('name')->join(', '),
-            'Keywords' => $title->keywords->pluck('name')->join(', '),
-            'Cast' => $this->peopleFor($title, CreditJob::CAST),
-            'Directors' => $this->peopleFor($title, CreditJob::DIRECTOR),
-            'Writers' => $this->peopleFor($title, CreditJob::WRITER),
-            'Year' => $title->release_date?->format('Y'),
-            'Part of collection' => $title->collection?->name,
-        ])
-            ->filter(fn (?string $value) => filled($value))
-            ->map(fn (string $value, string $label) => "{$label}: {$value}")
-            ->join("\n");
+            $title->tagline ? "{$title->name}: {$title->tagline}" : $title->name,
+            $title->overview,
+            $title->genres->isNotEmpty() ? 'Genres: '.$title->genres->pluck('name')->join(', ') : null,
+            $title->keywords->isNotEmpty() ? 'Themes:  '.$title->keywords->take(self::KEYWORD_LIMIT)->pluck('name')->join(', ') : null,
+            $directors ? "Directed by {$directors}." : null,
+            $writers ? "Written by {$writers}." : null,
+            $cast ? "Starring {$cast}." : null,
+        ])->filter()->join("\n");
     }
 
-    private function peopleFor(Title $title, CreditJob $job): string
+    private function peopleFor(Title $title, CreditJob $job, int $limit): string
     {
         return $title->people
             ->filter(fn (Person $person) => $person->pivot->job === $job)
-            ->when($job === CreditJob::CAST, fn ($people) => $people->filter(
-                fn (Person $person) => $person->pivot->order <= self::CAST_LIMIT_ORDER
-            ))
             ->sortBy(fn (Person $person) => $person->pivot->order)
+            ->take($limit)
             ->pluck('name')
             ->join(', ');
     }

@@ -50,6 +50,16 @@ class HybridSearchServiceTest extends TestCase
         $this->assertSame([5, 9, 7], $this->service()->fuse(collect([5, 9, 7]))->all());
     }
 
+    public function test_full_text_ids_rank_popular_titles_above_equal_text_matches(): void
+    {
+        $unknown = $this->createSearchableTitle(['name' => 'The Dark Knight', 'popularity' => 0]);
+        $popular = $this->createSearchableTitle(['name' => 'The Dark Knight', 'popularity' => 150]);
+        $obscure = $this->createSearchableTitle(['name' => 'The Dark Knight', 'popularity' => 2]);
+        Artisan::call('titles:refresh-searchable');
+
+        $this->assertSame([$popular->id, $obscure->id, $unknown->id], $this->service()->fullTextIds('the dark knight')->all());
+    }
+
     public function test_semantic_ids_are_ordered_by_cosine_distance(): void
     {
         $this->fakeQueryEmbedding(3);
@@ -94,13 +104,41 @@ class HybridSearchServiceTest extends TestCase
         $this->assertContains($semanticMatch->title_id, $ids);
     }
 
-    public function test_hybrid_ids_fall_back_to_full_text_when_openai_fails(): void
+    public function test_hybrid_ids_fall_back_to_lexical_search_when_openai_fails(): void
     {
         Http::fake(['api.openai.com/*' => Http::response('server error', 500)]);
         $textMatch = $this->createSearchableTitle(['name' => 'Galaxy Quest']);
+        $typoMatch = Title::factory()->create(['name' => 'Interstellar']);
         TitleSearchEmbedding::factory()->create();
         Artisan::call('titles:refresh-searchable');
 
         $this->assertSame([$textMatch->id], $this->service()->hybridIds('galaxy')->all());
+        $this->assertSame([$typoMatch->id], $this->service()->hybridIds('intersteller')->all());
+    }
+
+    public function test_trigram_ids_match_misspelled_titles(): void
+    {
+        $match = Title::factory()->create(['name' => 'The Shawshank Redemption']);
+        Title::factory()->create(['name' => 'Galaxy Quest']);
+
+        $this->assertSame([$match->id], $this->service()->trigramIds('shawshenk redemption')->all());
+    }
+
+    public function test_trigram_scores_rank_closer_and_more_popular_titles_first(): void
+    {
+        $obscure = Title::factory()->create(['name' => 'Interstellar', 'popularity' => 0]);
+        $popular = Title::factory()->create(['name' => 'Interstellar', 'popularity' => 200]);
+
+        $scores = $this->service()->trigramScores('intersteller');
+
+        $this->assertSame([$popular->id, $obscure->id], $scores->keys()->all());
+        $this->assertGreaterThan($scores[$obscure->id], $scores[$popular->id]);
+    }
+
+    public function test_trigram_ids_respect_the_adult_content_scope(): void
+    {
+        Title::factory()->create(['name' => 'Interstellar', 'is_adult' => true]);
+
+        $this->assertEmpty($this->service()->trigramIds('intersteller'));
     }
 }
