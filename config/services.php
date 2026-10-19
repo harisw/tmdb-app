@@ -48,6 +48,23 @@ return [
 
     'openai' => [
         'key' => env('OPENAI_API_KEY'),
+        'base_url' => 'https://api.openai.com/v1',
+        'llm_model' => env('OPENAI_LLM_MODEL') ?: 'gpt-4.1-mini',
+    ],
+    'groq' => [
+        'key' => env('GROQ_API_KEY'),
+        'base_url' => 'https://api.groq.com/openai/v1',
+        'llm_model' => env('GROQ_LLM_MODEL') ?: 'llama-3.3-70b-versatile',
+    ],
+    'llm' => [
+        'providers' => explode(',', env('LLM_PROVIDERS', 'openai,groq')),
+        'timeout' => (int) env('LLM_TIMEOUT', 10),
+        'cooldown' => (int) env('LLM_COOLDOWN', 60),
+    ],
+    'langfuse' => [
+        'host' => env('LANGFUSE_HOST', 'https://cloud.langfuse.com'),
+        'public_key' => env('LANGFUSE_PUBLIC_KEY'),
+        'secret_key' => env('LANGFUSE_SECRET_KEY'),
     ],
     'providers' => [
         'movie_night' => [

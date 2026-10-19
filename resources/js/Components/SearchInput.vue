@@ -15,7 +15,7 @@
 
         <SearchIcon class="pointer-events-none absolute left-3 top-1/2 size-5 -translate-y-1/2 text-white/40" />
 
-        <button
+        <!-- <button
             v-if="query"
             type="button"
             class="absolute right-2.5 top-1/2 grid size-6 -translate-y-1/2 place-items-center rounded-full text-white/50 transition-colors hover:bg-white/10 hover:text-white focus:outline-none focus:ring-2 focus:ring-madder/60"
@@ -23,7 +23,7 @@
             @click="clear"
         >
             <XIcon class="size-4" />
-        </button>
+        </button> -->
 
         <!-- results / status popover -->
         <div

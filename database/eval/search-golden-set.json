@@ -89,12 +89,5 @@
     { "query": "卧底警察和潜入警队的黑帮成员互相追查",                                                                   "category": "multilingual",  "relevant": [12121] },
     { "query": "jovem sonha ser fotógrafo enquanto cresce em uma favela violenta do rio",              "category": "multilingual",  "relevant": [9829] },
     { "query": "padre ebreo usa un gioco per proteggere il figlio in un campo di concentramento",      "category": "multilingual",  "relevant": [9487] },
-    { "query": "इंजीनियरिंग कॉलेज के तीन दोस्त और उनका सख्त प्रिंसिपल",                                "category": "multilingual",  "relevant": [11274] },
-
-    { "query": "千と千尋の神隠し",                                                                             "category": "native_title",  "relevant": [9414] },
-    { "query": "となりのトトロ",                                                                              "category": "native_title",  "relevant": [9790] },
-    { "query": "기생충",                                                                                  "category": "native_title",  "relevant": [9388] },
-    { "query": "la vita è bella",                                                                      "category": "native_title",  "relevant": [9487] },
-    { "query": "le fabuleux destin d'amélie poulain",                                                  "category": "native_title",  "relevant": [9536] },
-    { "query": "das leben der anderen",                                                                "category": "native_title",  "relevant": [10613] }
+    { "query": "इंजीनियरिंग कॉलेज के तीन दोस्त और उनका सख्त प्रिंसिपल",                                "category": "multilingual",  "relevant": [11274] }
 ]

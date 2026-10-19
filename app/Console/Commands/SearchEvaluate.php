@@ -9,13 +9,13 @@ use Illuminate\Console\Command;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\File;
 
-#[Signature('search:evaluate {mode=fts : fts, semantic or hybrid} {--golden-set=database/eval/search-golden-set.json}')]
+#[Signature('search:evaluate {mode=fts : fts, semantic, hybrid or hyde} {--golden-set=database/eval/search-golden-set.json}')]
 #[Description('Score search modes against the golden set with recall@10 and MRR')]
 class SearchEvaluate extends Command
 {
     private const CUTOFF = 10;
 
-    private const MODES = ['fts', 'semantic', 'hybrid'];
+    private const MODES = ['fts', 'semantic', 'hybrid', 'hyde'];
 
     public function handle(HybridSearchService $searchService): int
     {
@@ -32,6 +32,7 @@ class SearchEvaluate extends Command
                 'fts' => $searchService->fullTextIds($case['query'], self::CUTOFF),
                 'semantic' => $searchService->semanticIds($case['query'], self::CUTOFF),
                 'hybrid' => $searchService->hybridIds($case['query'], self::CUTOFF),
+                'hyde' => $searchService->hydeIds($case['query'], self::CUTOFF),
             };
 
             return [...$case, ...$this->score($rankedIds->values(), collect($case['relevant']))];

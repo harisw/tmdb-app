@@ -25,13 +25,14 @@ RUN apk add --no-cache \
       postgresql-dev \
       libzip-dev \
       oniguruma-dev \
+      icu-dev \
       unzip \
       autoconf g++ make \
-   && docker-php-ext-install pdo pdo_pgsql mbstring zip pcntl \
+   && docker-php-ext-install pdo pdo_pgsql mbstring zip pcntl intl \
    && pecl install redis \
    && docker-php-ext-enable redis \
-   && apk del postgresql-dev libzip-dev oniguruma-dev unzip autoconf g++ make \
-   && apk add --no-cache libpq libzip oniguruma
+   && apk del postgresql-dev libzip-dev oniguruma-dev icu-dev unzip autoconf g++ make \
+   && apk add --no-cache libpq libzip oniguruma icu-libs
 
 COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
 
@@ -51,7 +52,7 @@ FROM php:8.4-fpm-alpine AS app
 WORKDIR /var/www
 
 # Runtime libs only — no dev headers needed, extensions copied from builder
-RUN apk add --no-cache libpq libzip oniguruma bash jq aws-cli postgresql17-client
+RUN apk add --no-cache libpq libzip oniguruma icu-libs icu-data-full bash jq aws-cli postgresql17-client
 
 COPY --from=builder /usr/local/lib/php/extensions/ /usr/local/lib/php/extensions/
 COPY --from=builder /usr/local/etc/php/conf.d/ /usr/local/etc/php/conf.d/

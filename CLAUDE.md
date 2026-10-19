@@ -86,6 +86,8 @@ The least obvious subsystem, spread across jobs, services and pipelines:
 
 Full-text search reads the `titles_searchable_index` table (`SearchableTitle` model) using PostgreSQL tsvector. It is not maintained transactionally — `titles:refresh-searchable` rebuilds it, scheduled every six hours, so newly ingested titles stay unsearchable until it runs.
 
+`HybridSearchService` fuses full-text, trigram and semantic ranked lists with RRF. Behind the `hyde-search` Pennant flag, `searchAll` adds a fourth list: `HypotheticalDocumentGenerator` asks an LLM for a catalogue entry shaped like `SearchDocumentBuilder` output and embeds it. LLM calls go through `App\Services\Llm\LlmGateway`, which fails over across the OpenAI-compatible providers in `services.llm.providers`, cools down providers after 429/5xx, and fires `LlmCompletionAttempted` (traced to Langfuse over OTLP by a queued listener). Score changes with `php artisan search:evaluate {fts|semantic|hybrid|hyde}`.
+
 ### Shared Inertia props
 
 `HandleInertiaRequests::share()` gives every page `genres`, `countries`, `providers`, `base_url` (TMDB image prefixes), `auth.user`, `enums.TitleType`, `flash` and `avatarStyles`. The lists are cached from two hours to forever, so newly seeded genres or providers won't appear until caches clear. Build image URLs from `usePage().props.base_url` rather than hardcoding.
@@ -105,7 +107,11 @@ DB_CONNECTION=pgsql          # pgvector image; SQLite is not viable
 TMDB_BASE_URL=               # TMDB API v3 base
 TMDB_API_KEY=
 MOVIE_DB_IMG_URL=            # TMDB image CDN base
-OPENAI_API_KEY=              # embeddings; similarity is inert without it
+OPENAI_API_KEY=              # embeddings + default LLM; similarity is inert without it
+GROQ_API_KEY=                # LLM fallback; providers without a key are skipped
+LLM_PROVIDERS=openai,groq    # LLM failover order
+LANGFUSE_PUBLIC_KEY=         # LLM tracing; nothing is sent without both keys
+LANGFUSE_SECRET_KEY=
 SEED_CSV_S3_KEY=             # bulk title seeding source
 ALLOW_REGISTER=false         # toggle user registration
 GOOGLE_CLIENT_ID=            # Socialite login

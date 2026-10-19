@@ -13,6 +13,7 @@ use App\Models\TitleSearchEmbedding;
 use App\Utils\Enum\FeatureFlag;
 use Database\Factories\TitleSearchEmbeddingFactory;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\Client\Request;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Bus;
 use Illuminate\Support\Facades\Http;
@@ -305,9 +306,8 @@ class HomeControllerTest extends TestCase
             );
     }
 
-    public function test_search_all_uses_semantic_results_when_hybrid_search_is_active(): void
+    public function test_search_all_blends_semantic_results(): void
     {
-        Feature::for('global')->activate(FeatureFlag::HybridSearch);
         Http::fake(['api.openai.com/*' => Http::response([
             'data' => [['index' => 0, 'embedding' => TitleSearchEmbeddingFactory::unitVector(3)]],
         ])]);
@@ -326,18 +326,49 @@ class HomeControllerTest extends TestCase
         Http::assertSentCount(1);
     }
 
-    public function test_search_all_skips_semantic_search_when_hybrid_search_is_inactive(): void
+    public function test_search_all_skips_hyde_when_hyde_search_is_inactive(): void
     {
-        Http::fake();
+        Http::fake(['api.openai.com/v1/embeddings' => Http::response([
+            'data' => [['index' => 0, 'embedding' => TitleSearchEmbeddingFactory::unitVector(3)]],
+        ])]);
         $this->createSearchableTitle(['name' => 'Galaxy Quest']);
-        TitleSearchEmbedding::factory()->pointingAt(3)->create();
         $this->refreshSearchIndex();
 
-        $this->get('/search-all?q=galaxy')
-            ->assertOk()
-            ->assertInertia(fn ($page) => $page->has('titles.data', 1));
+        $this->get('/search-all?q=galaxy')->assertOk();
 
-        Http::assertNothingSent();
+        Http::assertNotSent(fn (Request $request) => str_ends_with($request->url(), '/chat/completions'));
+    }
+
+    public function test_search_all_adds_hyde_results_when_hyde_search_is_active(): void
+    {
+        Feature::for('global')->activate(FeatureFlag::HydeSearch);
+        config(['services.llm.providers' => ['openai']]);
+        Http::fake(fn (Request $request) => str_ends_with($request->url(), '/chat/completions')
+            ? Http::response(['choices' => [['message' => ['content' => 'Galaxy Quest: Never give up.']]]])
+            : Http::response(['data' => [['index' => 0, 'embedding' => TitleSearchEmbeddingFactory::unitVector(3)]]]));
+        $textMatch = $this->createSearchableTitle(['name' => 'Galaxy Quest Space Crew']);
+        $semanticMatch = TitleSearchEmbedding::factory()->pointingAt(3)->create();
+        $this->refreshSearchIndex();
+
+        $this->get('/search-all?q=galaxy quest space crew')
+            ->assertOk()
+            ->assertInertia(fn ($page) => $page
+                ->has('titles.data', 2)
+                ->where('titles.data.0.id', $textMatch->id)
+                ->where('titles.data.1.id', $semanticMatch->title_id)
+            );
+
+        Http::assertSent(fn (Request $request) => str_ends_with($request->url(), '/chat/completions'));
+        Http::assertSent(fn (Request $request) => ($request->data()['input'] ?? null) === ['Galaxy Quest: Never give up.']);
+    }
+
+    public function test_search_all_is_rate_limited(): void
+    {
+        foreach (range(1, 40) as $attempt) {
+            $this->get('/search-all')->assertOk();
+        }
+
+        $this->get('/search-all')->assertTooManyRequests();
     }
 
     // Helpers

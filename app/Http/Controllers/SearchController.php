@@ -28,7 +28,7 @@ class SearchController extends Controller
     public function search(Request $request): JsonResponse
     {
         $q = $request->validate(['q' => ['required', 'string']])['q'];
-        $ranks = $this->searchService->fullTextIds($q, self::SEARCH_LIMIT + 1)->flip();
+        $ranks = $this->searchService->hybridIds($q, self::SEARCH_LIMIT + 1)->flip();
         $results = Title::whereIn('id', $ranks->keys())
             ->with(Title::detailRelations())
             ->get()
@@ -72,9 +72,9 @@ class SearchController extends Controller
      */
     private function rankedTitleIds(string $q): Collection
     {
-        return Feature::for('global')->active(FeatureFlag::HybridSearch)
-            ? $this->searchService->hybridIds($q, self::SEARCH_ALL_LIMIT)
-            : $this->searchService->fullTextIds($q, self::SEARCH_ALL_LIMIT);
+        return Feature::for('global')->active(FeatureFlag::HydeSearch)
+            ? $this->searchService->hydeIds($q, self::SEARCH_ALL_LIMIT)
+            : $this->searchService->hybridIds($q, self::SEARCH_ALL_LIMIT);
     }
 
     /**

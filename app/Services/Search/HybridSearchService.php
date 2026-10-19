@@ -11,31 +11,83 @@ use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use IntlBreakIterator;
 use RuntimeException;
 
 class HybridSearchService
 {
     private const RRF_K = 60;
 
-    public function __construct(private readonly OpenAIEmbeddingService $embeddingService) {}
+    private const HYDE_MIN_WORDS = 4;
+
+    public function __construct(
+        private readonly OpenAIEmbeddingService $embeddingService,
+        private readonly HypotheticalDocumentGenerator $documentGenerator,
+    ) {}
 
     /**
      * @return Collection<int, int>
      */
     public function hybridIds(string $text, int $limit = 50): Collection
     {
-        $fullTextIds = $this->fullTextIds($text, $limit);
-        $trigramIds = $this->trigramIds($text, $limit);
+        return $this->fuse(...$this->hybridRankedLists($text, $limit))->take($limit)->values();
+    }
+
+    /**
+     * @return Collection<int, int>
+     */
+    public function hydeIds(string $text, int $limit = 50): Collection
+    {
+        if ($this->wordCount($text) < self::HYDE_MIN_WORDS) {
+            return $this->hybridIds($text, $limit);
+        }
+
+        $rankedLists = $this->hybridRankedLists($text, $limit);
 
         try {
-            $semanticIds = $this->semanticIds($text, $limit);
+            $rankedLists[] = $this->hypotheticalDocumentIds($text, $limit);
+        } catch (ConnectionException|RuntimeException $e) {
+            Log::warning('HyDE unavailable, falling back to hybrid search', ['error' => $e->getMessage()]);
+        }
+
+        return $this->fuse(...$rankedLists)->take($limit)->values();
+    }
+
+    /**
+     * @return Collection<int, int>
+     */
+    public function hypotheticalDocumentIds(string $text, int $limit = 50): Collection
+    {
+        return $this->nearestDistances($this->cachedVector($this->documentGenerator->generate($text)), $limit)->keys();
+    }
+
+    private function wordCount(string $text): int
+    {
+        $boundaries = IntlBreakIterator::createWordInstance();
+        $boundaries->setText($text);
+        $count = 0;
+
+        while ($boundaries->next() !== IntlBreakIterator::DONE) {
+            $count += $boundaries->getRuleStatus() >= IntlBreakIterator::WORD_NONE_LIMIT ? 1 : 0;
+        }
+
+        return $count;
+    }
+
+    /**
+     * @return array<int, Collection<int, int>>
+     */
+    private function hybridRankedLists(string $text, int $limit): array
+    {
+        $lexicalLists = [$this->fullTextIds($text, $limit), $this->trigramIds($text, $limit)];
+
+        try {
+            return [...$lexicalLists, $this->semanticIds($text, $limit)];
         } catch (ConnectionException|RuntimeException $e) {
             Log::warning('Semantic search unavailable, falling back to lexical search', ['error' => $e->getMessage()]);
 
-            return $this->fuse($fullTextIds, $trigramIds)->take($limit)->values();
+            return $lexicalLists;
         }
-
-        return $this->fuse($fullTextIds, $trigramIds, $semanticIds)->take($limit)->values();
     }
 
     /**
@@ -77,8 +129,14 @@ class HybridSearchService
      */
     public function semanticDistances(string $text, int $limit = 50): Collection
     {
-        $vector = $this->queryVector($text);
+        return $this->nearestDistances($this->queryVector($text), $limit);
+    }
 
+    /**
+     * @return Collection<int, float>
+     */
+    private function nearestDistances(string $vector, int $limit): Collection
+    {
         return DB::transaction(function () use ($vector, $limit) {
             DB::statement("SET LOCAL hnsw.iterative_scan = 'strict_order'");
 
@@ -145,13 +203,16 @@ class HybridSearchService
 
     public function queryVector(string $text): string
     {
-        $normalized = mb_strtolower(trim($text));
+        return $this->cachedVector(mb_strtolower(trim($text)));
+    }
 
+    private function cachedVector(string $text): string
+    {
         return Cache::remember(
-            'search-embedding:'.TitleSearchEmbedding::DIMENSIONS.':'.sha1($normalized),
+            'search-embedding:'.TitleSearchEmbedding::DIMENSIONS.':'.sha1($text),
             now()->addWeek(),
             fn () => TitleSearchEmbedding::toVectorLiteral(
-                $this->embeddingService->embedOne($normalized, TitleSearchEmbedding::DIMENSIONS)
+                $this->embeddingService->embedOne($text, TitleSearchEmbedding::DIMENSIONS)
             ),
         );
     }

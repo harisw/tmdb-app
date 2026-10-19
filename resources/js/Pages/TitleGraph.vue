@@ -140,7 +140,7 @@ onMounted(() => {
     if (initial) {
         loadInitial(initial)
     } else {
-        error.value = 'Open a title and choose “Explore graph” to start.'
+        error.value = 'Open a title and choose “Explore more” to start.'
     }
 })
 

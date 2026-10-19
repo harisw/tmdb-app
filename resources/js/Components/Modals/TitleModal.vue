@@ -159,7 +159,7 @@ watch(
                                 :class="button({ intent: 'soft', size: 'xs', class: 'gap-1' })"
                             >
                                 <Waypoints :size="13" />
-                                Explore graph
+                                Explore more
                             </Link>
                         </div>
 

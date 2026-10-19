@@ -11,7 +11,7 @@ return new class extends Migration
     {
         DB::table('titles')->where('tagline', '')->update(['tagline' => null]);
         DB::table('titles')->where('overview', '')->update(['overview' => null]);
-      }
+    }
 
     /**
      * Reverse the migrations.

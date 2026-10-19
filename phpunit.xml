@@ -32,6 +32,10 @@
         <env name="QUEUE_CONNECTION" value="sync"/>
         <env name="SESSION_DRIVER" value="array"/>
         <env name="OPENAI_API_KEY" value="test-openai-key"/>
+        <env name="GROQ_API_KEY" value=""/>
+        <env name="LLM_PROVIDERS" value="openai,groq"/>
+        <env name="LANGFUSE_PUBLIC_KEY" value=""/>
+        <env name="LANGFUSE_SECRET_KEY" value=""/>
         <env name="TMDB_API_KEY" value="test-tmdb-key"/>
         <env name="PULSE_ENABLED" value="false"/>
         <env name="TELESCOPE_ENABLED" value="false"/>

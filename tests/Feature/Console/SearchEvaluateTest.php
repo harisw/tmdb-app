@@ -5,9 +5,13 @@ namespace Tests\Feature\Console;
 use App\Models\Genre;
 use App\Models\ProductionCompany;
 use App\Models\Title;
+use App\Models\TitleSearchEmbedding;
+use Database\Factories\TitleSearchEmbeddingFactory;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\Client\Request;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\File;
+use Illuminate\Support\Facades\Http;
 use Tests\TestCase;
 
 class SearchEvaluateTest extends TestCase
@@ -56,6 +60,27 @@ class SearchEvaluateTest extends TestCase
             ])
             ->expectsOutputToContain('[descriptive] astronaut stranded on mars')
             ->assertSuccessful();
+    }
+
+    public function test_scores_the_hyde_mode(): void
+    {
+        config(['services.llm.providers' => ['openai']]);
+        Http::fake(fn (Request $request) => str_ends_with($request->url(), '/chat/completions')
+            ? Http::response(['choices' => [['message' => ['content' => 'The Martian: Bring him home.']]]])
+            : Http::response(['data' => [['index' => 0, 'embedding' => TitleSearchEmbeddingFactory::unitVector(3)]]]));
+        $martian = TitleSearchEmbedding::factory()->pointingAt(3)->create();
+        $this->writeGoldenSet([
+            ['query' => 'astronaut stranded on mars', 'category' => 'descriptive', 'relevant' => [$martian->title_id]],
+        ]);
+
+        $this->artisan('search:evaluate', ['mode' => 'hyde', '--golden-set' => $this->goldenSetPath])
+            ->expectsTable(['Category', 'Queries', 'Recall@10', 'MRR'], [
+                ['descriptive', 1, '1.000', '1.000'],
+                ['overall', 1, '1.000', '1.000'],
+            ])
+            ->assertSuccessful();
+
+        Http::assertSent(fn (Request $request) => str_ends_with($request->url(), '/chat/completions'));
     }
 
     public function test_rejects_an_unknown_mode(): void
