@@ -2,7 +2,7 @@
 
 namespace App\Services\Llm;
 
-use App\Events\LlmCompletionAttempted;
+use App\Events\LlmOperationCompleted;
 use Carbon\CarbonImmutable;
 use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Http\Client\RequestException;
@@ -19,21 +19,25 @@ class LlmGateway
 
     public function generate(string $operation, string $instructions, string $input): string
     {
-        $traceId = bin2hex(random_bytes(16));
+        $startedAt = CarbonImmutable::now();
         $messages = [
             ['role' => 'system', 'content' => $instructions],
             ['role' => 'user', 'content' => $input],
         ];
+        $attempts = [];
 
         foreach ($this->availableProviders() as $provider) {
-            try {
-                return $this->complete($traceId, $operation, $provider, $messages);
-            } catch (ConnectionException|RequestException $e) {
-                Log::warning('LLM provider failed, trying the next one', ['provider' => $provider, 'error' => $e->getMessage()]);
+            $attempts[] = $attempt = $this->attempt($provider, $messages);
+
+            if ($attempt->succeeded()) {
+                break;
             }
         }
 
-        throw new LlmUnavailableException("No LLM provider could complete [{$operation}].");
+        $completed = new LlmOperationCompleted($operation, $input, $startedAt, CarbonImmutable::now(), $attempts);
+        event($completed);
+
+        return $completed->output() ?? throw new LlmUnavailableException("No LLM provider could complete [{$operation}].");
     }
 
     /**
@@ -55,9 +59,10 @@ class LlmGateway
     /**
      * @param  array<int, array{role: string, content: string}>  $messages
      */
-    private function complete(string $traceId, string $operation, string $provider, array $messages): string
+    private function attempt(string $provider, array $messages): LlmAttempt
     {
         $config = config("services.{$provider}");
+        $parameters = ['max_completion_tokens' => self::MAX_COMPLETION_TOKENS];
         $startedAt = CarbonImmutable::now();
 
         try {
@@ -66,45 +71,38 @@ class LlmGateway
                 ->post("{$config['base_url']}/chat/completions", [
                     'model' => $config['llm_model'],
                     'messages' => $messages,
-                    'max_completion_tokens' => self::MAX_COMPLETION_TOKENS,
+                    ...$parameters,
                 ])
                 ->throw();
         } catch (ConnectionException|RequestException $e) {
             $this->coolDown($provider, $e);
+            Log::warning('LLM provider failed, trying the next one', ['provider' => $provider, 'error' => $e->getMessage()]);
 
-            event(new LlmCompletionAttempted(
-                traceId: $traceId,
-                operation: $operation,
+            return new LlmAttempt(
                 provider: $provider,
                 model: $config['llm_model'],
                 messages: $messages,
+                parameters: $parameters,
                 startedAt: $startedAt,
                 finishedAt: CarbonImmutable::now(),
                 error: $e->getMessage(),
-            ));
-
-            throw $e;
+            );
         }
 
-        $output = trim((string) $response->json('choices.0.message.content'));
-
-        event(new LlmCompletionAttempted(
-            traceId: $traceId,
-            operation: $operation,
+        return new LlmAttempt(
             provider: $provider,
             model: $response->json('model', $config['llm_model']),
             messages: $messages,
+            parameters: $parameters,
             startedAt: $startedAt,
             finishedAt: CarbonImmutable::now(),
-            output: $output,
+            output: trim((string) $response->json('choices.0.message.content')),
             usage: array_filter([
                 'input' => $response->json('usage.prompt_tokens'),
                 'output' => $response->json('usage.completion_tokens'),
                 'total' => $response->json('usage.total_tokens'),
             ], fn (?int $tokens) => $tokens !== null),
-        ));
-
-        return $output;
+        );
     }
 
     private function coolDown(string $provider, ConnectionException|RequestException $exception): void

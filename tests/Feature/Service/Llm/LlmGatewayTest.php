@@ -2,7 +2,7 @@
 
 namespace Tests\Feature\Service\Llm;
 
-use App\Events\LlmCompletionAttempted;
+use App\Events\LlmOperationCompleted;
 use App\Services\Llm\LlmGateway;
 use App\Services\Llm\LlmUnavailableException;
 use GuzzleHttp\Promise\PromiseInterface;
@@ -159,29 +159,42 @@ class LlmGatewayTest extends TestCase
         $this->gateway()->generate('hyde', 'Be helpful.', 'lonely robot');
     }
 
-    public function test_dispatches_an_attempt_event_per_provider_tried(): void
+    public function test_dispatches_one_operation_event_with_every_attempt(): void
     {
-        Event::fake([LlmCompletionAttempted::class]);
+        Event::fake([LlmOperationCompleted::class]);
         Http::fake([
             'api.openai.com/*' => Http::response('server error', 500),
             'api.groq.com/*' => $this->completion('From Groq.'),
         ]);
 
-        $this->gateway()->generate('hyde', 'Be helpful.', 'lonely robot');
+        $this->gateway()->generate('generate-hypothetical-document', 'Be helpful.', 'lonely robot');
 
-        $attempts = Event::dispatched(LlmCompletionAttempted::class)->map(fn (array $arguments) => $arguments[0]);
-        $this->assertCount(2, $attempts);
-        [$failed, $succeeded] = $attempts->all();
+        Event::assertDispatchedTimes(LlmOperationCompleted::class, 1);
+        Event::assertDispatched(LlmOperationCompleted::class, function (LlmOperationCompleted $event) {
+            [$failed, $succeeded] = $event->attempts;
 
-        $this->assertSame($failed->traceId, $succeeded->traceId);
-        $this->assertSame(['openai', 'gpt-test', 'hyde'], [$failed->provider, $failed->model, $failed->operation]);
-        $this->assertFalse($failed->succeeded());
-        $this->assertNull($failed->output);
+            return $event->operation === 'generate-hypothetical-document'
+                && $event->input === 'lonely robot'
+                && $event->output() === 'From Groq.'
+                && $event->finishedAt->greaterThanOrEqualTo($event->startedAt)
+                && [$failed->provider, $failed->model, $failed->succeeded(), $failed->output] === ['openai', 'gpt-test', false, null]
+                && [$succeeded->provider, $succeeded->model, $succeeded->output] === ['groq', 'served-model', 'From Groq.']
+                && $succeeded->usage === ['input' => 12, 'output' => 5, 'total' => 17]
+                && $succeeded->parameters === ['max_completion_tokens' => 400];
+        });
+    }
 
-        $this->assertSame(['groq', 'served-model'], [$succeeded->provider, $succeeded->model]);
-        $this->assertTrue($succeeded->succeeded());
-        $this->assertSame('From Groq.', $succeeded->output);
-        $this->assertSame(['input' => 12, 'output' => 5, 'total' => 17], $succeeded->usage);
-        $this->assertTrue($succeeded->finishedAt->greaterThanOrEqualTo($succeeded->startedAt));
+    public function test_dispatches_a_failed_operation_event_before_throwing(): void
+    {
+        Event::fake([LlmOperationCompleted::class]);
+        Http::fake(['*' => Http::response('server error', 500)]);
+
+        try {
+            $this->gateway()->generate('generate-hypothetical-document', 'Be helpful.', 'lonely robot');
+            $this->fail('Expected the gateway to throw.');
+        } catch (LlmUnavailableException) {
+            Event::assertDispatched(LlmOperationCompleted::class, fn (LlmOperationCompleted $event) => ! $event->succeeded()
+                && count($event->attempts) === 2);
+        }
     }
 }

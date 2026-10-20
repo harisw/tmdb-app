@@ -34,7 +34,7 @@ class HypotheticalDocumentGenerator
         return Cache::remember(
             'hyde-document:'.self::PROMPT_VERSION.':'.SearchDocumentBuilder::VERSION.':'.sha1($normalized),
             now()->addWeek(),
-            fn () => $this->gateway->generate('hyde', self::INSTRUCTIONS, $normalized),
+            fn () => $this->gateway->generate('generate-hypothetical-document', self::INSTRUCTIONS, $normalized),
         );
     }
 }
