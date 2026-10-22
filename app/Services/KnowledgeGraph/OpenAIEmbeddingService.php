@@ -18,7 +18,8 @@ class OpenAIEmbeddingService
 
     public function embedBatch(array $texts, ?int $dimensions = null): array
     {
-        $response = Http::withToken(config('services.openai.key'))
+        $response = Http::keepAlive()
+            ->withToken(config('services.openai.key'))
             ->timeout(60)
             ->post('https://api.openai.com/v1/embeddings', array_filter([
                 'model' => self::MODEL,

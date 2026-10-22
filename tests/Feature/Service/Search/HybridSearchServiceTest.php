@@ -204,12 +204,12 @@ class HybridSearchServiceTest extends TestCase
         $this->assertSame([$queryMatch->title_id, $documentMatch->title_id], $this->service()->hydeIds('post apocalyptic war rig chase', 2)->all());
     }
 
-    public function test_hyde_ids_skip_the_llm_for_queries_shorter_than_four_words(): void
+    public function test_hyde_ids_skip_the_llm_for_queries_shorter_than_three_words(): void
     {
         $this->fakeHyde('Inception', queryVector: $this->vector([3 => 1.0]), documentVector: $this->vector([5 => 1.0]));
         TitleSearchEmbedding::factory()->pointingAt(3)->create();
 
-        $this->service()->hydeIds('the dark knight');
+        $this->service()->hydeIds('the dark');
 
         Http::assertNotSent(fn (Request $request) => str_ends_with($request->url(), '/chat/completions'));
     }

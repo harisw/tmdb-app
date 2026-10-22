@@ -26,7 +26,6 @@ class SearchDocumentBuilder
         return [
             'genres',
             'keywords',
-            'collection',
             'people' => fn ($query) => $query->wherePivotIn('job', self::CREDIT_JOBS),
         ];
     }
@@ -41,7 +40,7 @@ class SearchDocumentBuilder
             $title->tagline ? "{$title->name}: {$title->tagline}" : $title->name,
             $title->overview,
             $title->genres->isNotEmpty() ? 'Genres: '.$title->genres->pluck('name')->join(', ') : null,
-            $title->keywords->isNotEmpty() ? 'Themes:  '.$title->keywords->take(self::KEYWORD_LIMIT)->pluck('name')->join(', ') : null,
+            $title->keywords->isNotEmpty() ? 'Themes: '.$title->keywords->take(self::KEYWORD_LIMIT)->pluck('name')->join(', ') : null,
             $directors ? "Directed by {$directors}." : null,
             $writers ? "Written by {$writers}." : null,
             $cast ? "Starring {$cast}." : null,

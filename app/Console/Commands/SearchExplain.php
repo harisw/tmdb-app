@@ -6,6 +6,7 @@ use App\Models\Title;
 use App\Models\TitleSearchEmbedding;
 use App\Services\KnowledgeGraph\OpenAIEmbeddingService;
 use App\Services\Search\HybridSearchService;
+use App\Services\Search\HypotheticalDocumentGenerator;
 use App\Services\Search\SearchDocumentBuilder;
 use Illuminate\Console\Attributes\Description;
 use Illuminate\Console\Attributes\Signature;
@@ -23,6 +24,7 @@ class SearchExplain extends Command
         private readonly HybridSearchService $searchService,
         private readonly SearchDocumentBuilder $documentBuilder,
         private readonly OpenAIEmbeddingService $embeddingService,
+        private readonly HypotheticalDocumentGenerator $documentGenerator,
     ) {
         parent::__construct();
     }
@@ -36,9 +38,12 @@ class SearchExplain extends Command
         $trigram = $this->searchService->trigramScores($query, self::WINDOW);
         $semantic = $this->searchService->semanticDistances($query, self::WINDOW);
         $hybrid = $this->searchService->fusedScores($fullText->keys(), $trigram->keys(), $semantic->keys());
+        $hydeDocument = $this->searchService->qualifiesForHyde($query) ? $this->documentGenerator->generate($query) : null;
+        $hyde = $hydeDocument === null ? collect() : $this->searchService->hypotheticalDocumentDistances($hydeDocument, self::WINDOW);
+        $hybridWithHyde = $this->searchService->fusedScores($fullText->keys(), $trigram->keys(), $semantic->keys(), $hyde->keys());
 
         $titles = Title::withoutGlobalScopes()
-            ->whereIn('id', $fullText->keys()->merge($trigram->keys())->merge($semantic->keys())->merge($expectedIds)->unique())
+            ->whereIn('id', $fullText->keys()->merge($trigram->keys())->merge($semantic->keys())->merge($hyde->keys())->merge($expectedIds)->unique())
             ->get(['id', 'name', 'release_date', 'is_adult'])
             ->keyBy('id');
 
@@ -46,11 +51,18 @@ class SearchExplain extends Command
         $this->renderRanking('Trigram (word similarity × popularity, higher is better)', $trigram, $titles, $expectedIds);
         $this->renderRanking('Semantic (cosine distance, lower is better)', $semantic, $titles, $expectedIds);
         $this->renderRanking('Hybrid (RRF score, higher is better)', $hybrid, $titles, $expectedIds);
+        $this->renderHyde($hydeDocument, $hyde, $hybridWithHyde, $titles, $expectedIds);
 
         $expectedIds->each(fn (int $titleId) => $this->explainExpected(
             $titleId,
             $this->searchService->queryVector($query),
-            ['Full-text' => $fullText, 'Trigram' => $trigram, 'Semantic' => $semantic, 'Hybrid' => $hybrid],
+            [
+                'Full-text' => $fullText,
+                'Trigram' => $trigram,
+                'Semantic' => $semantic,
+                'Hybrid' => $hybrid,
+                ...($hydeDocument === null ? [] : ['HyDE' => $hyde, 'HyDE fused' => $hybridWithHyde]),
+            ],
         ));
 
         return self::SUCCESS;
@@ -84,6 +96,30 @@ class SearchExplain extends Command
                 ->map(fn (array $row, int $rank) => [$rank + 1, ...$row])
                 ->all(),
         );
+    }
+
+    /**
+     * @param  Collection<int, float>  $hyde
+     * @param  Collection<int, float>  $hybridWithHyde
+     * @param  Collection<int, Title>  $titles
+     * @param  Collection<int, int>  $expectedIds
+     */
+    private function renderHyde(?string $hydeDocument, Collection $hyde, Collection $hybridWithHyde, Collection $titles, Collection $expectedIds): void
+    {
+        $this->newLine();
+
+        if ($hydeDocument === null) {
+            $this->info('HyDE');
+            $this->line('  skipped: query has fewer than '.HybridSearchService::HYDE_MIN_WORDS.' words, so hydeIds falls back to hybrid');
+
+            return;
+        }
+
+        $this->info('Hypothetical document (LLM output, embedded as-is)');
+        $this->line(collect(explode("\n", $hydeDocument))->map(fn (string $line) => "    {$line}")->join("\n"));
+
+        $this->renderRanking('HyDE (cosine distance to the hypothetical document, lower is better)', $hyde, $titles, $expectedIds);
+        $this->renderRanking('Hybrid + HyDE (RRF score over all four lists, higher is better)', $hybridWithHyde, $titles, $expectedIds);
     }
 
     /**

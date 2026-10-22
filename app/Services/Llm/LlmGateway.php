@@ -62,11 +62,12 @@ class LlmGateway
     private function attempt(string $provider, array $messages): LlmAttempt
     {
         $config = config("services.{$provider}");
-        $parameters = ['max_completion_tokens' => self::MAX_COMPLETION_TOKENS];
+        $parameters = ['max_completion_tokens' => self::MAX_COMPLETION_TOKENS, ...($config['llm_parameters'] ?? [])];
         $startedAt = CarbonImmutable::now();
 
         try {
-            $response = Http::withToken($config['key'])
+            $response = Http::keepAlive()
+                ->withToken($config['key'])
                 ->timeout(config('services.llm.timeout'))
                 ->post("{$config['base_url']}/chat/completions", [
                     'model' => $config['llm_model'],
@@ -89,6 +90,15 @@ class LlmGateway
             );
         }
 
+        $output = trim((string) $response->json('choices.0.message.content'));
+
+        if ($output === '') {
+            Log::warning('LLM provider returned an empty completion, trying the next one', [
+                'provider' => $provider,
+                'finish_reason' => $response->json('choices.0.finish_reason'),
+            ]);
+        }
+
         return new LlmAttempt(
             provider: $provider,
             model: $response->json('model', $config['llm_model']),
@@ -96,12 +106,13 @@ class LlmGateway
             parameters: $parameters,
             startedAt: $startedAt,
             finishedAt: CarbonImmutable::now(),
-            output: trim((string) $response->json('choices.0.message.content')),
+            output: $output === '' ? null : $output,
             usage: array_filter([
                 'input' => $response->json('usage.prompt_tokens'),
                 'output' => $response->json('usage.completion_tokens'),
                 'total' => $response->json('usage.total_tokens'),
             ], fn (?int $tokens) => $tokens !== null),
+            error: $output === '' ? 'Empty completion (finish_reason: '.$response->json('choices.0.finish_reason', 'unknown').').' : null,
         );
     }
 

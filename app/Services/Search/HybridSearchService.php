@@ -18,7 +18,7 @@ class HybridSearchService
 {
     private const RRF_K = 60;
 
-    private const HYDE_MIN_WORDS = 4;
+    public const HYDE_MIN_WORDS = 3;
 
     public function __construct(
         private readonly OpenAIEmbeddingService $embeddingService,
@@ -38,7 +38,7 @@ class HybridSearchService
      */
     public function hydeIds(string $text, int $limit = 50): Collection
     {
-        if ($this->wordCount($text) < self::HYDE_MIN_WORDS) {
+        if (! $this->qualifiesForHyde($text)) {
             return $this->hybridIds($text, $limit);
         }
 
@@ -58,7 +58,20 @@ class HybridSearchService
      */
     public function hypotheticalDocumentIds(string $text, int $limit = 50): Collection
     {
-        return $this->nearestDistances($this->cachedVector($this->documentGenerator->generate($text)), $limit)->keys();
+        return $this->hypotheticalDocumentDistances($this->documentGenerator->generate($text), $limit)->keys();
+    }
+
+    /**
+     * @return Collection<int, float>
+     */
+    public function hypotheticalDocumentDistances(string $document, int $limit = 50): Collection
+    {
+        return $this->nearestDistances($this->cachedVector($document), $limit);
+    }
+
+    public function qualifiesForHyde(string $text): bool
+    {
+        return $this->wordCount($text) >= self::HYDE_MIN_WORDS;
     }
 
     private function wordCount(string $text): int

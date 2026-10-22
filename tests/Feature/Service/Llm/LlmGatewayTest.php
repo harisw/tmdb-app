@@ -7,6 +7,7 @@ use App\Services\Llm\LlmGateway;
 use App\Services\Llm\LlmUnavailableException;
 use GuzzleHttp\Promise\PromiseInterface;
 use Illuminate\Http\Client\Request;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Http;
 use InvalidArgumentException;
@@ -25,6 +26,7 @@ class LlmGatewayTest extends TestCase
             'services.openai.llm_model' => 'gpt-test',
             'services.groq.key' => 'groq-key',
             'services.groq.llm_model' => 'llama-test',
+            'services.groq.llm_parameters' => ['reasoning_effort' => 'low'],
         ]);
     }
 
@@ -84,6 +86,44 @@ class LlmGatewayTest extends TestCase
 
         $this->assertSame('From Groq.', $this->gateway()->generate('hyde', 'Be helpful.', 'lonely robot'));
         $this->assertSame(0, $this->requestsTo('api.openai.com'));
+    }
+
+    public function test_sends_each_provider_its_own_request_parameters(): void
+    {
+        Http::fake([
+            'api.openai.com/*' => Http::response('server error', 500),
+            'api.groq.com/*' => $this->completion('From Groq.'),
+        ]);
+
+        $this->gateway()->generate('hyde', 'Be helpful.', 'lonely robot');
+
+        Http::assertSent(fn (Request $request) => str_contains($request->url(), 'api.groq.com')
+            && $request['reasoning_effort'] === 'low'
+            && $request['max_completion_tokens'] === 400);
+        Http::assertSent(fn (Request $request) => str_contains($request->url(), 'api.openai.com')
+            && ! isset($request['reasoning_effort']));
+    }
+
+    public function test_fails_over_when_a_provider_returns_an_empty_completion(): void
+    {
+        Http::fake([
+            'api.openai.com/*' => Http::response([
+                'choices' => [['message' => ['role' => 'assistant', 'content' => ''], 'finish_reason' => 'length']],
+            ]),
+            'api.groq.com/*' => $this->completion('From Groq.'),
+        ]);
+
+        $this->assertSame('From Groq.', $this->gateway()->generate('hyde', 'Be helpful.', 'lonely robot'));
+        $this->assertFalse(Cache::has('llm-cooldown:openai'));
+    }
+
+    public function test_throws_when_every_provider_returns_an_empty_completion(): void
+    {
+        Http::fake(['*' => $this->completion('  ')]);
+
+        $this->expectException(LlmUnavailableException::class);
+
+        $this->gateway()->generate('hyde', 'Be helpful.', 'lonely robot');
     }
 
     public function test_skips_a_rate_limited_provider_until_its_retry_after_passes(): void
@@ -180,7 +220,7 @@ class LlmGatewayTest extends TestCase
                 && [$failed->provider, $failed->model, $failed->succeeded(), $failed->output] === ['openai', 'gpt-test', false, null]
                 && [$succeeded->provider, $succeeded->model, $succeeded->output] === ['groq', 'served-model', 'From Groq.']
                 && $succeeded->usage === ['input' => 12, 'output' => 5, 'total' => 17]
-                && $succeeded->parameters === ['max_completion_tokens' => 400];
+                && $succeeded->parameters === ['max_completion_tokens' => 400, 'reasoning_effort' => 'low'];
         });
     }
 

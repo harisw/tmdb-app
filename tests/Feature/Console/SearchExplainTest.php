@@ -9,6 +9,7 @@ use App\Models\TitleSearchEmbedding;
 use App\Services\Search\SearchDocumentBuilder;
 use Database\Factories\TitleSearchEmbeddingFactory;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\Client\Request;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Http;
 use Tests\TestCase;
@@ -21,14 +22,17 @@ class SearchExplainTest extends TestCase
     {
         parent::setUp();
 
-        Http::fake(['api.openai.com/*' => fn ($request) => Http::response([
-            'data' => collect($request['input'])->map(fn (string $input, int $i) => [
-                'index' => $i,
-                'embedding' => TitleSearchEmbeddingFactory::unitVector(
-                    $input === 'galaxy' || str_contains($input, 'Astronauts') ? 3 : 9
-                ),
-            ])->all(),
-        ])]);
+        config(['services.llm.providers' => ['openai']]);
+        Http::fake(['api.openai.com/*' => fn (Request $request) => str_ends_with($request->url(), '/chat/completions')
+            ? Http::response(['choices' => [['message' => ['content' => "Lost Orbit: Astronauts drift between stars\nGenres: Science Fiction"]]]])
+            : Http::response([
+                'data' => collect($request['input'])->map(fn (string $input, int $i) => [
+                    'index' => $i,
+                    'embedding' => TitleSearchEmbeddingFactory::unitVector(
+                        $input === 'galaxy' || str_contains($input, 'Astronauts') ? 3 : 9
+                    ),
+                ])->all(),
+            ])]);
     }
 
     private function createSearchableTitle(array $overrides = []): Title
@@ -58,9 +62,28 @@ class SearchExplainTest extends TestCase
             ->expectsOutputToContain('Cosine distance 0.0000, exact rank 1 among all embedded titles')
             ->expectsOutputToContain('Retrieved, but closer titles outrank it')
             ->expectsOutputToContain('Astronauts lost in space.')
+            ->doesntExpectOutputToContain('HyDE       rank')
             ->assertSuccessful();
 
         Http::assertSentCount(1);
+    }
+
+    public function test_ranks_titles_near_the_hypothetical_document_for_longer_queries(): void
+    {
+        $expected = TitleSearchEmbedding::factory()->pointingAt(3)->create();
+        TitleSearchEmbedding::factory()->pointingAt(9)->create();
+
+        $this->artisan('search:explain', ['query' => 'crew lost far from home', '--expect' => [$expected->title_id]])
+            ->expectsOutputToContain('Hypothetical document (LLM output, embedded as-is)')
+            ->expectsOutputToContain('    Lost Orbit: Astronauts drift between stars')
+            ->expectsOutputToContain('HyDE (cosine distance to the hypothetical document, lower is better)')
+            ->expectsOutputToContain('Hybrid + HyDE (RRF score over all four lists, higher is better)')
+            ->expectsOutputToContain('Semantic   rank 2')
+            ->expectsOutputToContain('HyDE       rank 1')
+            ->expectsOutputToContain('HyDE fused rank')
+            ->assertSuccessful();
+
+        Http::assertSent(fn (Request $request) => str_ends_with($request->url(), '/chat/completions'));
     }
 
     public function test_lines_option_embeds_each_document_line_and_marks_the_closest(): void
