@@ -22,7 +22,7 @@ const img = computed(() => usePage().props.base_url)
         />
         <component
             :is="headingTag"
-            class="text-2xl 2xl:text-4xl font-bold text-madder [text-shadow:0_1px_2px_rgb(0_0_0/0.4)]"
+            class="text-2xl 2xl:text-4xl font-bold text-white [text-shadow:0_1px_2px_rgb(0_0_0/0.4)]"
         >
             {{ title }}
         </component>

@@ -5,13 +5,12 @@ import MobileSidebar from '../Components/MobileSidebar.vue'
 import Navbar from '../Components/Navbar.vue'
 import Toast from '../Components/Toast.vue'
 import AuthModal from '../Components/Modals/AuthModal.vue'
-import ProfileModal from '../Components/Modals/ProfileModal.vue'
 import { useUiStore } from '../stores/ui.js'
 
 // Modals are hosted once here (not in Navbar) so any component can open them
-// through the ui store. Navbar just calls ui.openAuthModal() / openProfileModal().
+// through the ui store. Navbar just calls ui.openAuthModal().
 const ui = useUiStore()
-const { authModalOpen, authModalTab, profileModalOpen } = storeToRefs(ui)
+const { authModalOpen, authModalTab } = storeToRefs(ui)
 </script>
 
 <template>
@@ -31,7 +30,6 @@ const { authModalOpen, authModalTab, profileModalOpen } = storeToRefs(ui)
             <Toast />
 
             <AuthModal :show="authModalOpen" :initial-tab="authModalTab" @close="ui.closeAuthModal" />
-            <ProfileModal :show="profileModalOpen" @close="ui.closeProfileModal" />
         </div>
 
         <!-- Mobile-only sliding sidebar (Navbar's hamburger, `lg:hidden`, toggles

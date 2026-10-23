@@ -149,6 +149,35 @@ class SendLlmTraceToLangfuseTest extends TestCase
         ], $this->attributesOf($succeeded));
     }
 
+    public function test_exports_a_rejected_completion_with_its_output_and_finish_reason(): void
+    {
+        Http::fake(['cloud.langfuse.com/*' => Http::response()]);
+
+        (new SendLlmTraceToLangfuse)->handle($this->operation([
+            $this->attempt([
+                'output' => '{"title": "WALL',
+                'finishReason' => 'length',
+                'error' => 'Invalid JSON completion: Syntax error (finish_reason: length).',
+            ]),
+            $this->attempt(['provider' => 'groq', 'finishReason' => 'stop']),
+        ]));
+
+        [$root, $rejected, $succeeded] = $this->sentSpans();
+        $rejectedAttributes = $this->attributesOf($rejected);
+        $this->assertSame(['code' => 2, 'message' => 'Invalid JSON completion: Syntax error (finish_reason: length).'], $rejected['status']);
+        $this->assertSame('ERROR', $rejectedAttributes['langfuse.observation.level']);
+        $this->assertSame('"{\\"title\\": \\"WALL"', $rejectedAttributes['langfuse.observation.output']);
+        $this->assertSame('length', $rejectedAttributes['langfuse.observation.metadata.finish_reason']);
+        $this->assertSame('{"input":12,"output":5,"total":17}', $rejectedAttributes['langfuse.observation.usage_details']);
+        $this->assertSame('stop', $this->attributesOf($succeeded)['langfuse.observation.metadata.finish_reason']);
+
+        $rootAttributes = $this->attributesOf($root);
+        $this->assertSame(['code' => 1], $root['status']);
+        $this->assertSame('WARNING', $rootAttributes['langfuse.observation.level']);
+        $this->assertSame('Succeeded after 1 failed attempt(s).', $rootAttributes['langfuse.observation.status_message']);
+        $this->assertSame('"WALL-E: After 700 years..."', $rootAttributes['langfuse.observation.output']);
+    }
+
     public function test_marks_the_root_as_an_error_when_every_attempt_failed(): void
     {
         Http::fake(['cloud.langfuse.com/*' => Http::response()]);

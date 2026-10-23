@@ -2,7 +2,6 @@
 import { computed } from 'vue'
 import { usePage, Link } from '@inertiajs/vue3'
 import useMobileDrawer from '../Composables/useMobileDrawer.js'
-import { useUiStore } from '../stores/ui.js'
 import { menu } from '../variants/menu.js'
 
 // `dropTop` is for the mobile sidebar's bottom bar, where the trigger sits at
@@ -11,18 +10,12 @@ const props = defineProps({
     dropTop: { type: Boolean, default: false },
 })
 
-const ui = useUiStore()
 const { closeMobileDrawer } = useMobileDrawer()
 
 const page = usePage()
 const user = computed(() => page.props.auth.user)
 
 const { content, item } = menu({ width: 'sm', pad: 'sm', offset: props.dropTop ? 'up' : 'gap' })
-
-function openProfileModal() {
-    closeMobileDrawer()
-    ui.openProfileModal()
-}
 </script>
 
 <template>
@@ -37,7 +30,7 @@ function openProfileModal() {
         <ul tabindex="0" :class="content()">
             <li class="menu-title text-sm">@{{ user.username }}</li>
             <li>
-                <button :class="item({ class: 'w-full' })" @click="openProfileModal">Update Profile</button>
+                <Link href="/settings" :class="item({ class: 'w-full' })" @click="closeMobileDrawer">Settings</Link>
             </li>
             <li>
                 <Link

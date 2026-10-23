@@ -6,6 +6,7 @@ use App\Models\Country;
 use App\Models\Language;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Cache;
 use Io238\ISOCountries\Models\Country as ISOCountry;
 
 class CountrySeeder extends Seeder
@@ -34,6 +35,8 @@ class CountrySeeder extends Seeder
         foreach (array_chunk($result, 1000) as $chunkedData) {
             Country::upsert($chunkedData, ['iso2']);
         }
+
+        Cache::forget('countries');
     }
 
     private function getProperties(string $iso2): array

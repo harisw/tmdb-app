@@ -78,4 +78,7 @@ return [
             'base_url' => env('WATCHMODE_BASE_URL'),
         ],
     ],
+    'avatar' => [
+        'base_url' => env('AVATAR_BASE_URL', 'https://api.dicebear.com/10.x/'),
+    ],
 ];

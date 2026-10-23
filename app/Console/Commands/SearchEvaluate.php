@@ -27,17 +27,22 @@ class SearchEvaluate extends Command
             return self::FAILURE;
         }
 
-        $scores = $this->goldenSet()->map(function (array $case) use ($searchService, $mode) {
+        $goldenSet = $this->goldenSet();
+        $bar = $this->output->createProgressBar($goldenSet->count());
+
+        $scores = $goldenSet->map(function (array $case) use ($searchService, $mode, $bar) {
             $rankedIds = match ($mode) {
-                'fts' => $searchService->fullTextIds($case['query'], self::CUTOFF),
-                'semantic' => $searchService->semanticIds($case['query'], self::CUTOFF),
+                'fts' => $searchService->lexicalMatches($case['query'], self::CUTOFF)->fullText->keys(),
+                'semantic' => $searchService->semanticScores($case['query'], self::CUTOFF)->keys(),
                 'hybrid' => $searchService->hybridIds($case['query'], self::CUTOFF),
                 'hyde' => $searchService->hydeIds($case['query'], self::CUTOFF),
             };
+            $bar->advance();
 
             return [...$case, ...$this->score($rankedIds->values(), collect($case['relevant']))];
         });
-
+        $bar->finish();
+        $this->info("Mode: {$mode}, fusion: {$searchService->fusionMethod()->value}");
         $this->table(
             ['Category', 'Queries', 'Recall@10', 'MRR'],
             $scores->groupBy('category')

@@ -8,7 +8,7 @@ readonly class LlmAttempt
 {
     /**
      * @param  array<int, array{role: string, content: string}>  $messages
-     * @param  array<string, int|float|string>  $parameters
+     * @param  array<string, mixed>  $parameters
      * @param  array{input?: int, output?: int, total?: int}  $usage
      */
     public function __construct(
@@ -20,6 +20,7 @@ readonly class LlmAttempt
         public CarbonImmutable $finishedAt,
         public ?string $output = null,
         public array $usage = [],
+        public ?string $finishReason = null,
         public ?string $error = null,
     ) {}
 

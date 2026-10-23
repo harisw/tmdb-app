@@ -2,7 +2,9 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Scopes\AvoidedKeywordScope;
 use App\Models\Title;
+use App\Models\TitleSimilarity;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -32,7 +34,9 @@ class TitleGraphController extends Controller
     {
         $request->validate(['title_slug' => ['required', 'string']]);
 
-        $title = Title::where('slug', $request->query('title_slug'))->firstOrFail();
+        $title = Title::withoutGlobalScope(AvoidedKeywordScope::class)
+            ->where('slug', $request->query('title_slug'))
+            ->firstOrFail();
 
         $neighbours = $title->similarTitles()
             ->select(['titles.id', 'slug', 'name', 'poster_path', 'release_date', 'rating', 'type'])
@@ -41,42 +45,14 @@ class TitleGraphController extends Controller
             ->get();
 
         return response()->json([
-            'node' => $this->nodeData($title),
-            'nodes' => $neighbours->map(fn (Title $t) => $this->nodeData($t))->values(),
+            'node' => $title->toGraphNode(),
+            'nodes' => $neighbours->map(fn (Title $t) => $t->toGraphNode())->values(),
             'links' => $neighbours->map(fn (Title $t) => [
                 'source' => $title->id,
                 'target' => $t->id,
                 'score' => round($t->pivot->score, 3),
-                'reasons' => $this->decodeReasons($t->pivot->reasons),
+                'reasons' => TitleSimilarity::decodeReasons($t->pivot->reasons),
             ])->values(),
         ]);
-    }
-
-    private function nodeData(Title $title): array
-    {
-        return [
-            'id' => $title->id,
-            'slug' => $title->slug,
-            'name' => $title->name,
-            'poster_path' => $title->poster_path,
-            'year' => $title->release_date?->format('Y'),
-            'rating' => $title->rating,
-            'type' => $title->type->value,
-        ];
-    }
-
-    /**
-     * reasons is stored as a json_encode'd string in the pivot, so decode it
-     * back to an array for the client.
-     *
-     * @return array<int, mixed>
-     */
-    private function decodeReasons(mixed $reasons): array
-    {
-        if (is_array($reasons)) {
-            return $reasons;
-        }
-
-        return json_decode($reasons ?? '[]', true) ?: [];
     }
 }

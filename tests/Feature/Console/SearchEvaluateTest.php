@@ -62,11 +62,11 @@ class SearchEvaluateTest extends TestCase
             ->assertSuccessful();
     }
 
-    public function test_scores_the_hyde_mode(): void
+    public function test_scores_the_hyde_mode_with_the_configured_fusion_method(): void
     {
-        config(['services.llm.providers' => ['openai']]);
+        config(['services.llm.providers' => ['openai'], 'search.fusion' => 'z-score']);
         Http::fake(fn (Request $request) => str_ends_with($request->url(), '/chat/completions')
-            ? Http::response(['choices' => [['message' => ['content' => 'The Martian: Bring him home.']]]])
+            ? Http::response(['choices' => [['message' => ['content' => json_encode(['title' => 'The Martian', 'document' => 'The Martian'])]]]])
             : Http::response(['data' => [['index' => 0, 'embedding' => TitleSearchEmbeddingFactory::unitVector(3)]]]));
         $martian = TitleSearchEmbedding::factory()->pointingAt(3)->create();
         $this->writeGoldenSet([
@@ -74,6 +74,7 @@ class SearchEvaluateTest extends TestCase
         ]);
 
         $this->artisan('search:evaluate', ['mode' => 'hyde', '--golden-set' => $this->goldenSetPath])
+            ->expectsOutputToContain('Mode: hyde, fusion: z-score')
             ->expectsTable(['Category', 'Queries', 'Recall@10', 'MRR'], [
                 ['descriptive', 1, '1.000', '1.000'],
                 ['overall', 1, '1.000', '1.000'],

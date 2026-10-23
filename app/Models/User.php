@@ -3,6 +3,7 @@
 namespace App\Models;
 
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
+use App\Models\Scopes\AvoidedKeywordScope;
 use Database\Factories\UserFactory;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Casts\Attribute;
@@ -64,6 +65,8 @@ class User extends Authenticatable implements MustVerifyEmail
     /** @use HasFactory<UserFactory> */
     use HasFactory, Notifiable;
 
+    public const MAX_AVOIDED_KEYWORDS = 50;
+
     /**
      * The attributes that are mass assignable.
      *
@@ -123,7 +126,7 @@ class User extends Authenticatable implements MustVerifyEmail
 
         // If using the HTTP API:
         return Attribute::make(
-            get: fn (mixed $value, array $attributes) => "https://api.dicebear.com/9.x/{$avatar['style']}/svg?seed=".urlencode($avatar['seed'])
+            get: fn () => config('services.avatar.base_url')."{$avatar['style']}/svg?seed=".urlencode($avatar['seed'])
         );
     }
 
@@ -131,7 +134,21 @@ class User extends Authenticatable implements MustVerifyEmail
     {
         return $this->belongsToMany(Title::class, 'user_title_states')
             ->using(UserTitleState::class)
-            ->withPivot('id', 'liked', 'watched', 'to_watch', 'rate');
+            ->withPivot('id', 'liked', 'watched', 'to_watch', 'rate')
+            ->withoutGlobalScope(AvoidedKeywordScope::class);
+    }
+
+    public function avoidedKeywords(): BelongsToMany
+    {
+        return $this->belongsToMany(Keyword::class, 'user_avoided_keywords')->withTimestamps();
+    }
+
+    /**
+     * @return list<int>
+     */
+    public function avoidedKeywordIds(): array
+    {
+        return once(fn () => $this->avoidedKeywords()->pluck('keywords.id')->all());
     }
 
     public function likedTitles(): BelongsToMany

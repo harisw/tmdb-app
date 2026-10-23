@@ -2,7 +2,7 @@
 
 namespace App\Services\Search;
 
-use App\Models\SearchableTitle;
+use App\Domain\Enums\FusionMethod;
 use App\Models\Title;
 use App\Models\TitleSearchEmbedding;
 use App\Services\KnowledgeGraph\OpenAIEmbeddingService;
@@ -16,9 +16,11 @@ use RuntimeException;
 
 class HybridSearchService
 {
-    private const RRF_K = 60;
-
     public const HYDE_MIN_WORDS = 3;
+
+    private const TRIGRAM_THRESHOLD = 0.4;
+
+    private const CONFIDENT_WORD_SIMILARITY = 0.75;
 
     public function __construct(
         private readonly OpenAIEmbeddingService $embeddingService,
@@ -30,7 +32,7 @@ class HybridSearchService
      */
     public function hybridIds(string $text, int $limit = 50): Collection
     {
-        return $this->fuse(...$this->hybridRankedLists($text, $limit))->take($limit)->values();
+        return $this->rankHybrid($text, $this->lexicalMatches($text, $limit), $limit);
     }
 
     /**
@@ -38,117 +40,173 @@ class HybridSearchService
      */
     public function hydeIds(string $text, int $limit = 50): Collection
     {
-        if (! $this->qualifiesForHyde($text)) {
-            return $this->hybridIds($text, $limit);
-        }
+        $lexical = $this->lexicalMatches($text, $limit);
 
-        $rankedLists = $this->hybridRankedLists($text, $limit);
+        if ($lexical->confident || ! $this->qualifiesForHyde($text)) {
+            return $this->rankHybrid($text, $lexical, $limit);
+        }
 
         try {
-            $rankedLists[] = $this->hypotheticalDocumentIds($text, $limit);
+            return $this->rank([...$lexical->lists(), ...$this->hypothesisLists($text, $limit)], $limit);
         } catch (ConnectionException|RuntimeException $e) {
             Log::warning('HyDE unavailable, falling back to hybrid search', ['error' => $e->getMessage()]);
+
+            return $this->rankHybrid($text, $lexical, $limit);
         }
-
-        return $this->fuse(...$rankedLists)->take($limit)->values();
-    }
-
-    /**
-     * @return Collection<int, int>
-     */
-    public function hypotheticalDocumentIds(string $text, int $limit = 50): Collection
-    {
-        return $this->hypotheticalDocumentDistances($this->documentGenerator->generate($text), $limit)->keys();
-    }
-
-    /**
-     * @return Collection<int, float>
-     */
-    public function hypotheticalDocumentDistances(string $document, int $limit = 50): Collection
-    {
-        return $this->nearestDistances($this->cachedVector($document), $limit);
     }
 
     public function qualifiesForHyde(string $text): bool
     {
-        return $this->wordCount($text) >= self::HYDE_MIN_WORDS;
-    }
-
-    private function wordCount(string $text): int
-    {
         $boundaries = IntlBreakIterator::createWordInstance();
         $boundaries->setText($text);
-        $count = 0;
+        $words = 0;
 
         while ($boundaries->next() !== IntlBreakIterator::DONE) {
-            $count += $boundaries->getRuleStatus() >= IntlBreakIterator::WORD_NONE_LIMIT ? 1 : 0;
+            $words += $boundaries->getRuleStatus() >= IntlBreakIterator::WORD_NONE_LIMIT ? 1 : 0;
         }
 
-        return $count;
+        return $words >= self::HYDE_MIN_WORDS;
     }
 
-    /**
-     * @return array<int, Collection<int, int>>
-     */
-    private function hybridRankedLists(string $text, int $limit): array
+    public function lexicalMatches(string $text, int $limit = 50): LexicalMatches
     {
-        $lexicalLists = [$this->fullTextIds($text, $limit), $this->trigramIds($text, $limit)];
+        $fullText = $this->fullTextMatches($text, $limit);
+        $trigram = $this->trigramMatches($text, $limit);
 
-        try {
-            return [...$lexicalLists, $this->semanticIds($text, $limit)];
-        } catch (ConnectionException|RuntimeException $e) {
-            Log::warning('Semantic search unavailable, falling back to lexical search', ['error' => $e->getMessage()]);
-
-            return $lexicalLists;
-        }
-    }
-
-    /**
-     * @return Collection<int, int>
-     */
-    public function fullTextIds(string $text, int $limit = 50): Collection
-    {
-        return $this->fullTextScores($text, $limit)->keys();
+        return new LexicalMatches(
+            fullText: $fullText->mapWithKeys(fn (object $match) => [$match->id => (float) $match->score]),
+            trigram: $trigram->mapWithKeys(fn (object $match) => [$match->id => (float) $match->score]),
+            confident: (bool) $fullText->first()?->has_name_match
+                || $trigram->first()?->best_similarity >= self::CONFIDENT_WORD_SIMILARITY,
+        );
     }
 
     /**
      * @return Collection<int, float>
      */
-    public function fullTextScores(string $text, int $limit = 50): Collection
+    public function semanticScores(string $text, int $limit = 50): Collection
     {
-        return SearchableTitle::query()
-            ->join('titles', 'titles.id', '=', 'searchable_titles.title_id')
+        return $this->nearestSimilarities($this->queryVector($text), $limit);
+    }
+
+    /**
+     * @return Collection<int, float>
+     */
+    public function hypothesisScores(string $document, int $limit = 50): Collection
+    {
+        return $this->nearestSimilarities($this->cachedVector($document), $limit);
+    }
+
+    /**
+     * @param  array<int, Collection<int, float>>  $scoredLists
+     * @return Collection<int, float>
+     */
+    public function fusedScores(array $scoredLists): Collection
+    {
+        $fusionMethod = $this->fusionMethod();
+
+        return collect($scoredLists)
+            ->flatMap(fn (Collection $scores) => $fusionMethod->normalize($scores)
+                ->map(fn (float $score, int $titleId) => ['id' => $titleId, 'score' => $score])
+                ->values())
+            ->groupBy('id')
+            ->map(fn (Collection $hits) => $hits->sum('score'))
+            ->sortDesc();
+    }
+
+    public function fusionMethod(): FusionMethod
+    {
+        return FusionMethod::from(config('search.fusion'));
+    }
+
+    public function queryVector(string $text): string
+    {
+        return $this->cachedVector(mb_strtolower(trim($text)));
+    }
+
+    /**
+     * @param  array<int, Collection<int, float>>  $scoredLists
+     * @return Collection<int, int>
+     */
+    private function rank(array $scoredLists, int $limit): Collection
+    {
+        return $this->fusedScores($scoredLists)->keys()->take($limit)->values();
+    }
+
+    /**
+     * @return Collection<int, int>
+     */
+    private function rankHybrid(string $text, LexicalMatches $lexical, int $limit): Collection
+    {
+        try {
+            return $this->rank([...$lexical->lists(), $this->semanticScores($text, $limit)], $limit);
+        } catch (ConnectionException|RuntimeException $e) {
+            Log::warning('Semantic search unavailable, falling back to lexical search', ['error' => $e->getMessage()]);
+
+            return $this->rank($lexical->lists(), $limit);
+        }
+    }
+
+    /**
+     * @return array<int, Collection<int, float>>
+     */
+    private function hypothesisLists(string $text, int $limit): array
+    {
+        $hypothesis = $this->documentGenerator->generate($text);
+
+        return [
+            $this->hypothesisScores($hypothesis->document, $limit),
+            ...($hypothesis->title === null ? [] : $this->lexicalMatches($hypothesis->title, $limit)->lists()),
+        ];
+    }
+
+    /**
+     * @return Collection<int, object{id: int, score: float, has_name_match: bool}>
+     */
+    private function fullTextMatches(string $text, int $limit): Collection
+    {
+        return Title::query()
+            ->join('searchable_titles', 'searchable_titles.title_id', '=', 'titles.id')
             ->selectRaw(
-                "searchable_titles.title_id, ts_rank(searchable_titles.search_vector, plainto_tsquery('english', ?)) * ln(titles.popularity + exp(1)) AS score",
-                [$text],
+                "titles.id,
+                ts_rank(searchable_titles.search_vector, plainto_tsquery('english', ?)) * ln(titles.popularity + exp(1)) AS score,
+                bool_or(ts_filter(searchable_titles.search_vector, '{a}') @@ plainto_tsquery('english', ?)) OVER () AS has_name_match",
+                [$text, $text],
             )
             ->whereRaw("searchable_titles.search_vector @@ plainto_tsquery('english', ?)", [$text])
             ->orderByDesc('score')
             ->limit($limit)
-            ->pluck('score', 'title_id')
-            ->map(fn (mixed $score) => (float) $score);
+            ->toBase()
+            ->get();
     }
 
     /**
-     * @return Collection<int, int>
+     * @return Collection<int, object{id: int, score: float, best_similarity: float}>
      */
-    public function semanticIds(string $text, int $limit = 50): Collection
+    private function trigramMatches(string $text, int $limit): Collection
     {
-        return $this->semanticDistances($text, $limit)->keys();
+        return DB::transaction(function () use ($text, $limit) {
+            DB::statement('SET LOCAL pg_trgm.word_similarity_threshold = '.self::TRIGRAM_THRESHOLD);
+
+            return Title::query()
+                ->selectRaw(
+                    'titles.id,
+                    word_similarity(?, titles.name) * ln(titles.popularity + exp(1)) AS score,
+                    max(word_similarity(?, titles.name)) OVER () AS best_similarity',
+                    [$text, $text],
+                )
+                ->whereRaw('? <% titles.name', [$text])
+                ->orderByDesc('score')
+                ->limit($limit)
+                ->toBase()
+                ->get();
+        });
     }
 
     /**
      * @return Collection<int, float>
      */
-    public function semanticDistances(string $text, int $limit = 50): Collection
-    {
-        return $this->nearestDistances($this->queryVector($text), $limit);
-    }
-
-    /**
-     * @return Collection<int, float>
-     */
-    private function nearestDistances(string $vector, int $limit): Collection
+    private function nearestSimilarities(string $vector, int $limit): Collection
     {
         return DB::transaction(function () use ($vector, $limit) {
             DB::statement("SET LOCAL hnsw.iterative_scan = 'strict_order'");
@@ -159,64 +217,8 @@ class HybridSearchService
                 ->orderBy('distance')
                 ->limit($limit)
                 ->pluck('distance', 'id')
-                ->map(fn (mixed $distance) => (float) $distance);
+                ->map(fn (mixed $distance) => 1 - (float) $distance);
         });
-    }
-
-    /**
-     * @return Collection<int, int>
-     */
-    public function trigramIds(string $text, int $limit = 50): Collection
-    {
-        return $this->trigramScores($text, $limit)->keys();
-    }
-
-    /**
-     * @return Collection<int, float>
-     */
-    public function trigramScores(string $text, int $limit = 50): Collection
-    {
-        return DB::transaction(function () use ($text, $limit) {
-            DB::statement('SET LOCAL pg_trgm.word_similarity_threshold = 0.4');
-
-            return Title::query()
-                ->selectRaw('titles.id, word_similarity(?, titles.name) * ln(titles.popularity + exp(1)) AS score', [$text])
-                ->whereRaw('? <% titles.name', [$text])
-                ->orderByDesc('score')
-                ->limit($limit)
-                ->pluck('score', 'id')
-                ->map(fn (mixed $score) => (float) $score);
-        });
-    }
-
-    /**
-     * @param  Collection<int, int>  ...$rankedLists
-     * @return Collection<int, int>
-     */
-    public function fuse(Collection ...$rankedLists): Collection
-    {
-        return $this->fusedScores(...$rankedLists)->keys();
-    }
-
-    /**
-     * @param  Collection<int, int>  ...$rankedLists
-     * @return Collection<int, float>
-     */
-    public function fusedScores(Collection ...$rankedLists): Collection
-    {
-        return collect($rankedLists)
-            ->flatMap(fn (Collection $ids) => $ids->values()->map(fn (int $id, int $rank) => [
-                'id' => $id,
-                'score' => 1 / (self::RRF_K + $rank + 1),
-            ]))
-            ->groupBy('id')
-            ->map(fn (Collection $hits) => $hits->sum('score'))
-            ->sortDesc();
-    }
-
-    public function queryVector(string $text): string
-    {
-        return $this->cachedVector(mb_strtolower(trim($text)));
     }
 
     private function cachedVector(string $text): string

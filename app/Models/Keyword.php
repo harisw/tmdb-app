@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Database\Factories\KeywordFactory;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -43,6 +44,16 @@ class Keyword extends Model
     protected $guarded = [];
 
     protected $appends = ['url'];
+
+    public function scopeMatching(Builder $query, string $term): Builder
+    {
+        $escaped = addcslashes($term, '%_\\');
+
+        return $query->where('count', '>', 0)
+            ->whereLike('name', "%{$escaped}%")
+            ->orderByRaw('name ilike ? desc', ["{$escaped}%"])
+            ->orderByDesc('count');
+    }
 
     public function titles(): BelongsToMany
     {

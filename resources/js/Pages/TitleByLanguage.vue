@@ -2,7 +2,7 @@
     <Head title="Find by Languages" />
     <AppLayout>
         <div>
-            <h1 class="text-2xl 2xl:text-4xl font-bold text-madder [text-shadow:0_1px_2px_rgb(0_0_0/0.4)]">
+            <h1 class="text-2xl 2xl:text-4xl font-bold text-white [text-shadow:0_1px_2px_rgb(0_0_0/0.4)]">
                 Browse by Languages
             </h1>
             <p class="mt-1.5 text-sm 2xl:text-base text-white/60">

@@ -42,11 +42,12 @@ class SearchDocumentBuilderTest extends TestCase
 
         $lines = explode("\n", $this->build($title));
 
-        $this->assertSame('The Martian: Bring him home.', $lines[0]);
+        $this->assertSame('The Martian', $lines[0]);
         $this->assertSame('An astronaut is stranded on Mars.', $lines[1]);
         $this->assertSame('Genres: Science Fiction', $lines[2]);
         $this->assertStringContainsString('mars', $lines[3]);
         $this->assertSame(['Directed by Ridley Scott.', 'Written by Drew Goddard.', 'Starring Matt Damon.'], array_slice($lines, 4));
+        $this->assertStringNotContainsString('Bring him home.', implode("\n", $lines));
     }
 
     public function test_omits_empty_sections(): void

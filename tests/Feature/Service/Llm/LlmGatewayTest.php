@@ -24,6 +24,7 @@ class LlmGatewayTest extends TestCase
             'services.llm.cooldown' => 60,
             'services.openai.key' => 'openai-key',
             'services.openai.llm_model' => 'gpt-test',
+            'services.openai.llm_parameters' => [],
             'services.groq.key' => 'groq-key',
             'services.groq.llm_model' => 'llama-test',
             'services.groq.llm_parameters' => ['reasoning_effort' => 'low'],
@@ -104,6 +105,24 @@ class LlmGatewayTest extends TestCase
             && ! isset($request['reasoning_effort']));
     }
 
+    public function test_adds_per_call_parameters_on_top_of_the_provider_parameters(): void
+    {
+        Http::fake([
+            'api.openai.com/*' => Http::response('server error', 500),
+            'api.groq.com/*' => $this->completion('{}'),
+        ]);
+        $responseFormat = ['type' => 'json_object'];
+
+        $this->gateway()->generate('hyde', 'Be helpful.', 'lonely robot', ['response_format' => $responseFormat]);
+
+        Http::assertSent(fn (Request $request) => str_contains($request->url(), 'api.openai.com')
+            && $request['response_format'] === $responseFormat);
+        Http::assertSent(fn (Request $request) => str_contains($request->url(), 'api.groq.com')
+            && $request['response_format'] === $responseFormat
+            && $request['reasoning_effort'] === 'low'
+            && $request['max_completion_tokens'] === 400);
+    }
+
     public function test_fails_over_when_a_provider_returns_an_empty_completion(): void
     {
         Http::fake([
@@ -115,6 +134,49 @@ class LlmGatewayTest extends TestCase
 
         $this->assertSame('From Groq.', $this->gateway()->generate('hyde', 'Be helpful.', 'lonely robot'));
         $this->assertFalse(Cache::has('llm-cooldown:openai'));
+    }
+
+    public function test_fails_over_when_a_provider_returns_invalid_json_for_a_json_response_format(): void
+    {
+        Event::fake([LlmOperationCompleted::class]);
+        Http::fake([
+            'api.openai.com/*' => Http::response([
+                'choices' => [['message' => ['role' => 'assistant', 'content' => '{"title": "WALL'], 'finish_reason' => 'length']],
+                'usage' => ['prompt_tokens' => 12, 'completion_tokens' => 400, 'total_tokens' => 412],
+            ]),
+            'api.groq.com/*' => $this->completion('{"title": "WALL·E"}'),
+        ]);
+
+        $output = $this->gateway()->generate('hyde', 'Be helpful.', 'lonely robot', ['response_format' => ['type' => 'json_schema']]);
+
+        $this->assertSame('{"title": "WALL·E"}', $output);
+        $this->assertFalse(Cache::has('llm-cooldown:openai'));
+        Event::assertDispatched(LlmOperationCompleted::class, function (LlmOperationCompleted $event) {
+            [$rejected] = $event->attempts;
+
+            return ! $rejected->succeeded()
+                && $rejected->output === '{"title": "WALL'
+                && $rejected->finishReason === 'length'
+                && $rejected->usage['output'] === 400
+                && str_starts_with($rejected->error, 'Invalid JSON completion: ')
+                && str_ends_with($rejected->error, ' (finish_reason: length).');
+        });
+    }
+
+    public function test_accepts_plain_text_when_no_json_response_format_is_requested(): void
+    {
+        Http::fake(['api.openai.com/*' => $this->completion('{"title": "WALL')]);
+
+        $this->assertSame('{"title": "WALL', $this->gateway()->generate('hyde', 'Be helpful.', 'lonely robot'));
+    }
+
+    public function test_throws_when_every_provider_returns_invalid_json(): void
+    {
+        Http::fake(['*' => $this->completion('not json')]);
+
+        $this->expectException(LlmUnavailableException::class);
+
+        $this->gateway()->generate('hyde', 'Be helpful.', 'lonely robot', ['response_format' => ['type' => 'json_object']]);
     }
 
     public function test_throws_when_every_provider_returns_an_empty_completion(): void

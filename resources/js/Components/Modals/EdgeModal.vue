@@ -1,7 +1,8 @@
 <script setup>
 import { computed } from 'vue'
 import BaseModal from './BaseModal.vue'
-import { ArrowLeftRight, Brain, Film, Info, Tag, User, Users, Waypoints } from 'lucide-vue-next'
+import { ArrowLeftRight, Info, Waypoints } from 'lucide-vue-next'
+import { reasonMeta } from '../../constants/reasons.js'
 
 const props = defineProps({
     show: { type: Boolean, required: true },
@@ -10,34 +11,6 @@ const props = defineProps({
 })
 
 const emit = defineEmits(['close', 'view', 'expand'])
-
-const REASON_META = {
-    shared_keywords: {
-        label: 'Shared keywords',
-        icon: Tag,
-        iconBg: 'bg-violet-500/20 text-violet-400',
-        bar: 'bg-violet-500',
-    },
-    semantic_similarity: {
-        label: 'Similar overall feel',
-        icon: Brain,
-        iconBg: 'bg-emerald-500/20 text-emerald-400',
-        bar: 'bg-emerald-500',
-    },
-    shared_casts: { label: 'Shared cast', icon: User, iconBg: 'bg-amber-500/20 text-amber-400', bar: 'bg-amber-500' },
-    shared_genres: { label: 'Shared genres', icon: Film, iconBg: 'bg-blue-500/20 text-blue-400', bar: 'bg-blue-500' },
-}
-
-function reasonMeta(type) {
-    return (
-        REASON_META[type] ?? {
-            label: type.replace(/^shared_/, 'Shared ').replace(/_/g, ' '),
-            icon: Users,
-            iconBg: 'bg-gray-500/20 text-gray-400',
-            bar: 'bg-gray-500',
-        }
-    )
-}
 
 const reasons = computed(() => props.link?.reasons ?? [])
 const topWeight = computed(() => reasons.value[0]?.weight || 1)

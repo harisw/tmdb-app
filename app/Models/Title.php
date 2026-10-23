@@ -7,6 +7,7 @@ use App\Domain\Enums\TitleType;
 use App\Helpers\DateTimeHelper;
 use App\Infrastructure\Observers\TitleObserver;
 use App\Models\Scopes\AdultContentScope;
+use App\Models\Scopes\AvoidedKeywordScope;
 use App\Models\Scopes\TitleTypeScope;
 use Database\Factories\TitleFactory;
 use Illuminate\Database\Eloquent\Attributes\ObservedBy;
@@ -119,6 +120,16 @@ class Title extends Model
     {
         static::addGlobalScope(new TitleTypeScope);
         static::addGlobalScope(new AdultContentScope);
+        static::addGlobalScope(new AvoidedKeywordScope);
+    }
+
+    public function resolveRouteBinding($value, $field = null): ?Model
+    {
+        return $this->resolveRouteBindingQuery(
+            $this->newQuery()->withoutGlobalScope(AvoidedKeywordScope::class),
+            $value,
+            $field,
+        )->first();
     }
 
     public const IMG_SMALL_URL = 'w300';
@@ -213,6 +224,22 @@ class Title extends Model
     public function titleProviders(): HasMany
     {
         return $this->hasMany(TitleProvider::class);
+    }
+
+    /**
+     * @return array{id: int, slug: string, name: string, poster_path: string, year: ?string, rating: mixed, type: string}
+     */
+    public function toGraphNode(): array
+    {
+        return [
+            'id' => $this->id,
+            'slug' => $this->slug,
+            'name' => $this->name,
+            'poster_path' => $this->poster_path,
+            'year' => $this->release_date?->format('Y'),
+            'rating' => $this->rating,
+            'type' => $this->type->value,
+        ];
     }
 
     public function similarTitles(): BelongsToMany

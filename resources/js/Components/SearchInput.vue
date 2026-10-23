@@ -3,6 +3,7 @@
         <label :for="inputId" class="sr-only">{{ placeholder }}</label>
         <input
             :id="inputId"
+            ref="inputEl"
             v-model="query"
             type="search"
             :aria-label="placeholder"
@@ -11,6 +12,7 @@
             @input="onInput"
             @focus="onFocus"
             @keydown.escape="onEscape"
+            @keydown.enter="searchNow"
         />
 
         <SearchIcon class="pointer-events-none absolute left-3 top-1/2 size-5 -translate-y-1/2 text-white/40" />
@@ -46,7 +48,7 @@
                 <li v-if="hasMore" class="border-t border-white/10">
                     <Link
                         :href="`${baseUrl}/search-all?q=${encodeURIComponent(query)}`"
-                        class="block px-3 py-2 text-sm font-medium text-madder transition-colors hover:bg-white/5"
+                        class="block px-3 py-2 text-sm font-medium text-white underline decoration-madder decoration-2 underline-offset-4 transition-colors hover:bg-white/5"
                     >
                         See all results
                     </Link>
@@ -81,6 +83,7 @@ const props = defineProps({
     modelValue: { type: String, default: '' },
     paramName: { type: String, default: 'q' },
     debounce: { type: Number, default: 400 },
+    pauseDebounce: { type: Number, default: 1000 },
     placeholder: { type: String, default: 'Search...' },
     minLength: { type: Number, default: 0 },
     replace: { type: Boolean, default: true },
@@ -93,6 +96,7 @@ const emit = defineEmits(['update:modelValue', 'search', 'resultOnClick'])
 const baseUrl = useBaseUrl()
 const inputId = useId()
 
+const inputEl = ref(null)
 const query = ref(props.modelValue)
 const loading = ref(false)
 const error = ref(false)
@@ -100,6 +104,9 @@ const showResults = ref(false)
 const results = ref([])
 const hasMore = ref(false)
 let timer = null
+let lastSearched = null
+
+const CHARACTER_EDITS = ['insertText', 'deleteContentBackward', 'deleteContentForward']
 
 const showPanel = computed(() => showResults.value && query.value.length >= props.minLength)
 
@@ -143,14 +150,31 @@ async function doSearch(q) {
     emit('search', q)
 }
 
-function debounceSearch(q) {
+function debounceSearch(text, delay) {
+    const q = text.trim()
     clearTimeout(timer)
-    timer = setTimeout(() => doSearch(q), props.debounce)
+    if (q === lastSearched) return
+    timer = setTimeout(() => {
+        lastSearched = q
+        doSearch(q)
+    }, delay)
 }
 
-function onInput() {
+function searchNow() {
+    clearTimeout(timer)
+    lastSearched = query.value.trim()
+    doSearch(lastSearched)
+}
+
+function shouldSearch(text, inputType) {
+    const onFirstWord = !/\S\s+\S/.test(text)
+    const finishedWord = /\S\s$/.test(text)
+    return onFirstWord || finishedWord || !CHARACTER_EDITS.includes(inputType)
+}
+
+function onInput(event) {
     emit('update:modelValue', query.value)
-    debounceSearch(query.value)
+    debounceSearch(query.value, shouldSearch(query.value, event.inputType) ? props.debounce : props.pauseDebounce)
 }
 
 function onFocus() {
@@ -172,6 +196,7 @@ function onEscape() {
 
 function clear() {
     clearTimeout(timer)
+    lastSearched = null
     query.value = ''
     showResults.value = false
     results.value = []
@@ -180,6 +205,19 @@ function clear() {
     emit('update:modelValue', '')
     emit('search', '')
 }
+
+function focus() {
+    inputEl.value?.focus()
+}
+
+function searchFor(text) {
+    query.value = text
+    emit('update:modelValue', text)
+    focus()
+    searchNow()
+}
+
+defineExpose({ focus, searchFor })
 
 watch(
     () => props.modelValue,

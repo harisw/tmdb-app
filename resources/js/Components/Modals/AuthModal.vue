@@ -164,7 +164,7 @@ const resendVerification = () => {
                             Wrong address?
                             <button
                                 type="button"
-                                class="text-madder hover:underline cursor-pointer"
+                                class="text-white underline decoration-madder decoration-2 underline-offset-4 hover:decoration-glow-red cursor-pointer"
                                 @click="((registrationPending = false), (activeTab = 'register'))"
                             >
                                 Go back
@@ -265,7 +265,7 @@ const resendVerification = () => {
                             No account?
                             <button
                                 type="button"
-                                class="text-madder hover:underline cursor-pointer"
+                                class="text-white underline decoration-madder decoration-2 underline-offset-4 hover:decoration-glow-red cursor-pointer"
                                 @click="activeTab = 'register'"
                             >
                                 Register here
@@ -331,7 +331,7 @@ const resendVerification = () => {
                             Already have an account?
                             <button
                                 type="button"
-                                class="text-madder hover:underline cursor-pointer"
+                                class="text-white underline decoration-madder decoration-2 underline-offset-4 hover:decoration-glow-red cursor-pointer"
                                 @click="activeTab = 'login'"
                             >
                                 Sign in

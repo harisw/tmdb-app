@@ -8,7 +8,7 @@ use App\Models\Title;
 
 class SearchDocumentBuilder
 {
-    public const VERSION = 2;
+    public const VERSION = 3;
 
     private const KEYWORD_LIMIT = 10;
 
@@ -37,7 +37,7 @@ class SearchDocumentBuilder
         $cast = $this->peopleFor($title, CreditJob::CAST, self::CAST_LIMIT);
 
         return collect([
-            $title->tagline ? "{$title->name}: {$title->tagline}" : $title->name,
+            $title->name,
             $title->overview,
             $title->genres->isNotEmpty() ? 'Genres: '.$title->genres->pluck('name')->join(', ') : null,
             $title->keywords->isNotEmpty() ? 'Themes: '.$title->keywords->take(self::KEYWORD_LIMIT)->pluck('name')->join(', ') : null,

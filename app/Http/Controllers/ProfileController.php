@@ -3,12 +3,43 @@
 namespace App\Http\Controllers;
 
 use App\Models\Country;
+use App\Models\Keyword;
+use App\Models\User;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
+use Inertia\Inertia;
+use Inertia\Response;
 
 class ProfileController extends Controller
 {
+    private const KEYWORD_RESULTS_LIMIT = 12;
+
+    public function edit(Request $req): Response
+    {
+        $req->validate([
+            'tag_query' => ['nullable', 'string', 'max:50'],
+        ]);
+
+        return Inertia::render('Settings', [
+            'avoidedKeywords' => fn () => $req->user()
+                ->avoidedKeywords()
+                ->orderByPivot('created_at')
+                ->get(['keywords.id', 'keywords.slug', 'keywords.name', 'keywords.count']),
+            'maxAvoidedKeywords' => User::MAX_AVOIDED_KEYWORDS,
+            'keywordResults' => Inertia::optional(function () use ($req) {
+                $query = $req->string('tag_query')->trim()->toString();
+
+                return [
+                    'query' => $query,
+                    'items' => $query === ''
+                        ? []
+                        : Keyword::matching($query)->take(self::KEYWORD_RESULTS_LIMIT)->get(['id', 'slug', 'name', 'count']),
+                ];
+            }),
+        ]);
+    }
+
     public function update(Request $req): RedirectResponse
     {
         $usernameRules = [

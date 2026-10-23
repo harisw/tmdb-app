@@ -260,6 +260,13 @@ return [
                 'tries' => 1,
                 'timeout' => 60,
             ],
+            'embeddings' => [
+                'connection' => 'redis',
+                'queue' => ['embeddings'],
+                'balance' => 'simple',
+                'processes' => 2, // 2 concurrent = ~200 embeddings/min (within rate limits)
+                'tries' => 3,
+            ],
         ],
     ],
 

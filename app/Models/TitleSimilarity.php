@@ -58,6 +58,18 @@ class TitleSimilarity extends Pivot
         'reasons',
     ];
 
+    /**
+     * @return list<array{type: string, values: array<int, mixed>, weight: float}>
+     */
+    public static function decodeReasons(mixed $reasons): array
+    {
+        if (is_array($reasons)) {
+            return $reasons;
+        }
+
+        return json_decode($reasons ?? '[]', true) ?: [];
+    }
+
     public function title(): BelongsTo
     {
         return $this->belongsTo(Title::class);

@@ -43,6 +43,27 @@ class HomeControllerTest extends TestCase
         );
     }
 
+    public function test_index_defers_the_constellation_until_requested(): void
+    {
+        $seed = Title::factory()->create(['popularity' => 100]);
+        Title::factory(4)->create()->each(fn (Title $neighbour) => $seed->similarTitles()
+            ->attach($neighbour->id, ['score' => 0.9, 'reasons' => '[]']));
+
+        $this->get('/')->assertInertia(fn ($page) => $page
+            ->missing('constellation')
+            ->loadDeferredProps(fn ($reload) => $reload
+                ->where('constellation.seed', $seed->id)
+                ->has('constellation.nodes', 5)
+                ->has('constellation.links', 4)
+            )
+        );
+    }
+
+    public function test_index_rejects_a_seed_outside_the_pool(): void
+    {
+        $this->get('/?seed=99')->assertSessionHasErrors('seed');
+    }
+
     public function test_index_renders_home_with_paginated_titles(): void
     {
         Title::factory(35)->create();
@@ -344,9 +365,10 @@ class HomeControllerTest extends TestCase
         Feature::for('global')->activate(FeatureFlag::HydeSearch);
         config(['services.llm.providers' => ['openai']]);
         Http::fake(fn (Request $request) => str_ends_with($request->url(), '/chat/completions')
-            ? Http::response(['choices' => [['message' => ['content' => 'Galaxy Quest: Never give up.']]]])
+            ? Http::response(['choices' => [['message' => ['content' => json_encode(['title' => null, 'document' => 'Galaxy Quest'])]]]])
             : Http::response(['data' => [['index' => 0, 'embedding' => TitleSearchEmbeddingFactory::unitVector(3)]]]));
-        $textMatch = $this->createSearchableTitle(['name' => 'Galaxy Quest Space Crew']);
+        $textMatch = $this->createSearchableTitle(['name' => 'Galaxy Quest']);
+        $textMatch->keywords()->attach(Keyword::factory()->create(['name' => 'space crew']));
         $semanticMatch = TitleSearchEmbedding::factory()->pointingAt(3)->create();
         $this->refreshSearchIndex();
 
@@ -359,7 +381,7 @@ class HomeControllerTest extends TestCase
             );
 
         Http::assertSent(fn (Request $request) => str_ends_with($request->url(), '/chat/completions'));
-        Http::assertSent(fn (Request $request) => ($request->data()['input'] ?? null) === ['Galaxy Quest: Never give up.']);
+        Http::assertSent(fn (Request $request) => ($request->data()['input'] ?? null) === ['Galaxy Quest']);
     }
 
     public function test_search_all_is_rate_limited(): void

@@ -53,6 +53,8 @@ class SendLlmTraceToLangfuse implements ShouldQueue
     private function rootSpan(LlmOperationCompleted $event, string $traceId, string $spanId): array
     {
         $error = $event->succeeded() ? null : 'No LLM provider could complete the operation.';
+        $failedAttempts = collect($event->attempts)->reject(fn (LlmAttempt $attempt) => $attempt->succeeded())->count();
+        $warning = $error === null && $failedAttempts > 0 ? "Succeeded after {$failedAttempts} failed attempt(s)." : null;
 
         return [
             'traceId' => $traceId,
@@ -66,8 +68,12 @@ class SendLlmTraceToLangfuse implements ShouldQueue
                 'langfuse.observation.type' => 'span',
                 'langfuse.observation.input' => json_encode($event->input),
                 'langfuse.observation.output' => $event->succeeded() ? json_encode($event->output()) : null,
-                'langfuse.observation.level' => $error ? 'ERROR' : 'DEFAULT',
-                'langfuse.observation.status_message' => $error,
+                'langfuse.observation.level' => match (true) {
+                    $error !== null => 'ERROR',
+                    $warning !== null => 'WARNING',
+                    default => 'DEFAULT',
+                },
+                'langfuse.observation.status_message' => $error ?? $warning,
                 'langfuse.observation.metadata.attempts' => (string) count($event->attempts),
             ]),
             'status' => $this->status($error),
@@ -93,11 +99,12 @@ class SendLlmTraceToLangfuse implements ShouldQueue
                 'langfuse.observation.model.name' => $attempt->model,
                 'langfuse.observation.model.parameters' => json_encode($attempt->parameters),
                 'langfuse.observation.input' => json_encode($attempt->messages),
-                'langfuse.observation.output' => $attempt->succeeded() ? json_encode($attempt->output) : null,
+                'langfuse.observation.output' => $attempt->output === null ? null : json_encode($attempt->output),
                 'langfuse.observation.usage_details' => $attempt->usage ? json_encode($attempt->usage) : null,
                 'langfuse.observation.level' => $attempt->succeeded() ? 'DEFAULT' : 'ERROR',
                 'langfuse.observation.status_message' => $attempt->error,
                 'langfuse.observation.metadata.provider' => $attempt->provider,
+                'langfuse.observation.metadata.finish_reason' => $attempt->finishReason,
             ]),
             'status' => $this->status($attempt->error),
         ];

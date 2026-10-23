@@ -4,6 +4,7 @@
 use App\Http\Controllers\Auth\GoogleAuthController;
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\Auth\RegisterController;
+use App\Http\Controllers\AvoidedKeywordController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\UserController;
 
@@ -29,6 +30,11 @@ Route::get('/auth/google/callback', [GoogleAuthController::class, 'callback']);
 Route::post('/logout', [LoginController::class, 'destroy'])->name('logout');
 
 Route::middleware('auth')->group(function () {
+    Route::get('/settings', [ProfileController::class, 'edit'])->name('settings');
+    Route::post('/settings/avoided-tags/{keyword}', [AvoidedKeywordController::class, 'store'])
+        ->name('avoided-tags.store');
+    Route::delete('/settings/avoided-tags/{keyword}', [AvoidedKeywordController::class, 'destroy'])
+        ->name('avoided-tags.destroy');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::patch('/profile/country', [ProfileController::class, 'updateCountry'])
         ->name('profile.update-country');

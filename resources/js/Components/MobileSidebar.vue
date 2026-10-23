@@ -26,7 +26,7 @@ function openAuthModal(tab) {
 <template>
     <div class="flex h-full w-72 max-w-[85vw] flex-col bg-black text-white">
         <div class="flex items-center justify-between p-4 border-b border-gray-800">
-            <span class="text-lg font-semibold text-madder">Menu</span>
+            <span class="text-lg font-semibold text-white">Menu</span>
             <label
                 for="mobile-nav-drawer"
                 aria-label="Close menu"

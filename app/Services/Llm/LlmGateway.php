@@ -17,7 +17,10 @@ class LlmGateway
 {
     private const MAX_COMPLETION_TOKENS = 400;
 
-    public function generate(string $operation, string $instructions, string $input): string
+    /**
+     * @param  array<string, mixed>  $parameters
+     */
+    public function generate(string $operation, string $instructions, string $input, array $parameters = []): string
     {
         $startedAt = CarbonImmutable::now();
         $messages = [
@@ -27,7 +30,7 @@ class LlmGateway
         $attempts = [];
 
         foreach ($this->availableProviders() as $provider) {
-            $attempts[] = $attempt = $this->attempt($provider, $messages);
+            $attempts[] = $attempt = $this->attempt($provider, $messages, $parameters);
 
             if ($attempt->succeeded()) {
                 break;
@@ -58,11 +61,16 @@ class LlmGateway
 
     /**
      * @param  array<int, array{role: string, content: string}>  $messages
+     * @param  array<string, mixed>  $operationParameters
      */
-    private function attempt(string $provider, array $messages): LlmAttempt
+    private function attempt(string $provider, array $messages, array $operationParameters): LlmAttempt
     {
         $config = config("services.{$provider}");
-        $parameters = ['max_completion_tokens' => self::MAX_COMPLETION_TOKENS, ...($config['llm_parameters'] ?? [])];
+        $parameters = [
+            'max_completion_tokens' => self::MAX_COMPLETION_TOKENS,
+            ...($config['llm_parameters'] ?? []),
+            ...$operationParameters,
+        ];
         $startedAt = CarbonImmutable::now();
 
         try {
@@ -91,11 +99,14 @@ class LlmGateway
         }
 
         $output = trim((string) $response->json('choices.0.message.content'));
+        $finishReason = $response->json('choices.0.finish_reason');
+        $rejection = $this->rejectionOf($output, $parameters);
 
-        if ($output === '') {
-            Log::warning('LLM provider returned an empty completion, trying the next one', [
+        if ($rejection !== null) {
+            Log::warning('LLM provider returned an unusable completion, trying the next one', [
                 'provider' => $provider,
-                'finish_reason' => $response->json('choices.0.finish_reason'),
+                'rejection' => $rejection,
+                'finish_reason' => $finishReason,
             ]);
         }
 
@@ -112,8 +123,29 @@ class LlmGateway
                 'output' => $response->json('usage.completion_tokens'),
                 'total' => $response->json('usage.total_tokens'),
             ], fn (?int $tokens) => $tokens !== null),
-            error: $output === '' ? 'Empty completion (finish_reason: '.$response->json('choices.0.finish_reason', 'unknown').').' : null,
+            finishReason: $finishReason,
+            error: $rejection === null ? null : "{$rejection} (finish_reason: ".($finishReason ?? 'unknown').').',
         );
+    }
+
+    /**
+     * @param  array<string, mixed>  $parameters
+     */
+    private function rejectionOf(string $output, array $parameters): ?string
+    {
+        return match (true) {
+            $output === '' => 'Empty completion',
+            $this->expectsJson($parameters) && ! json_validate($output) => 'Invalid JSON completion: '.json_last_error_msg(),
+            default => null,
+        };
+    }
+
+    /**
+     * @param  array<string, mixed>  $parameters
+     */
+    private function expectsJson(array $parameters): bool
+    {
+        return in_array($parameters['response_format']['type'] ?? null, ['json_object', 'json_schema'], true);
     }
 
     private function coolDown(string $provider, ConnectionException|RequestException $exception): void

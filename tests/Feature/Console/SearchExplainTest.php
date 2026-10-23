@@ -24,7 +24,10 @@ class SearchExplainTest extends TestCase
 
         config(['services.llm.providers' => ['openai']]);
         Http::fake(['api.openai.com/*' => fn (Request $request) => str_ends_with($request->url(), '/chat/completions')
-            ? Http::response(['choices' => [['message' => ['content' => "Lost Orbit: Astronauts drift between stars\nGenres: Science Fiction"]]]])
+            ? Http::response(['choices' => [['message' => ['content' => json_encode([
+                'title' => 'Lost Orbit',
+                'document' => "Lost Orbit\nAstronauts drift between stars\nGenres: Science Fiction",
+            ])]]]])
             : Http::response([
                 'data' => collect($request['input'])->map(fn (string $input, int $i) => [
                     'index' => $i,
@@ -59,7 +62,7 @@ class SearchExplainTest extends TestCase
             ->expectsOutputToContain("Expected: #{$expected->id} Space Story")
             ->expectsOutputToContain('Full-text  not in top 50')
             ->expectsOutputToContain('Semantic   rank 1')
-            ->expectsOutputToContain('Cosine distance 0.0000, exact rank 1 among all embedded titles')
+            ->expectsOutputToContain('Cosine similarity 1.0000, exact rank 1 among all embedded titles')
             ->expectsOutputToContain('Retrieved, but closer titles outrank it')
             ->expectsOutputToContain('Astronauts lost in space.')
             ->doesntExpectOutputToContain('HyDE       rank')
@@ -74,16 +77,34 @@ class SearchExplainTest extends TestCase
         TitleSearchEmbedding::factory()->pointingAt(9)->create();
 
         $this->artisan('search:explain', ['query' => 'crew lost far from home', '--expect' => [$expected->title_id]])
-            ->expectsOutputToContain('Hypothetical document (LLM output, embedded as-is)')
-            ->expectsOutputToContain('    Lost Orbit: Astronauts drift between stars')
-            ->expectsOutputToContain('HyDE (cosine distance to the hypothetical document, lower is better)')
-            ->expectsOutputToContain('Hybrid + HyDE (RRF score over all four lists, higher is better)')
+            ->expectsOutputToContain('Hypothetical document (LLM output, document embedded as-is)')
+            ->expectsOutputToContain('    Title guess: Lost Orbit')
+            ->expectsOutputToContain('    Astronauts drift between stars')
+            ->expectsOutputToContain('HyDE (cosine similarity to the hypothetical document, higher is better)')
+            ->expectsOutputToContain('Full-text on the title guess (ts_rank × popularity, higher is better)')
+            ->expectsOutputToContain('Hybrid + HyDE (rrf score over full-text, trigram, HyDE and the title guess, higher is better)')
             ->expectsOutputToContain('Semantic   rank 2')
             ->expectsOutputToContain('HyDE       rank 1')
-            ->expectsOutputToContain('HyDE fused rank')
+            ->expectsOutputToContain('Trigram on the title guess (word similarity × popularity, higher is better)')
+            ->expectsOutputToContain('Title text not in top 50')
+            ->expectsOutputToContain('Title trgm not in top 50')
+            ->expectsOutputToContain('HyDE fused rank 1')
             ->assertSuccessful();
 
         Http::assertSent(fn (Request $request) => str_ends_with($request->url(), '/chat/completions'));
+    }
+
+    public function test_explains_why_hyde_is_skipped_for_a_close_title_match(): void
+    {
+        Title::factory()->create(['name' => 'The Silence of the Lambs']);
+        config(['search.fusion' => 'min-max']);
+
+        $this->artisan('search:explain', ['query' => 'the silence of the lambs'])
+            ->expectsOutputToContain('Hybrid (min-max score, higher is better)')
+            ->expectsOutputToContain('skipped: a title name already matches the query closely, so hydeIds falls back to hybrid')
+            ->assertSuccessful();
+
+        Http::assertNotSent(fn (Request $request) => str_ends_with($request->url(), '/chat/completions'));
     }
 
     public function test_lines_option_embeds_each_document_line_and_marks_the_closest(): void
@@ -97,8 +118,8 @@ class SearchExplainTest extends TestCase
 
         $this->artisan('search:explain', ['query' => 'galaxy', '--expect' => [$expected->id], '--lines' => true])
             ->expectsOutputToContain('Each document line embedded on its own')
-            ->expectsOutputToContain('1.0000  Space Story')
-            ->expectsOutputToContain('0.0000  Astronauts lost in space.  ◀ closest')
+            ->expectsOutputToContain('0.0000  Space Story')
+            ->expectsOutputToContain('1.0000  Astronauts lost in space.  ◀ closest')
             ->doesntExpectOutputToContain('Document the embedding is built from')
             ->assertSuccessful();
     }
@@ -109,7 +130,7 @@ class SearchExplainTest extends TestCase
         TitleSearchEmbedding::factory()->pointingAt(3)->create();
 
         $this->artisan('search:explain', ['query' => 'galaxy', '--expect' => [$expected->title_id]])
-            ->expectsOutputToContain('Cosine distance 1.0000, exact rank 2')
+            ->expectsOutputToContain('Cosine similarity 0.0000, exact rank 2')
             ->expectsOutputToContain('Retrieved, but closer titles outrank it')
             ->assertSuccessful();
     }

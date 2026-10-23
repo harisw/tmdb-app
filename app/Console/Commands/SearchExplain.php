@@ -6,7 +6,9 @@ use App\Models\Title;
 use App\Models\TitleSearchEmbedding;
 use App\Services\KnowledgeGraph\OpenAIEmbeddingService;
 use App\Services\Search\HybridSearchService;
+use App\Services\Search\HypotheticalDocument;
 use App\Services\Search\HypotheticalDocumentGenerator;
+use App\Services\Search\LexicalMatches;
 use App\Services\Search\SearchDocumentBuilder;
 use Illuminate\Console\Attributes\Description;
 use Illuminate\Console\Attributes\Signature;
@@ -34,34 +36,47 @@ class SearchExplain extends Command
         $query = $this->argument('query');
         $expectedIds = collect($this->option('expect'))->map(fn (string $id) => (int) $id);
 
-        $fullText = $this->searchService->fullTextScores($query, self::WINDOW);
-        $trigram = $this->searchService->trigramScores($query, self::WINDOW);
-        $semantic = $this->searchService->semanticDistances($query, self::WINDOW);
-        $hybrid = $this->searchService->fusedScores($fullText->keys(), $trigram->keys(), $semantic->keys());
-        $hydeDocument = $this->searchService->qualifiesForHyde($query) ? $this->documentGenerator->generate($query) : null;
-        $hyde = $hydeDocument === null ? collect() : $this->searchService->hypotheticalDocumentDistances($hydeDocument, self::WINDOW);
-        $hybridWithHyde = $this->searchService->fusedScores($fullText->keys(), $trigram->keys(), $semantic->keys(), $hyde->keys());
+        $lexical = $this->searchService->lexicalMatches($query, self::WINDOW);
+        $semantic = $this->searchService->semanticScores($query, self::WINDOW);
+        $hybrid = $this->searchService->fusedScores([...$lexical->lists(), $semantic]);
+        $hydeSkipReason = match (true) {
+            ! $this->searchService->qualifiesForHyde($query) => 'query has fewer than '.HybridSearchService::HYDE_MIN_WORDS.' words',
+            $lexical->confident => 'a title name already matches the query closely',
+            default => null,
+        };
+        $hypothesis = $hydeSkipReason === null ? $this->documentGenerator->generate($query) : null;
+        $hyde = $hypothesis === null ? collect() : $this->searchService->hypothesisScores($hypothesis->document, self::WINDOW);
+        $titleGuess = $hypothesis?->title === null ? null : $this->searchService->lexicalMatches($hypothesis->title, self::WINDOW);
+        $titleFullText = $titleGuess?->fullText ?? collect();
+        $titleTrigram = $titleGuess?->trigram ?? collect();
+        $hybridWithHyde = $this->searchService->fusedScores([...$lexical->lists(), $hyde, $titleFullText, $titleTrigram]);
+        $fusion = $this->searchService->fusionMethod()->value;
 
         $titles = Title::withoutGlobalScopes()
-            ->whereIn('id', $fullText->keys()->merge($trigram->keys())->merge($semantic->keys())->merge($hyde->keys())->merge($expectedIds)->unique())
+            ->whereIn('id', collect([...$lexical->lists(), $semantic, $hyde, $titleFullText, $titleTrigram])->flatMap->keys()->merge($expectedIds)->unique())
             ->get(['id', 'name', 'release_date', 'is_adult'])
             ->keyBy('id');
 
-        $this->renderRanking('Full-text (ts_rank × popularity, higher is better)', $fullText, $titles, $expectedIds);
-        $this->renderRanking('Trigram (word similarity × popularity, higher is better)', $trigram, $titles, $expectedIds);
-        $this->renderRanking('Semantic (cosine distance, lower is better)', $semantic, $titles, $expectedIds);
-        $this->renderRanking('Hybrid (RRF score, higher is better)', $hybrid, $titles, $expectedIds);
-        $this->renderHyde($hydeDocument, $hyde, $hybridWithHyde, $titles, $expectedIds);
+        $this->renderRanking('Full-text (ts_rank × popularity, higher is better)', $lexical->fullText, $titles, $expectedIds);
+        $this->renderRanking('Trigram (word similarity × popularity, higher is better)', $lexical->trigram, $titles, $expectedIds);
+        $this->renderRanking('Semantic (cosine similarity, higher is better)', $semantic, $titles, $expectedIds);
+        $this->renderRanking("Hybrid ({$fusion} score, higher is better)", $hybrid, $titles, $expectedIds);
+        $this->renderHyde($hypothesis, $hydeSkipReason, $fusion, $hyde, $titleGuess, $hybridWithHyde, $titles, $expectedIds);
 
         $expectedIds->each(fn (int $titleId) => $this->explainExpected(
             $titleId,
             $this->searchService->queryVector($query),
             [
-                'Full-text' => $fullText,
-                'Trigram' => $trigram,
+                'Full-text' => $lexical->fullText,
+                'Trigram' => $lexical->trigram,
                 'Semantic' => $semantic,
                 'Hybrid' => $hybrid,
-                ...($hydeDocument === null ? [] : ['HyDE' => $hyde, 'HyDE fused' => $hybridWithHyde]),
+                ...($hypothesis === null ? [] : [
+                    'HyDE' => $hyde,
+                    'Title text' => $titleFullText,
+                    'Title trgm' => $titleTrigram,
+                    'HyDE fused' => $hybridWithHyde,
+                ]),
             ],
         ));
 
@@ -104,22 +119,37 @@ class SearchExplain extends Command
      * @param  Collection<int, Title>  $titles
      * @param  Collection<int, int>  $expectedIds
      */
-    private function renderHyde(?string $hydeDocument, Collection $hyde, Collection $hybridWithHyde, Collection $titles, Collection $expectedIds): void
-    {
+    private function renderHyde(
+        ?HypotheticalDocument $hypothesis,
+        ?string $skipReason,
+        string $fusion,
+        Collection $hyde,
+        ?LexicalMatches $titleGuess,
+        Collection $hybridWithHyde,
+        Collection $titles,
+        Collection $expectedIds,
+    ): void {
         $this->newLine();
 
-        if ($hydeDocument === null) {
+        if ($hypothesis === null) {
             $this->info('HyDE');
-            $this->line('  skipped: query has fewer than '.HybridSearchService::HYDE_MIN_WORDS.' words, so hydeIds falls back to hybrid');
+            $this->line("  skipped: {$skipReason}, so hydeIds falls back to hybrid");
 
             return;
         }
 
-        $this->info('Hypothetical document (LLM output, embedded as-is)');
-        $this->line(collect(explode("\n", $hydeDocument))->map(fn (string $line) => "    {$line}")->join("\n"));
+        $this->info('Hypothetical document (LLM output, document embedded as-is)');
+        $this->line('    Title guess: '.($hypothesis->title ?? 'none'));
+        $this->line(collect(explode("\n", $hypothesis->document))->map(fn (string $line) => "    {$line}")->join("\n"));
 
-        $this->renderRanking('HyDE (cosine distance to the hypothetical document, lower is better)', $hyde, $titles, $expectedIds);
-        $this->renderRanking('Hybrid + HyDE (RRF score over all four lists, higher is better)', $hybridWithHyde, $titles, $expectedIds);
+        $this->renderRanking('HyDE (cosine similarity to the hypothetical document, higher is better)', $hyde, $titles, $expectedIds);
+
+        if ($titleGuess !== null) {
+            $this->renderRanking('Full-text on the title guess (ts_rank × popularity, higher is better)', $titleGuess->fullText, $titles, $expectedIds);
+            $this->renderRanking('Trigram on the title guess (word similarity × popularity, higher is better)', $titleGuess->trigram, $titles, $expectedIds);
+        }
+
+        $this->renderRanking("Hybrid + HyDE ({$fusion} score over full-text, trigram, HyDE and the title guess, higher is better)", $hybridWithHyde, $titles, $expectedIds);
     }
 
     /**
@@ -166,17 +196,17 @@ class SearchExplain extends Command
      */
     private function explainLines(Collection $documentLines, string $queryVector): void
     {
-        $lineDistances = collect($this->embeddingService->embedBatch($documentLines->all(), TitleSearchEmbedding::DIMENSIONS))
+        $lineSimilarities = collect($this->embeddingService->embedBatch($documentLines->all(), TitleSearchEmbedding::DIMENSIONS))
             ->map(fn (array $lineVector) => (float) DB::scalar(
-                'SELECT ?::halfvec <=> ?::halfvec',
+                'SELECT 1 - (?::halfvec <=> ?::halfvec)',
                 [$queryVector, TitleSearchEmbedding::toVectorLiteral($lineVector)],
             ));
-        $closestLine = $lineDistances->sort()->keys()->first();
+        $closestLine = $lineSimilarities->sortDesc()->keys()->first();
 
-        $this->line('  Each document line embedded on its own (cosine distance to the query, lower is better):');
+        $this->line('  Each document line embedded on its own (cosine similarity to the query, higher is better):');
         $documentLines->each(fn (string $line, int $i) => $this->line(sprintf(
             '    %.4f  %s%s',
-            $lineDistances[$i],
+            $lineSimilarities[$i],
             mb_strimwidth($line, 0, 100, '…'),
             $i === $closestLine ? '  ◀ closest' : '',
         )));
@@ -208,7 +238,7 @@ class SearchExplain extends Command
             [$queryVector, $distance],
         );
 
-        $this->line(sprintf('  Cosine distance %.4f, exact rank %d among all embedded titles', $distance, $exactRank));
+        $this->line(sprintf('  Cosine similarity %.4f, exact rank %d among all embedded titles', 1 - $distance, $exactRank));
         $this->line(match (true) {
             $exactRank > self::WINDOW => '  → The model places it far from the query; compare the document with the query wording.',
             $semantic->has($titleId) => '  → Retrieved, but closer titles outrank it; see which document lines pull it away.',
