@@ -20,7 +20,6 @@ class TitleResource extends JsonResource
             'overview' => $this->overview,
             'backdrop_path' => $this->backdrop_path,
             'poster_path' => $this->poster_path,
-            'is_adult' => $this->is_adult,
             'genres' => $this->whenLoaded('genres'),
             'keywords' => $this->whenLoaded('keywords'),
             'title_providers' => $this->whenLoaded('titleProviders'),

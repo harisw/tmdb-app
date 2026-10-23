@@ -23,7 +23,7 @@ class TitleGraphControllerTest extends TestCase
     {
         $title->similarTitles()->attach($similar->id, [
             'score' => $score,
-            'reasons' => json_encode($reasons),
+            'reasons' => $reasons,
         ]);
     }
 
@@ -45,6 +45,25 @@ class TitleGraphControllerTest extends TestCase
                 ->component('TitleGraph')
                 ->where('slug', null)
             );
+    }
+
+    public function test_graph_page_offers_popular_starting_titles_without_a_slug(): void
+    {
+        $start = Title::factory()->create(['popularity' => 100]);
+        Title::factory(4)->create()->each(fn (Title $neighbour) => $this->attachSimilar($start, $neighbour, 0.9));
+
+        $this->get('/graph')->assertInertia(fn ($page) => $page
+            ->has('starts', 1)
+            ->where('starts.0.slug', $start->slug)
+        );
+    }
+
+    public function test_graph_page_skips_starting_titles_when_a_slug_is_given(): void
+    {
+        $start = Title::factory()->create(['popularity' => 100]);
+        Title::factory(4)->create()->each(fn (Title $neighbour) => $this->attachSimilar($start, $neighbour, 0.9));
+
+        $this->get('/graph?title_slug=anything')->assertInertia(fn ($page) => $page->has('starts', 0));
     }
 
     public function test_neighbors_requires_title_slug(): void
@@ -134,20 +153,5 @@ class TitleGraphControllerTest extends TestCase
             ->assertOk()
             ->assertJsonPath('links.0.reasons', $reasons)
             ->assertJsonPath('links.0.score', 0.9);
-    }
-
-    public function test_neighbors_excludes_adult_titles(): void
-    {
-        $title = Title::factory()->create(['slug' => 'sfw-title']);
-        $safe = Title::factory()->create(['is_adult' => false]);
-        $adult = Title::factory()->create(['is_adult' => true]);
-
-        $this->attachSimilar($title, $safe, 0.9);
-        $this->attachSimilar($title, $adult, 0.9);
-
-        $this->getJson('/graph/neighbors?title_slug=sfw-title')
-            ->assertOk()
-            ->assertJsonCount(1, 'nodes')
-            ->assertJsonPath('nodes.0.id', $safe->id);
     }
 }

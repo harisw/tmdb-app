@@ -5,11 +5,9 @@ namespace App\Models;
 use App\Domain\Enums\CreditJob;
 use App\Domain\Enums\TitleType;
 use App\Helpers\DateTimeHelper;
-use App\Infrastructure\Observers\TitleObserver;
-use App\Models\Scopes\AdultContentScope;
+use App\Models\Scopes\AvoidedKeywordScope;
 use App\Models\Scopes\TitleTypeScope;
 use Database\Factories\TitleFactory;
-use Illuminate\Database\Eloquent\Attributes\ObservedBy;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Collection;
@@ -84,10 +82,10 @@ use Spatie\SchemalessAttributes\Casts\SchemalessAttributes;
  *
  * @property \Spatie\SchemalessAttributes\SchemalessAttributes|null $extra_attributes
  * @property string|null $enriched_at
- * @property bool $is_adult
  * @property string|null $original_name
  * @property string|null $credits_filled_at
  * @property string|null $embedding
+ * @property Carbon|null $similarities_materialized_at
  * @property-read Collection<int, TitlePerson> $cast
  * @property-read int|null $cast_count
  * @property-read Collection<int, TitlePerson> $crew
@@ -103,13 +101,11 @@ use Spatie\SchemalessAttributes\Casts\SchemalessAttributes;
  * @method static Builder<static>|Title whereEmbedding($value)
  * @method static Builder<static>|Title whereEnrichedAt($value)
  * @method static Builder<static>|Title whereExtraAttributes($value)
- * @method static Builder<static>|Title whereIsAdult($value)
  * @method static Builder<static>|Title whereOriginalName($value)
  * @method static Builder<static>|Title withExtraAttributes()
  *
  * @mixin \Eloquent
  */
-#[ObservedBy([TitleObserver::class])]
 class Title extends Model
 {
     /** @use HasFactory<TitleFactory> */
@@ -118,7 +114,16 @@ class Title extends Model
     protected static function booted(): void
     {
         static::addGlobalScope(new TitleTypeScope);
-        static::addGlobalScope(new AdultContentScope);
+        static::addGlobalScope(new AvoidedKeywordScope);
+    }
+
+    public function resolveRouteBinding($value, $field = null): ?Model
+    {
+        return $this->resolveRouteBindingQuery(
+            $this->newQuery()->withoutGlobalScope(AvoidedKeywordScope::class),
+            $value,
+            $field,
+        )->first();
     }
 
     public const IMG_SMALL_URL = 'w300';
@@ -140,7 +145,7 @@ class Title extends Model
         'release_date' => 'datetime:Y',
         'rating' => 'float',
         'type' => TitleType::class,
-        'is_adult' => 'boolean',
+        'similarities_materialized_at' => 'datetime',
         'extra_attributes' => SchemalessAttributes::class,
     ];
 
@@ -215,9 +220,26 @@ class Title extends Model
         return $this->hasMany(TitleProvider::class);
     }
 
+    /**
+     * @return array{id: int, slug: string, name: string, poster_path: string, year: ?string, rating: mixed, type: string}
+     */
+    public function toGraphNode(): array
+    {
+        return [
+            'id' => $this->id,
+            'slug' => $this->slug,
+            'name' => $this->name,
+            'poster_path' => $this->poster_path,
+            'year' => $this->release_date?->format('Y'),
+            'rating' => $this->rating,
+            'type' => $this->type->value,
+        ];
+    }
+
     public function similarTitles(): BelongsToMany
     {
         return $this->belongsToMany(__CLASS__, 'title_similarities', 'title_id', 'similar_title_id')
+            ->using(TitleSimilarity::class)
             ->withPivot(['score', 'reasons'])
             ->orderByPivot('score', 'desc');
     }
@@ -253,6 +275,11 @@ class Title extends Model
     public function userState(): HasOne
     {
         return $this->hasOne(UserTitleState::class);
+    }
+
+    public function searchEmbedding(): HasOne
+    {
+        return $this->hasOne(TitleSearchEmbedding::class);
     }
 
     public function cast(): HasMany

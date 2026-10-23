@@ -11,20 +11,22 @@ class OpenAIEmbeddingService
 
     private const MAX_BATCH = 100;
 
-    public function embedOne(string $text): array
+    public function embedOne(string $text, ?int $dimensions = null): array
     {
-        return $this->embedBatch([$text])[0];
+        return $this->embedBatch([$text], $dimensions)[0];
     }
 
-    public function embedBatch(array $texts): array
+    public function embedBatch(array $texts, ?int $dimensions = null): array
     {
-        $response = Http::withToken(config('services.openai.key'))
+        $response = Http::keepAlive()
+            ->withToken(config('services.openai.key'))
             ->timeout(60)
-            ->post('https://api.openai.com/v1/embeddings', [
+            ->post('https://api.openai.com/v1/embeddings', array_filter([
                 'model' => self::MODEL,
                 'input' => $texts,
                 'encoding_format' => 'float',
-            ]);
+                'dimensions' => $dimensions,
+            ]));
 
         if ($response->failed()) {
             Log::error('OpenAI embedding failed', [

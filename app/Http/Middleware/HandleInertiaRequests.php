@@ -58,6 +58,7 @@ class HandleInertiaRequests extends Middleware
                 'poster' => config('services.tmdb.img_url').Title::IMG_SMALL_URL,
                 'backdrop' => config('services.tmdb.img_url').Title::IMG_LARGE_URL,
                 'logo' => config('services.tmdb.img_url').'original',
+                'profile' => config('services.avatar.base_url'),
             ],
             'auth' => [
                 'user' => fn () => $request->user()

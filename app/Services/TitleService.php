@@ -7,7 +7,6 @@ use App\Data\DTOs\TmdbApi\TmdbTitleData;
 use App\Models\Genre;
 use App\Models\Keyword;
 use App\Models\ProductionCompany;
-use App\Models\Scopes\AdultContentScope;
 use App\Models\Title;
 use DB;
 use Illuminate\Support\Collection;
@@ -48,6 +47,10 @@ class TitleService
 
     public function insertRow(TmdbTitleData $row): ?Title
     {
+        if ($row->is_adult) {
+            return null;
+        }
+
         try {
             // NOTE: Transaction here is important for testing critical behavior to safely rollback for error
             return DB::transaction(function () use ($row) {
@@ -55,12 +58,9 @@ class TitleService
                 $companies = $this->prepareRelationIds($row->production_companies, ProductionCompany::class);
                 $keywords = $row->keywords ? $this->prepareRelationIds($row->keywords, Keyword::class) : [];
 
-                // Import must see every title regardless of the viewer-facing
-                // adult filter, otherwise re-importing an existing adult title
-                // is hidden by AdultContentScope and hits the unique(slug) index.
-                $title = Title::withoutGlobalScope(AdultContentScope::class)->firstOrCreate(
+                $title = Title::withoutGlobalScopes()->firstOrCreate(
                     ['slug' => $row->slug],
-                    $row->except('genres', 'production_companies', 'keywords', 'belongs_to_collection')->toArray()
+                    $row->except('genres', 'production_companies', 'keywords', 'belongs_to_collection', 'is_adult')->toArray()
                 );
                 $title->genres()->syncWithoutDetaching($genres);
                 $title->companies()->syncWithoutDetaching($companies);

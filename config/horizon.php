@@ -232,7 +232,7 @@ return [
                 'balance' => 'simple',
                 'minProcesses' => 1,
                 'maxProcesses' => 5,
-                'tries' => 3,
+                'tries' => 1,
                 'timeout' => 60,
             ],
             'embeddings' => [
@@ -259,6 +259,13 @@ return [
                 'processes' => 2,
                 'tries' => 1,
                 'timeout' => 60,
+            ],
+            'embeddings' => [
+                'connection' => 'redis',
+                'queue' => ['embeddings'],
+                'balance' => 'simple',
+                'processes' => 2, // 2 concurrent = ~200 embeddings/min (within rate limits)
+                'tries' => 3,
             ],
         ],
     ],

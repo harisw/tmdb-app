@@ -70,7 +70,11 @@ const submit = () => {
 
                 <p class="text-center text-sm text-white/50">
                     Already have an account?
-                    <a href="/login" class="text-madder hover:underline">Login</a>
+                    <a
+                        href="/login"
+                        class="text-white underline decoration-madder decoration-2 underline-offset-4 hover:decoration-glow-red"
+                        >Login</a
+                    >
                 </p>
             </form>
         </div>

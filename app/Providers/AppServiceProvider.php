@@ -13,6 +13,8 @@ use App\Services\TitleService;
 use App\Services\TmdbApiService;
 use App\Utils\Enum\FeatureFlag;
 use Gate;
+use GuzzleHttp\Utils;
+use Http;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\ServiceProvider;
@@ -53,6 +55,8 @@ class AppServiceProvider extends ServiceProvider
             baseUrl: config('services.providers.watchmode.base_url'),
             catalog: $app->make(ProviderCatalog::class),
         ));
+
+        $this->app->singleton('http.keep-alive-handler', fn () => Utils::chooseHandler());
     }
 
     /**
@@ -72,6 +76,7 @@ class AppServiceProvider extends ServiceProvider
         Gate::define('admin', fn ($user) => (bool) $user->is_admin);
         Gate::define('viewPulse', fn ($user) => Gate::forUser($user)->allows('admin'));
 
+        Http::macro('keepAlive', fn () => Http::setHandler(app('http.keep-alive-handler')));
         // Defaults only — Pennant stops consulting these once the flag has a
         // stored value for the 'global' scope. @see FeatureFlag::default()
         foreach (FeatureFlag::cases() as $flag) {

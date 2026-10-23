@@ -21,6 +21,14 @@
     --animate-glow-drift-b: glowDriftB 18s ease-in-out infinite;
     --animate-side-glow-a: sideGlowA 20s ease-in-out infinite;
     --animate-side-glow-b: sideGlowB 26s ease-in-out infinite;
+    --animate-popover-in: popoverIn 150ms ease-out;
+
+    @keyframes popoverIn {
+        from {
+            opacity: 0;
+            transform: translateY(-4px);
+        }
+    }
 
     @keyframes grainShift {
         0% {

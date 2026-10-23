@@ -24,9 +24,8 @@ Route::get('/tags', [KeywordController::class, 'index'])->name('all-tags');
 Route::get('/tag/{keyword}', [KeywordController::class, 'show'])->name('titles-by-keyword');
 Route::middleware('throttle:40,1')->group(function () {
     Route::get('/search', [SearchController::class, 'search'])->name('search-title');
+    Route::get('/search-all', [SearchController::class, 'searchAll'])->name('search-all-title');
 });
-
-Route::get('/search-all', [SearchController::class, 'searchAll'])->name('search-all-title');
 
 Route::get('/title/{title}', [TitleController::class, 'show'])->name('title-show');
 Route::get('/title/{title}/similar', [SimilarTitleController::class, 'index'])->name('title-similar');

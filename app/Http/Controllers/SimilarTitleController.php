@@ -15,7 +15,7 @@ class SimilarTitleController extends Controller
         $titles = $title->similarTitles()
             ->select([
                 'titles.id', 'name', 'slug', 'type', 'rating', 'release_date',
-                'runtime', 'backdrop_path', 'poster_path', 'overview', 'is_adult',
+                'runtime', 'backdrop_path', 'poster_path', 'overview',
             ])
             ->wherePivot('score', '>=', config('features.knowledge_graph.min_score'))
             ->with(Title::detailRelations())

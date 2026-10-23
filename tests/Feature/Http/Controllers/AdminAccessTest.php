@@ -64,7 +64,6 @@ class AdminAccessTest extends TestCase
                 'username' => 'the_operator',
                 'country' => $country->iso2,
                 'avatar_style' => 'adventurer',
-                'hide_adult' => true,
             ])
             ->assertSessionHasErrors('username');
 
@@ -84,7 +83,6 @@ class AdminAccessTest extends TestCase
                 'username' => 'the_operator',
                 'country' => $country->iso2,
                 'avatar_style' => 'adventurer',
-                'hide_adult' => true,
             ])
             ->assertSessionHasNoErrors();
     }

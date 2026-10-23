@@ -5,13 +5,12 @@ namespace App\Jobs;
 use App\Models\Title;
 use App\Services\KnowledgeGraph\OpenAIEmbeddingService;
 use App\Services\KnowledgeGraph\TitleDocumentBuilder;
-use Illuminate\Bus\Batchable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
 
 class GenerateTitleEmbeddingsChunkJob implements ShouldQueue
 {
-    use Batchable, Queueable;
+    use Queueable;
 
     public int $tries = 1;
 
@@ -20,17 +19,17 @@ class GenerateTitleEmbeddingsChunkJob implements ShouldQueue
     /**
      * @param  int[]  $titleIds
      */
-    public function __construct(public readonly array $titleIds) {}
+    public function __construct(public readonly array $titleIds)
+    {
+        $this->onQueue('embeddings');
+    }
 
     public function handle(
         OpenAIEmbeddingService $embeddingService,
         TitleDocumentBuilder $documentBuilder
     ): void {
-        if ($this->batch()?->canceled()) {
-            return;
-        }
-
-        $titles = Title::with(['genres', 'keywords', 'people', 'collection'])
+        $titles = Title::withoutGlobalScopes()
+            ->with(['genres', 'people', 'collection', 'keywords' => fn ($query) => $query->where('use_in_similarity', true)])
             ->whereIn('id', $this->titleIds)
             ->get()
             ->values(); // guarantee a 0-indexed order that matches the embeddings

@@ -71,6 +71,19 @@ class TitleServiceTest extends TestCase
         ]);
     }
 
+    public function test_insert_bulk_skips_adult_titles(): void
+    {
+        $rows = [
+            array_values([...$this->makeRow(), 'is_adult' => true]),
+            array_values([...$this->makeRow(['id' => '2', 'name' => 'Safe Title']), 'is_adult' => false]),
+        ];
+
+        $count = TitleService::insertBulk($rows, [...$this->headers, 'is_adult']);
+
+        $this->assertSame(1, $count);
+        $this->assertSame(['safe-title'], Title::pluck('slug')->all());
+    }
+
     public function test_insert_bulk_attaches_genres_to_title(): void
     {
         $data = [array_values($this->makeRow(['genres' => 'Action, Science Fiction']))];

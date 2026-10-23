@@ -53,11 +53,11 @@ Laravel + Vue 3 SPA bridged by **Inertia.js v2**. `routes/api.php` is deliberate
 
 `Title` is the central model: movies and TV live in one table discriminated by `type`. Genres, keywords, production companies, providers and people are many-to-many; language is a direct FK.
 
-### Two global scopes filter every Title query
+### Two global scopes filter Title queries in viewer context
 
-Both live in `app/Models/Scopes/` and apply implicitly, so `Title::query()` is never unfiltered:
+Both live in `app/Models/Scopes/` and apply implicitly, reading ambient request/auth state. Jobs and commands use `withoutGlobalScopes()` explicitly rather than relying on that state being empty:
 
-- `AdultContentScope` — hides `is_adult` titles unless the authenticated user has `hide_adult = false`. Guests always have them hidden.
+- `AvoidedKeywordScope` — hides titles tagged with the authenticated user's avoided keywords. Title pages and the graph endpoint bypass it so direct links still resolve.
 - `TitleTypeScope` — narrows to `titles.type` whenever a `title_type` query parameter is present.
 
 That query parameter is injected client-side: `resources/js/app.js` registers a `router.on('before')` hook appending the Pinia `titleType` store value to every GET visit. The movie/TV toggle therefore reaches the database through a global scope with no controller involvement — changing one end without the other silently breaks filtering.
@@ -66,7 +66,7 @@ That query parameter is injected client-side: `resources/js/app.js` registers a 
 
 Scheduled in `routes/console.php`, not user-triggered. `FetchTitlesJob` is an abstract pager subclassed by `FetchTrending/Popular/UpcomingTitlesJob`; it walks a paginated TMDB feed until it has inserted `$limit` *new* titles, so it reaches deeper as the catalogue fills. Rows land via `TitleService::insertRow()`, then `EnrichTitle*Job`s backfill credits, providers and knowledge-graph data on the `enrichment` queue.
 
-Inbound payloads are parsed by `App\Data\DTOs\TmdbApi\*` (spatie/laravel-data), with `MapInputName`/`MapOutputName` translating between TMDB's field names and ours — TMDB's `adult` becomes `is_adult`, for instance. Note that flag marks pornographic content, not an age rating; no maturity certifications are fetched.
+Inbound payloads are parsed by `App\Data\DTOs\TmdbApi\*` (spatie/laravel-data), with `MapInputName`/`MapOutputName` translating between TMDB's field names and ours — `vote_average` becomes `rating`, for instance. TMDB's `adult` flag (pornographic content, not an age rating) is read only to skip those titles in `TitleService::insertRow()`; adult titles are never stored, and no maturity certifications are fetched.
 
 Bulk seeding still exists separately: `TitleSeeder` and `TitlesBatchInsertJob` read a CSV from S3 via `SEED_CSV_S3_KEY`.
 
@@ -74,17 +74,19 @@ Bulk seeding still exists separately: `TitleSeeder` and `TitlesBatchInsertJob` r
 
 The least obvious subsystem, spread across jobs, services and pipelines:
 
-1. `GenerateTitleEmbeddingJob` calls `OpenAIEmbeddingService` on a document assembled by `TitleDocumentBuilder`, storing the vector in `titles.embedding` (hidden from serialization).
-2. `MaterializeTitleSimilaritiesJob` runs a raw pgvector cosine KNN (`<=>`) for the top 10 neighbours and persists them to `title_similarities`. Similarity is **precomputed, never queried live**.
+1. `GenerateTitleEmbeddingsChunkJob` calls `OpenAIEmbeddingService` on documents assembled by `TitleDocumentBuilder` (100 titles per request), storing each vector in `titles.embedding` (hidden from serialization).
+2. `MaterializeTitleSimilaritiesJob` runs a raw pgvector cosine KNN (`<=>`) for the top 10 neighbours and replaces that title's own rows in `title_similarities` (forward only), stamping `titles.similarities_materialized_at`. Similarity is **precomputed, never queried live**.
 3. For each pair, `ReasonBuilderService` sends a `ReasonContext` through an `Illuminate\Pipeline` of `app/Pipelines/Reasons/*Pipe` classes — shared genres, keywords, casts, crews, semantics — producing ranked human-readable explanations.
 
-`TitleEnrichmentService::enqueue()` chains steps 1→2 as a `Bus::batch` on the `embeddings` queue. Results surface at `/title/{title}/similar` and in the force-directed graph (`Pages/TitleGraph.vue` + `Composables/useForceGraph.js`, d3-force).
+Nothing runs on title creation: credits arrive later, so `EnrichTitleEmbeddingsBatchJob` (scheduled, picks unembedded titles that have credits) runs step 1 only. `MaterializeTitleSimilaritiesBatchJob` runs step 2 hourly for titles never materialized or materialized over a week ago (oldest first), which both picks up new embeddings and lets older titles gain newer neighbours. Both are gated by the `KnowledgeGraphEnrichment` flag. Results surface at `/title/{title}/similar` and in the force-directed graph (`Pages/TitleGraph.vue` + `Composables/useForceGraph.js`, d3-force).
 
 **`composer run dev` only listens on the default queue.** Anything dispatched `onQueue('embeddings')` or `onQueue('enrichment')` sits unprocessed. Run `php artisan horizon`, or `php artisan queue:work --queue=embeddings,enrichment`, when working on ingestion or similarity. `config/horizon.php` defines a supervisor per queue.
 
 ### Search
 
 Full-text search reads the `titles_searchable_index` table (`SearchableTitle` model) using PostgreSQL tsvector. It is not maintained transactionally — `titles:refresh-searchable` rebuilds it, scheduled every six hours, so newly ingested titles stay unsearchable until it runs.
+
+`HybridSearchService` fuses full-text, trigram and semantic lists with the method in `config/search.php` (`SEARCH_FUSION`: `rrf`, `min-max` or `z-score`, see `App\Domain\Enums\FusionMethod`). Behind the `hyde-search` Pennant flag, `searchAll` replaces the semantic list with HyDE: `HypotheticalDocumentGenerator` asks an LLM for JSON holding a title guess and a catalogue entry shaped like `SearchDocumentBuilder` output; the entry is embedded and the title guess is run through full-text search. HyDE is skipped for queries under `HYDE_MIN_WORDS` words or when a title name already matches the query closely. LLM calls go through `App\Services\Llm\LlmGateway`, which fails over across the OpenAI-compatible providers in `services.llm.providers`, cools down providers after 429/5xx, and fires one `LlmOperationCompleted` per call (exported to Langfuse as an OTLP root span with a generation per attempt by a queued listener). Score changes with `php artisan search:evaluate {fts|semantic|hybrid|hyde}`.
 
 ### Shared Inertia props
 
@@ -105,7 +107,11 @@ DB_CONNECTION=pgsql          # pgvector image; SQLite is not viable
 TMDB_BASE_URL=               # TMDB API v3 base
 TMDB_API_KEY=
 MOVIE_DB_IMG_URL=            # TMDB image CDN base
-OPENAI_API_KEY=              # embeddings; similarity is inert without it
+OPENAI_API_KEY=              # embeddings + default LLM; similarity is inert without it
+GROQ_API_KEY=                # LLM fallback; providers without a key are skipped
+LLM_PROVIDERS=openai,groq    # LLM failover order
+LANGFUSE_PUBLIC_KEY=         # LLM tracing; nothing is sent without both keys
+LANGFUSE_SECRET_KEY=
 SEED_CSV_S3_KEY=             # bulk title seeding source
 ALLOW_REGISTER=false         # toggle user registration
 GOOGLE_CLIENT_ID=            # Socialite login

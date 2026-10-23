@@ -3,6 +3,7 @@
 namespace Tests\Feature\Console;
 
 use App\Jobs\FetchTrendingTitlesJob;
+use App\Jobs\MaterializeTitleSimilaritiesBatchJob;
 use Carbon\CarbonImmutable;
 use Cron\CronExpression;
 use Illuminate\Console\Scheduling\Event;
@@ -65,5 +66,16 @@ class ScheduleTest extends TestCase
             ->all();
 
         $this->assertSame([1, 1, 7, 7], $runsPerWeek);
+    }
+
+    public function test_similarities_are_refreshed_hourly(): void
+    {
+        $runsPerWeek = collect(app(Schedule::class)->events())
+            ->filter(fn (Event $event) => $event->description === MaterializeTitleSimilaritiesBatchJob::class)
+            ->map(fn (Event $event) => count($this->runsInWeek($event)))
+            ->values()
+            ->all();
+
+        $this->assertSame([7 * 24], $runsPerWeek);
     }
 }

@@ -15,7 +15,6 @@ class UserData extends Data
         public readonly ?string $avatar_url,
         public readonly ?string $avatar_style,
         public readonly ?string $country,
-        public readonly bool $hide_adult,
     ) {}
 
     public static function fromModel(User $user): self
@@ -28,7 +27,6 @@ class UserData extends Data
             avatar_url: $user->avatar_url,
             avatar_style: $user->extra_attributes->get('avatar.style'),
             country: $user->country?->iso2,
-            hide_adult: $user->hide_adult,
         );
     }
 }

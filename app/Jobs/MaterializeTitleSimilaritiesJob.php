@@ -2,28 +2,36 @@
 
 namespace App\Jobs;
 
-use App\Data\DTOs\TitleSimilarityData;
 use App\Models\Title;
+use App\Models\TitleSimilarity;
 use App\Services\KnowledgeGraph\ReasonBuilderService;
 use DB;
+use Illuminate\Contracts\Queue\ShouldBeUnique;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
 use Illuminate\Support\Facades\Log;
 
-class MaterializeTitleSimilaritiesJob implements ShouldQueue
+class MaterializeTitleSimilaritiesJob implements ShouldBeUnique, ShouldQueue
 {
     use Queueable;
 
     private const TOP_K = 10;
+
+    public int $uniqueFor = 3600;
 
     public function __construct(public readonly int $titleId)
     {
         $this->onQueue('embeddings');
     }
 
+    public function uniqueId(): string
+    {
+        return (string) $this->titleId;
+    }
+
     public function handle(ReasonBuilderService $reasonService): void
     {
-        $title = Title::findOrFail($this->titleId);
+        $title = Title::withoutGlobalScopes()->findOrFail($this->titleId);
 
         if (! $title->embedding) {
             Log::info("Title {$title->slug} has no embeddings");
@@ -31,10 +39,11 @@ class MaterializeTitleSimilaritiesJob implements ShouldQueue
             return;
         }
 
-        $neighbours = DB::select(<<<'SQL'
+        $minScore = config('features.knowledge_graph.min_score');
+
+        $neighbours = collect(DB::select(<<<'SQL'
             SELECT
                 t.id,
-                t.name,
                 1 - (t.embedding <=> :embedding) AS score
             FROM titles t
             WHERE t.id != :id
@@ -46,52 +55,32 @@ class MaterializeTitleSimilaritiesJob implements ShouldQueue
             'embedding2' => $title->embedding,
             'id' => $title->id,
             'limit' => self::TOP_K,
-        ]);
+        ]))->filter(fn (object $neighbour) => $neighbour->score > $minScore);
 
-        if (empty($neighbours)) {
-            Log::info("Title {$title->slug} has no neighbours");
-
-            return;
-        }
-
-        // Load both titles for reason generation
-        $neighbourIds = array_column($neighbours, 'id');
-        $neighbourTitles = Title::with(['genres', 'keywords', 'topCasts', 'keyCrews'])
-            ->whereIn('id', $neighbourIds)
-            ->get()
+        $neighbourTitles = Title::withoutGlobalScopes()
+            ->with(['genres', 'keywords', 'topCasts', 'keyCrews'])
+            ->findMany($neighbours->pluck('id'))
             ->keyBy('id');
 
         $now = now();
 
-        // Each edge expands to a forward and a reverse row (see TitleSimilarityData),
-        // so graph queries from either title are cheap without re-materialising the
-        // neighbour.
-
-        $minScore = config('features.knowledge_graph.min_score');
-
-        $upsertData = collect($neighbours)
-            ->filter(fn ($nb) => $nb->score > $minScore)
-            ->flatMap(function ($neighbour) use ($title, $neighbourTitles, $reasonService, $now) {
-                $neighbourTitle = $neighbourTitles[$neighbour->id] ?? null;
-
-                Log::info("Title {$title->slug} is neighbouring with {$neighbourTitle->slug}| score {$neighbour->score}");
-                $reasons = $neighbourTitle
-                    ? $reasonService->build($title, $neighbourTitle, $neighbour->score)
-                    : [];
-
-                return (new TitleSimilarityData(
-                    titleId: $title->id,
-                    similarTitleId: $neighbour->id,
-                    score: $neighbour->score,
-                    reasons: $reasons,
-                ))->toUpsertRows($now);
-            })
+        $rows = $neighbours
+            ->filter(fn (object $neighbour) => $neighbourTitles->has($neighbour->id))
+            ->map(fn (object $neighbour) => [
+                'title_id' => $title->id,
+                'similar_title_id' => $neighbour->id,
+                'score' => round($neighbour->score, 6),
+                'reasons' => json_encode($reasonService->build($title, $neighbourTitles[$neighbour->id], $neighbour->score)),
+                'created_at' => $now,
+                'updated_at' => $now,
+            ])
+            ->values()
             ->all();
 
-        DB::table('title_similarities')->upsert(
-            $upsertData,
-            ['title_id', 'similar_title_id'],
-            ['score', 'reasons', 'updated_at'],
-        );
+        DB::transaction(function () use ($title, $rows, $now) {
+            TitleSimilarity::where('title_id', $title->id)->delete();
+            TitleSimilarity::insert($rows);
+            $title->updateQuietly(['similarities_materialized_at' => $now]);
+        });
     }
 }

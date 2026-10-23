@@ -2,7 +2,7 @@
     <Head title="Explore more" />
     <AppLayout>
         <div>
-            <h1 class="text-2xl 2xl:text-4xl font-bold mb-6 text-madder">Advanced Search</h1>
+            <h1 class="text-2xl 2xl:text-4xl font-bold mb-6 text-white">Advanced Search</h1>
             <div class="flex flex-col gap-5">
                 <div class="flex flex-col sm:flex-row gap-4 sm:gap-10">
                     <MultiSelect
@@ -52,7 +52,7 @@
             </div>
 
             <div v-if="items" class="w-full mt-10">
-                <h2 class="text-2xl 2xl:text-4xl font-bold mb-6 text-madder">Results</h2>
+                <h2 class="text-2xl 2xl:text-4xl font-bold mb-6 text-white">Results</h2>
                 <div
                     class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-7 gap-6 auto-rows-[450px] 2xl:auto-rows-[520px]"
                 >

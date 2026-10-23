@@ -6,27 +6,34 @@ use App\Http\Resources\TitleResource;
 use App\Models\Genre;
 use App\Models\Keyword;
 use App\Models\Language;
-use App\Models\SearchableTitle;
 use App\Models\Title;
+use App\Services\Search\HybridSearchService;
+use App\Utils\Enum\FeatureFlag;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
 use Inertia\Inertia;
 use Inertia\Response;
+use Laravel\Pennant\Feature;
 
 class SearchController extends Controller
 {
     private const SEARCH_LIMIT = 10;
 
+    private const SEARCH_ALL_LIMIT = 100;
+
+    public function __construct(private readonly HybridSearchService $searchService) {}
+
     public function search(Request $request): JsonResponse
     {
-        $q = $request->query('q');
-        $results = SearchableTitle::selectRaw("title_id, ts_rank(search_vector, plainto_tsquery('english',(?))) as rank", [$q])
-            ->whereRaw('search_vector @@ plainto_tsquery(?)', [$q])
-            ->with(['title' => fn ($query) => $query->with(Title::detailRelations())])
-            ->orderByDesc('rank')
-            ->take(30)->get()->pluck('title')->filter()->values();
+        $q = $request->validate(['q' => ['required', 'string']])['q'];
+        $ranks = $this->searchService->hybridIds($q, self::SEARCH_LIMIT + 1)->flip();
+        $results = Title::whereIn('id', $ranks->keys())
+            ->with(Title::detailRelations())
+            ->get()
+            ->sortBy(fn (Title $title) => $ranks[$title->id])
+            ->values();
 
         $hasMore = $results->count() > self::SEARCH_LIMIT;
 
@@ -44,14 +51,10 @@ class SearchController extends Controller
         if ($hasParams) {
             $q = $request->query('q');
 
-            $results = $q ? SearchableTitle::selectRaw("title_id, ts_rank(search_vector, plainto_tsquery('english',(?))) as rank", [$q])
-                ->whereRaw('search_vector @@ plainto_tsquery(?)', [$q])
-                ->with('title')
-                ->orderByDesc('rank')
-                ->take(100)->pluck('title_id') : collect();
+            $titleIds = $q ? $this->rankedTitleIds($q) : null;
 
             $results = TitleResource::collection(
-                $this->applyFilters($results, $request->query('lang'), $request->query('gen'),
+                $this->applyFilters($titleIds, $request->query('lang'), $request->query('gen'),
                     $request->query('tag'))->paginate(self::PAGINATE_SIZE)
             );
         }
@@ -64,7 +67,20 @@ class SearchController extends Controller
         ]);
     }
 
-    private function applyFilters(Collection $titleIds, ?string $lang, ?string $gen, ?string $tag): Builder
+    /**
+     * @return Collection<int, int>
+     */
+    private function rankedTitleIds(string $q): Collection
+    {
+        return Feature::for('global')->active(FeatureFlag::HydeSearch)
+            ? $this->searchService->hydeIds($q, self::SEARCH_ALL_LIMIT)
+            : $this->searchService->hybridIds($q, self::SEARCH_ALL_LIMIT);
+    }
+
+    /**
+     * @param  Collection<int, int>|null  $titleIds
+     */
+    private function applyFilters(?Collection $titleIds, ?string $lang, ?string $gen, ?string $tag): Builder
     {
         $query = Title::listing();
         $languageIds = $lang ? Language::whereCode($lang)->pluck('id') : [];
@@ -88,8 +104,10 @@ class SearchController extends Controller
             });
         }
 
-        if ($titleIds->isNotEmpty()) {
-            $query->whereIn('id', $titleIds);
+        if ($titleIds !== null) {
+            $query->whereIn('id', $titleIds)
+                ->reorder()
+                ->orderByRaw('array_position(?::bigint[], titles.id)', ['{'.$titleIds->implode(',').'}']);
         }
 
         return $query;
