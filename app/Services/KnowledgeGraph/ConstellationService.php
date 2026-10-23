@@ -33,20 +33,27 @@ class ConstellationService
     /**
      * @return array{seed: int, seedIndex: int, seedCount: int, nodes: list<array<string, mixed>>, links: list<array<string, mixed>>}|null
      */
-    private function compute(int $seedIndex): ?array
+    /**
+     * @return Collection<int, Title>
+     */
+    public function seeds(): Collection
     {
-        $minScore = config('features.knowledge_graph.min_score');
-
-        $seeds = Title::query()
+        return Title::query()
             ->whereHas(
                 'similarTitles',
-                fn (Builder $query) => $query->where('title_similarities.score', '>=', $minScore),
+                fn (Builder $query) => $query->where('title_similarities.score', '>=', config('features.knowledge_graph.min_score')),
                 '>=',
                 self::MIN_NEIGHBOURS,
             )
             ->orderByDesc('popularity')
             ->limit(self::SEED_POOL)
             ->get(self::NODE_COLUMNS);
+    }
+
+    private function compute(int $seedIndex): ?array
+    {
+        $minScore = config('features.knowledge_graph.min_score');
+        $seeds = $this->seeds();
 
         if ($seeds->isEmpty()) {
             return null;

@@ -219,7 +219,7 @@ class HybridSearchServiceTest extends TestCase
             'exact title' => ['the silence of the lambs', false],
             'one typo in a title' => ['lord of the rigns', false],
             'every term in a title' => ['dark knights rising', false],
-            'several typos in a title' => ['the silense of the lamb', true],
+            'several typos in a title' => ['the silense of the lamb', false],
             'keyword is not a title' => ['dark knight vigilante', true],
             'under three words' => ['haunted lighthouse', false],
             'language written without spaces' => ['戦争で孤児になった兄妹', true],

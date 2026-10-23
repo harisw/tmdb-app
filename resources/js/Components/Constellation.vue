@@ -109,7 +109,7 @@ function nodeMeta(node) {
     return [
         node.year,
         node.type === 'movie' ? 'Film' : 'TV',
-        node.rating ? `★ ${Number(node.rating).toFixed(1)}` : null,
+        node.rating ? `Rated ${Number(node.rating).toFixed(1)}` : null,
     ]
         .filter(Boolean)
         .join(' · ')

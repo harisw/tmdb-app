@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Scopes\AvoidedKeywordScope;
 use App\Models\Title;
+use App\Services\KnowledgeGraph\ConstellationService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -18,10 +19,13 @@ class TitleGraphController extends Controller
      * than a path segment so traversal can re-point the same page at whichever
      * title the user drills into (shareable, reflected in the URL).
      */
-    public function index(Request $request): Response
+    public function index(Request $request, ConstellationService $constellations): Response
     {
+        $slug = $request->query('title_slug');
+
         return Inertia::render('TitleGraph', [
-            'slug' => $request->query('title_slug'),
+            'slug' => $slug,
+            'starts' => $slug ? [] : $constellations->seeds()->map(fn (Title $title) => $title->toGraphNode())->all(),
         ]);
     }
 
