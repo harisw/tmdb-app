@@ -3,7 +3,10 @@
 namespace App\Pipelines\Reasons;
 
 use App\Data\Contexts\ReasonContext;
+use App\Data\DTOs\SimilarityReasonData;
 use App\Domain\Enums\CreditJob;
+use App\Domain\Enums\ReasonType;
+use App\Models\Title;
 use Closure;
 
 class SharedCrewsPipe
@@ -18,16 +21,13 @@ class SharedCrewsPipe
 
     private function addSharedCrews(ReasonContext $context, CreditJob $job): void
     {
-        $sharedCrews = $context->titleA->keyCrews->where('job', $job)->pluck('name')
-            ->intersect($context->titleB->keyCrews->where('job', $job)->pluck('name'))
-            ->values()
-            ->all();
+        $sharedCrews = $context->sharedNames(fn (Title $title) => $title->keyCrews->where('pivot.job', $job));
         if (! empty($sharedCrews)) {
-            $context->addReason([
-                'type' => "shared_{$job->value}",
-                'values' => $sharedCrews,
-                'weight' => count($sharedCrews) * 0.37,
-            ]);
+            $context->addReason(new SimilarityReasonData(
+                type: ReasonType::sharedCrew($job),
+                values: $sharedCrews,
+                weight: count($sharedCrews) * 0.37,
+            ));
         }
 
     }

@@ -4,7 +4,6 @@ namespace App\Http\Controllers;
 
 use App\Models\Scopes\AvoidedKeywordScope;
 use App\Models\Title;
-use App\Models\TitleSimilarity;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -51,7 +50,7 @@ class TitleGraphController extends Controller
                 'source' => $title->id,
                 'target' => $t->id,
                 'score' => round($t->pivot->score, 3),
-                'reasons' => TitleSimilarity::decodeReasons($t->pivot->reasons),
+                'reasons' => $t->pivot->reasons,
             ])->values(),
         ]);
     }

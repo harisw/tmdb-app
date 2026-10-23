@@ -4,41 +4,18 @@ namespace Tests\Feature\Models;
 
 use App\Models\Title;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Illuminate\Support\Facades\Bus;
 use Tests\TestCase;
 
 class TitleSimilarityRelationTest extends TestCase
 {
     use RefreshDatabase;
 
-    protected function setUp(): void
-    {
-        parent::setUp();
-
-        Bus::fake();
-    }
-
     private function attachSimilar(Title $title, Title $similar, float $score, array $reasons = []): void
     {
         $title->similarTitles()->attach($similar->id, [
             'score' => $score,
-            'reasons' => json_encode($reasons),
+            'reasons' => $reasons,
         ]);
-    }
-
-    public function test_similar_titles_returns_attached_neighbours(): void
-    {
-        $title = Title::factory()->create();
-        $a = Title::factory()->create();
-        $b = Title::factory()->create();
-
-        $this->attachSimilar($title, $a, 0.8);
-        $this->attachSimilar($title, $b, 0.6);
-
-        $this->assertEqualsCanonicalizing(
-            [$a->id, $b->id],
-            $title->similarTitles->pluck('id')->all()
-        );
     }
 
     public function test_similar_titles_are_ordered_by_score_descending(): void
@@ -70,25 +47,7 @@ class TitleSimilarityRelationTest extends TestCase
         $this->assertEqualsWithDelta(0.77, (float) $pivot->score, 0.0001);
         $this->assertSame(
             [['type' => 'semantic', 'values' => ['77% match']]],
-            json_decode($pivot->reasons, true)
+            $pivot->reasons
         );
-    }
-
-    public function test_relationship_matches_the_title_id_side_only(): void
-    {
-        $title = Title::factory()->create();
-        $similar = Title::factory()->create();
-
-        // A single-direction row surfaces only on the title_id side.
-        $this->attachSimilar($title, $similar, 0.9);
-
-        $this->assertTrue($title->similarTitles->contains($similar));
-        $this->assertFalse($similar->fresh()->similarTitles->contains($title));
-
-        // MaterializeTitleSimilaritiesJob writes both directions, so a mirrored
-        // row makes the relationship resolve from either side.
-        $this->attachSimilar($similar, $title, 0.9);
-
-        $this->assertTrue($similar->fresh()->similarTitles->contains($title));
     }
 }

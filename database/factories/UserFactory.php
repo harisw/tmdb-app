@@ -36,7 +36,6 @@ class UserFactory extends Factory
             // Columns with database defaults still need setting here: the
             // factory does not read them back, so they arrive as null in memory
             // and break the non-nullable UserData DTO.
-            'hide_adult' => true,
             'is_admin' => false,
             // User::avatarUrl() reads extra_attributes['avatar'] unguarded, so a
             // factory user without it fatals on any page that renders the

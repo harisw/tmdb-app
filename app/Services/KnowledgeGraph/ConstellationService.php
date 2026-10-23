@@ -115,7 +115,7 @@ class ConstellationService
     /**
      * @param  Collection<string, array<string, mixed>>  $links
      */
-    private function link(Collection $links, int $sourceId, int $targetId, mixed $score, mixed $reasons): void
+    private function link(Collection $links, int $sourceId, int $targetId, float $score, array $reasons): void
     {
         $key = min($sourceId, $targetId).'-'.max($sourceId, $targetId);
 
@@ -126,8 +126,8 @@ class ConstellationService
         $links->put($key, [
             'source' => $sourceId,
             'target' => $targetId,
-            'score' => round((float) $score, 3),
-            'reasons' => TitleSimilarity::decodeReasons($reasons),
+            'score' => round($score, 3),
+            'reasons' => $reasons,
         ]);
     }
 
@@ -138,7 +138,6 @@ class ConstellationService
         return implode(':', [
             'constellation',
             request('title_type') ?: 'all',
-            (int) ($user?->hide_adult ?? true),
             md5(implode(',', $user?->avoidedKeywordIds() ?? [])),
             $seedIndex,
         ]);

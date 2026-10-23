@@ -24,7 +24,7 @@ class TitleData extends Data
         public readonly ?string $release_date,
         public readonly int $revenue,
         public readonly ?int $runtime,
-        // TMDB sends `adult`; the titles column is `is_adult`.
+        // TMDB sends `adult`.
         #[MapOutputName('adult')]
         public readonly ?bool $is_adult,
         public readonly ?string $backdrop_path,

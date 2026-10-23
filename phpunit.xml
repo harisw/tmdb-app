@@ -34,6 +34,7 @@
         <env name="OPENAI_API_KEY" value="test-openai-key"/>
         <env name="GROQ_API_KEY" value=""/>
         <env name="LLM_PROVIDERS" value="openai,groq"/>
+        <env name="SEARCH_FUSION" value="rrf"/>
         <env name="LANGFUSE_PUBLIC_KEY" value=""/>
         <env name="LANGFUSE_SECRET_KEY" value=""/>
         <env name="TMDB_API_KEY" value="test-tmdb-key"/>

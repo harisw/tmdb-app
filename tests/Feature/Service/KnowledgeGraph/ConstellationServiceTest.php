@@ -28,7 +28,7 @@ class ConstellationServiceTest extends TestCase
 
     private function attachSimilar(Title $title, Title $similar, float $score, array $reasons = []): void
     {
-        $title->similarTitles()->attach($similar->id, ['score' => $score, 'reasons' => json_encode($reasons)]);
+        $title->similarTitles()->attach($similar->id, ['score' => $score, 'reasons' => $reasons]);
     }
 
     /**

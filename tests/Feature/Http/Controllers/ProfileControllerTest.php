@@ -95,7 +95,7 @@ class ProfileControllerTest extends TestCase
 
     public function test_update_saves_the_profile(): void
     {
-        $user = User::factory()->create(['hide_adult' => true]);
+        $user = User::factory()->create();
         $country = Country::factory()->create();
 
         $this->actingAs($user)
@@ -104,14 +104,12 @@ class ProfileControllerTest extends TestCase
                 'username' => 'new_name',
                 'country' => $country->iso2,
                 'avatar_style' => 'bottts',
-                'hide_adult' => false,
             ])
             ->assertRedirect(route('settings'));
 
         $user->refresh();
         $this->assertSame('new_name', $user->username);
         $this->assertSame($country->id, $user->country_id);
-        $this->assertFalse($user->hide_adult);
         $this->assertSame('bottts', $user->extra_attributes->get('avatar.style'));
     }
 
@@ -125,7 +123,6 @@ class ProfileControllerTest extends TestCase
                 'username' => 'taken',
                 'country' => $country->iso2,
                 'avatar_style' => 'bottts',
-                'hide_adult' => true,
             ])
             ->assertSessionHasErrors('username');
     }

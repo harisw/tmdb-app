@@ -20,7 +20,7 @@ class HybridSearchService
 
     private const TRIGRAM_THRESHOLD = 0.4;
 
-    private const CONFIDENT_WORD_SIMILARITY = 0.75;
+    private const CONFIDENT_WORD_SIMILARITY = 0.65;
 
     public function __construct(
         private readonly OpenAIEmbeddingService $embeddingService,

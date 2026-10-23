@@ -54,7 +54,7 @@ class SearchExplain extends Command
 
         $titles = Title::withoutGlobalScopes()
             ->whereIn('id', collect([...$lexical->lists(), $semantic, $hyde, $titleFullText, $titleTrigram])->flatMap->keys()->merge($expectedIds)->unique())
-            ->get(['id', 'name', 'release_date', 'is_adult'])
+            ->get(['id', 'name', 'release_date'])
             ->keyBy('id');
 
         $this->renderRanking('Full-text (ts_rank × popularity, higher is better)', $lexical->fullText, $titles, $expectedIds);
@@ -171,10 +171,6 @@ class SearchExplain extends Command
         foreach ($rankings as $retriever => $scores) {
             $position = $scores->keys()->search($titleId);
             $this->line(sprintf('  %-10s %s', $retriever, $position === false ? 'not in top '.self::WINDOW : 'rank '.($position + 1)));
-        }
-
-        if ($title->is_adult) {
-            $this->warn('  Adult title: hidden from guests and users with hide_adult by AdultContentScope.');
         }
 
         $this->explainEmbedding($titleId, $queryVector, $rankings['Semantic']);

@@ -2,6 +2,7 @@
 
 namespace Tests\Feature\Http\Controllers;
 
+use App\Domain\Enums\TitleType;
 use App\Models\Genre;
 use App\Models\Keyword;
 use App\Models\Language;
@@ -10,6 +11,7 @@ use App\Models\Provider;
 use App\Models\Title;
 use App\Models\TitleProvider;
 use App\Models\TitleSearchEmbedding;
+use App\Models\User;
 use App\Utils\Enum\FeatureFlag;
 use Database\Factories\TitleSearchEmbeddingFactory;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -47,7 +49,7 @@ class HomeControllerTest extends TestCase
     {
         $seed = Title::factory()->create(['popularity' => 100]);
         Title::factory(4)->create()->each(fn (Title $neighbour) => $seed->similarTitles()
-            ->attach($neighbour->id, ['score' => 0.9, 'reasons' => '[]']));
+            ->attach($neighbour->id, ['score' => 0.9, 'reasons' => []]));
 
         $this->get('/')->assertInertia(fn ($page) => $page
             ->missing('constellation')
@@ -382,6 +384,59 @@ class HomeControllerTest extends TestCase
 
         Http::assertSent(fn (Request $request) => str_ends_with($request->url(), '/chat/completions'));
         Http::assertSent(fn (Request $request) => ($request->data()['input'] ?? null) === ['Galaxy Quest']);
+    }
+
+    public function test_search_applies_the_title_type_filter_before_the_result_limit(): void
+    {
+        $movie = $this->createSearchableTitle(['name' => 'Galaxy Quest', 'type' => TitleType::MOVIE->value, 'popularity' => 0]);
+        foreach (range(1, 11) as $show) {
+            $this->createSearchableTitle(['name' => 'Galaxy Quest', 'type' => TitleType::TV->value, 'popularity' => 500]);
+        }
+        $this->refreshSearchIndex();
+
+        $this->getJson('/search?q=galaxy&title_type='.TitleType::MOVIE->value)
+            ->assertOk()
+            ->assertJsonCount(1, 'results')
+            ->assertJsonPath('results.0.id', $movie->id);
+    }
+
+    public function test_search_hides_avoided_keywords_before_the_result_limit(): void
+    {
+        $gore = Keyword::factory()->create();
+        $kept = $this->createSearchableTitle(['name' => 'Galaxy Quest', 'popularity' => 0]);
+        foreach (range(1, 11) as $avoided) {
+            $this->createSearchableTitle(['name' => 'Galaxy Quest', 'popularity' => 500])->keywords()->attach($gore);
+        }
+        $user = User::factory()->create();
+        $user->avoidedKeywords()->attach($gore);
+        $this->refreshSearchIndex();
+
+        $this->actingAs($user)
+            ->getJson('/search?q=galaxy')
+            ->assertOk()
+            ->assertJsonCount(1, 'results')
+            ->assertJsonPath('results.0.id', $kept->id);
+    }
+
+    public function test_search_all_keeps_relevance_order_when_filtering_by_genre(): void
+    {
+        $sciFi = Genre::factory()->create(['slug' => 'science-fiction']);
+        $nameMatch = $this->createSearchableTitle(['name' => 'Galaxy Quest', 'popularity' => 10]);
+        $keywordMatch = $this->createSearchableTitle(['name' => 'Unrelated Film', 'popularity' => 10]);
+        $keywordMatch->keywords()->attach(Keyword::factory()->create(['name' => 'galaxy']));
+        $this->createSearchableTitle(['name' => 'Galaxy Express']);
+        $nameMatch->genres()->attach($sciFi);
+        $keywordMatch->genres()->attach($sciFi);
+        $nameMatch->update(['created_at' => now()->subYear()]);
+        $this->refreshSearchIndex();
+
+        $this->get('/search-all?q=galaxy&gen=science-fiction')
+            ->assertOk()
+            ->assertInertia(fn ($page) => $page
+                ->has('titles.data', 2)
+                ->where('titles.data.0.id', $nameMatch->id)
+                ->where('titles.data.1.id', $keywordMatch->id)
+            );
     }
 
     public function test_search_all_is_rate_limited(): void

@@ -24,7 +24,7 @@ class SimilarTitleControllerTest extends TestCase
     {
         $title->similarTitles()->attach($similar->id, [
             'score' => $score,
-            'reasons' => json_encode([]),
+            'reasons' => [],
         ]);
     }
 

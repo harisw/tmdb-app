@@ -135,8 +135,8 @@ export default function useInfiniteScroll(source, options = {}) {
     })
 
     // When Inertia replaces the prop, rebuild the list, but only if the change
-    // came from outside our own pagination (e.g. router.reload() after toggling
-    // the adult filter). Our own fetches set internalUpdate and are skipped.
+    // came from outside our own pagination (e.g. router.reload()). Our own
+    // fetches set internalUpdate and are skipped.
     watch(getResource, (res) => {
         if (internalUpdate) {
             internalUpdate = false

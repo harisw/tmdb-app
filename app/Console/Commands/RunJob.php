@@ -5,7 +5,7 @@ namespace App\Console\Commands;
 use App\Domain\Enums\TitleType;
 use App\Jobs\EnrichSearchEmbeddingsBatchJob;
 use App\Jobs\EnrichTitleCreditsBatchJob;
-use App\Jobs\EnrichTitleKnowledgeGraphsJob;
+use App\Jobs\EnrichTitleEmbeddingsBatchJob;
 use App\Jobs\EnrichTitleProvidersBatchJob;
 use App\Jobs\EnrichTitleProvidersLinkBatchJob;
 use App\Jobs\EnrichTopTitlesProvidersBatchJob;
@@ -43,7 +43,7 @@ class RunJob extends Command
         $jobClass = $this->choice('Which job class do you want to run?',
             [FetchTrendingTitlesJob::class, FetchPopularTitlesJob::class, FetchUpcomingTitlesJob::class,
                 EnrichTitleProvidersBatchJob::class, TitlesBatchInsertJob::class,
-                EnrichTitleCreditsBatchJob::class, EnrichTitleKnowledgeGraphsJob::class,
+                EnrichTitleCreditsBatchJob::class, EnrichTitleEmbeddingsBatchJob::class,
                 MaterializeTitleSimilaritiesBatchJob::class, EnrichTitleProvidersLinkBatchJob::class, EnrichTopTitlesProvidersBatchJob::class,
                 EnrichSearchEmbeddingsBatchJob::class],
         );
@@ -64,8 +64,8 @@ class RunJob extends Command
             case EnrichTitleCreditsBatchJob::class:
                 $this->runEnrichTitleCredits();
                 break;
-            case EnrichTitleKnowledgeGraphsJob::class:
-                $this->runEnrichTitleKnowledgeGraphs();
+            case EnrichTitleEmbeddingsBatchJob::class:
+                $this->runEnrichTitleEmbeddings();
                 break;
             case MaterializeTitleSimilaritiesBatchJob::class:
                 $this->runMaterializeSimilarities();
@@ -143,10 +143,10 @@ class RunJob extends Command
         EnrichTitleCreditsBatchJob::dispatch($limit);
     }
 
-    private function runEnrichTitleKnowledgeGraphs(): void
+    private function runEnrichTitleEmbeddings(): void
     {
         $limit = (int) $this->ask('Limit titles?', 10);
-        EnrichTitleKnowledgeGraphsJob::dispatch($limit);
+        EnrichTitleEmbeddingsBatchJob::dispatch($limit);
     }
 
     private function runEnrichSearchEmbeddings(): void
@@ -158,7 +158,7 @@ class RunJob extends Command
     private function runMaterializeSimilarities(): void
     {
         $limit = (int) $this->ask('Limit titles?', 1000);
-        $onlyMissing = $this->confirm('Only titles missing similarities? (No = rebuild all embedded titles)', false);
-        MaterializeTitleSimilaritiesBatchJob::dispatch($limit, $onlyMissing);
+        $includeFresh = $this->confirm('Include titles materialized within the last week? (No = only stale or missing)', false);
+        MaterializeTitleSimilaritiesBatchJob::dispatch($limit, $includeFresh);
     }
 }

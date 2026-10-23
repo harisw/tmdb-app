@@ -15,11 +15,10 @@ class EnrichSearchEmbeddingsBatchJobTest extends TestCase
 {
     use RefreshDatabase;
 
-    public function test_queues_missing_stale_and_adult_titles_by_popularity(): void
+    public function test_queues_missing_and_stale_titles_by_popularity(): void
     {
         Queue::fake();
         $missing = Title::factory()->create(['popularity' => 10]);
-        $adult = Title::factory()->create(['popularity' => 30, 'is_adult' => true]);
         $stale = Title::factory()->create(['popularity' => 20]);
         TitleSearchEmbedding::factory()->for($stale)->create(['document_version' => SearchDocumentBuilder::VERSION - 1]);
         TitleSearchEmbedding::factory()->create();
@@ -28,7 +27,7 @@ class EnrichSearchEmbeddingsBatchJobTest extends TestCase
 
         Queue::assertPushed(GenerateSearchEmbeddingsChunkJob::class, 1);
         Queue::assertPushed(GenerateSearchEmbeddingsChunkJob::class,
-            fn (GenerateSearchEmbeddingsChunkJob $job) => $job->titleIds === [$adult->id, $stale->id, $missing->id]);
+            fn (GenerateSearchEmbeddingsChunkJob $job) => $job->titleIds === [$stale->id, $missing->id]);
     }
 
     public function test_splits_titles_into_chunks_of_one_hundred(): void

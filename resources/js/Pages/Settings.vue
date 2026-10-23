@@ -24,7 +24,6 @@ const form = useForm({
     username: user.value.username,
     country: user.value.country ?? '',
     avatar_style: user.value.avatar_style ?? '',
-    hide_adult: user.value.hide_adult,
 })
 
 const avatarPreview = computed(() => {
@@ -119,10 +118,9 @@ function submit() {
                     </aside>
 
                     <section aria-labelledby="region-heading" class="lg:col-start-2 lg:row-start-1">
-                        <h2 id="region-heading" class="text-lg font-semibold text-white">Region & content</h2>
+                        <h2 id="region-heading" class="text-lg font-semibold text-white">Region</h2>
                         <p class="mt-1.5 max-w-[60ch] text-sm leading-relaxed text-white/55">
-                            Streaming availability follows your country. Adult titles are hidden until you choose
-                            otherwise.
+                            Streaming availability follows your country.
                         </p>
 
                         <dl class="mt-6 divide-y divide-white/10 border-y border-white/10">
@@ -141,29 +139,6 @@ function submit() {
                                     <p v-if="form.errors.country" class="mt-1.5 text-sm text-red-300">
                                         {{ form.errors.country }}
                                     </p>
-                                </dd>
-                            </div>
-                            <div class="grid gap-3 py-5 sm:grid-cols-[12rem_minmax(0,1fr)] sm:items-center">
-                                <dt>
-                                    <label for="settings-hide-adult" class="text-sm font-medium text-white/80">
-                                        Adult titles
-                                    </label>
-                                </dt>
-                                <dd class="flex items-center justify-between gap-6">
-                                    <p class="text-sm leading-relaxed text-white/50">
-                                        Titles TMDB flags as adult. This is not an age rating.
-                                    </p>
-                                    <span class="flex shrink-0 items-center gap-3">
-                                        <span class="w-12 text-right text-sm text-white/70">
-                                            {{ form.hide_adult ? 'Hidden' : 'Shown' }}
-                                        </span>
-                                        <input
-                                            id="settings-hide-adult"
-                                            v-model="form.hide_adult"
-                                            type="checkbox"
-                                            class="toggle toggle-sm"
-                                        />
-                                    </span>
                                 </dd>
                             </div>
                         </dl>

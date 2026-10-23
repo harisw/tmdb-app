@@ -23,7 +23,7 @@ class TitleGraphControllerTest extends TestCase
     {
         $title->similarTitles()->attach($similar->id, [
             'score' => $score,
-            'reasons' => json_encode($reasons),
+            'reasons' => $reasons,
         ]);
     }
 
@@ -134,20 +134,5 @@ class TitleGraphControllerTest extends TestCase
             ->assertOk()
             ->assertJsonPath('links.0.reasons', $reasons)
             ->assertJsonPath('links.0.score', 0.9);
-    }
-
-    public function test_neighbors_excludes_adult_titles(): void
-    {
-        $title = Title::factory()->create(['slug' => 'sfw-title']);
-        $safe = Title::factory()->create(['is_adult' => false]);
-        $adult = Title::factory()->create(['is_adult' => true]);
-
-        $this->attachSimilar($title, $safe, 0.9);
-        $this->attachSimilar($title, $adult, 0.9);
-
-        $this->getJson('/graph/neighbors?title_slug=sfw-title')
-            ->assertOk()
-            ->assertJsonCount(1, 'nodes')
-            ->assertJsonPath('nodes.0.id', $safe->id);
     }
 }

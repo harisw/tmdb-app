@@ -25,7 +25,7 @@ class TitleResourceTest extends TestCase
             ->assertJsonStructure([
                 'title' => [
                     'id', 'name', 'slug', 'type', 'rating', 'release_date', 'runtime',
-                    'overview', 'backdrop_path', 'poster_path', 'is_adult',
+                    'overview', 'backdrop_path', 'poster_path',
                     'genres', 'keywords', 'title_providers', 'user_state',
                 ],
             ]);

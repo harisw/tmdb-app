@@ -25,12 +25,12 @@ class GenerateSearchEmbeddingsChunkJobTest extends TestCase
         ])]);
     }
 
-    public function test_stores_an_embedding_per_title_including_adult_titles(): void
+    public function test_stores_an_embedding_per_title(): void
     {
         $this->fakeOpenAi();
         $titles = collect([
             Title::factory()->create(),
-            Title::factory()->create(['is_adult' => true]),
+            Title::factory()->create(),
         ]);
 
         GenerateSearchEmbeddingsChunkJob::dispatchSync($titles->pluck('id')->all());
