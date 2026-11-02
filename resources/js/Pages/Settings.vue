@@ -53,7 +53,7 @@ function submit() {
     <Head title="Settings" />
     <AppLayout>
         <div class="w-full max-w-5xl selection:bg-madder/60 selection:text-white">
-            <SectionHeader title="Settings" />
+            <SectionHeader title="Settings" class="mb-6" />
             <p class="-mt-2 mb-10 text-sm leading-relaxed text-white/50">
                 Your profile, your region, and what Chill keeps out of your feed.
             </p>

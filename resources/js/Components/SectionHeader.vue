@@ -9,6 +9,7 @@ const props = defineProps({
     // page. Left empty the heading renders as plain text, so the component stays
     // usable for sections that have nowhere to go.
     href: { type: String, default: '' },
+    headingTag: { type: String, default: 'h1' },
 })
 
 const tag = computed(() => (props.href ? Link : 'div'))
@@ -19,15 +20,16 @@ const tag = computed(() => (props.href ? Link : 'div'))
         :is="tag"
         :href="href || undefined"
         :aria-label="href ? `Browse all ${title} titles` : undefined"
-        class="group flex items-center gap-3 mb-6 w-fit"
+        class="group flex items-center gap-3 w-fit"
         :class="href && 'rounded focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-glow-red'"
     >
-        <img v-if="logo" :src="logo" :alt="title" class="h-8 w-auto object-contain rounded" />
-        <h1
+        <img v-if="logo" :src="logo" alt="" class="h-8 w-auto object-contain rounded" />
+        <component
+            :is="headingTag"
             class="text-2xl 2xl:text-4xl font-bold text-white [text-shadow:0_1px_2px_rgb(0_0_0/0.4)] transition-colors motion-reduce:transition-none group-hover:text-white/75"
         >
             {{ title }}
-        </h1>
+        </component>
         <!-- Sole affordance that the heading is clickable, so it stays visible
              rather than appearing on hover; there is no hover on touch. -->
         <svg

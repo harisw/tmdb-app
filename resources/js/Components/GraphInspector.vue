@@ -103,10 +103,19 @@ function barWidth(weight) {
                     </dt>
                     <dd class="text-white/75">Brighter, thicker lines are stronger matches</dd>
                 </div>
+                <div class="flex items-center gap-3">
+                    <dt class="shrink-0">
+                        <svg width="24" height="24" viewBox="0 0 24 24" aria-hidden="true">
+                            <line x1="2" y1="16" x2="22" y2="8" class="stroke-tea-green" stroke-width="3" />
+                        </svg>
+                    </dt>
+                    <dd class="text-white/75">Your route to each title you expanded</dd>
+                </div>
             </dl>
 
             <p class="mt-6 text-sm leading-relaxed text-white/60">
-                Click a poster to see why it's here, double-click to add its neighbours. Drag to move, scroll to zoom,
+                Click a poster to see why it's here, double-click to add its neighbours. Hover a line for its main
+                reason. Drag to move, scroll to zoom,
                 <kbd class="rounded border border-white/20 px-1 text-xs text-white/75">F</kbd> for fullscreen.
             </p>
         </template>

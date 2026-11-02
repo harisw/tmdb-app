@@ -7,12 +7,15 @@ use App\Models\Title;
 use App\Services\KnowledgeGraph\ConstellationService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Str;
 use Inertia\Inertia;
 use Inertia\Response;
 
 class TitleGraphController extends Controller
 {
     private const LIMIT = 8;
+
+    private const TRAIL_LIMIT = 20;
 
     /**
      * The Inertia explorer page. Keyed by the ?title_slug= query param rather
@@ -25,6 +28,7 @@ class TitleGraphController extends Controller
 
         return Inertia::render('TitleGraph', [
             'slug' => $slug,
+            'trail' => is_string($slug) ? $this->trailSlugs($request, $slug) : [],
             'starts' => $slug ? [] : $constellations->seeds()->map(fn (Title $title) => $title->toGraphNode())->all(),
         ]);
     }
@@ -57,5 +61,27 @@ class TitleGraphController extends Controller
                 'reasons' => $t->pivot->reasons,
             ])->values(),
         ]);
+    }
+
+    /**
+     * @return list<string>
+     */
+    private function trailSlugs(Request $request, string $rootSlug): array
+    {
+        $trail = $request->query('trail');
+
+        if (! is_string($trail)) {
+            return [];
+        }
+
+        return Str::of($trail)
+            ->explode(',')
+            ->map(fn (string $slug) => trim($slug))
+            ->filter()
+            ->reject(fn (string $slug) => $slug === $rootSlug)
+            ->unique()
+            ->take(self::TRAIL_LIMIT)
+            ->values()
+            ->all();
     }
 }

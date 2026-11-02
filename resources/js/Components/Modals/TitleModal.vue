@@ -46,19 +46,31 @@ async function fetchSimilar(title) {
     }
 }
 
-function selectSimilar(title) {
+async function fillDetails(title) {
+    if (!title?.id || title.keywords) return
+    const response = await window.axios.get(`/title/${title.id}`).catch(() => null)
+    if (response && currentItem.value?.id === title.id) {
+        currentItem.value = { ...currentItem.value, ...response.data.title }
+    }
+}
+
+function present(title) {
     currentItem.value = title
-    baseModal.value?.scrollToTop()
     fetchSimilar(title)
+    fillDetails(title)
+}
+
+function selectSimilar(title) {
+    baseModal.value?.scrollToTop()
+    present(title)
 }
 
 watch(
     () => [props.show, props.item?.id],
-    ([show]) => {
-        if (show && props.item) {
-            currentItem.value = props.item
-            fetchSimilar(props.item)
-        } else if (!show) {
+    ([isShown]) => {
+        if (isShown && props.item) {
+            present(props.item)
+        } else if (!isShown) {
             similar.value = []
             requestId++ // invalidate any in-flight request
         }

@@ -7,6 +7,7 @@ import TitleActionBar from './TitleActionBar.vue'
 import TitleActionSheet from './TitleActionSheet.vue'
 import TitleRateModal from './Modals/TitleRateModal.vue'
 import useTitleActions from '../Composables/useTitleActions.js'
+import { usePointerTilt } from '../Composables/usePointerTilt.js'
 import { onPosterError } from '../utils/img.js'
 import { badge } from '../variants/badge.js'
 
@@ -14,48 +15,52 @@ const props = defineProps({
     onClick: { type: Function },
     item: { type: Object, required: true },
     showGenres: { type: Boolean, default: true },
-    size: { type: String, default: '' },
 })
 
+const GENRE_LIMIT = 2
+
 const { state, pending, likeCount, trigger, rate, resolveRating } = useTitleActions(() => props.item)
+const { target: card, onPointerMove, onPointerLeave } = usePointerTilt()
 </script>
 
 <template>
-    <div class="bg-licorice rounded-xl shadow">
-        <div :class="`${size} group [perspective:500px] mx-auto h-full hover:cursor-pointer`">
-            <div
-                class="relative bg-licorice/95 ring-1 ring-white/5 has-[.card-open:focus-visible]:ring-2 has-[.card-open:focus-visible]:ring-glow-red rounded-xl shadow-xl transition-transform duration-500 transform group-hover:rotate-y-3 group-hover:-rotate-x-1 group-hover:scale-105 [transform-style:preserve-3d] overflow-x-hidden h-full"
-            >
-                <div class="relative overflow-hidden rounded-t-xl">
-                    <img
-                        :src="item.poster_path"
-                        :alt="`${item.name} Poster`"
-                        class="w-full aspect-[2/3] object-cover rounded-t-xl"
-                        @error="onPosterError"
-                    />
+    <div class="h-full [perspective:800px]">
+        <div
+            ref="card"
+            class="group relative flex h-full cursor-pointer flex-col overflow-hidden rounded-xl bg-licorice shadow-xl ring-1 ring-white/5 transition-transform duration-200 ease-out [transform:translateY(var(--lift,0px))_rotateX(var(--tilt-x,0deg))_rotateY(var(--tilt-y,0deg))] has-[.card-open:focus-visible]:ring-2 has-[.card-open:focus-visible]:ring-glow-red motion-reduce:transition-none"
+            @pointermove="onPointerMove"
+            @pointerleave="onPointerLeave"
+        >
+            <div class="relative overflow-hidden rounded-t-xl">
+                <img
+                    :src="item.poster_path"
+                    :alt="`${item.name} Poster`"
+                    class="aspect-[2/3] w-full object-cover transition-transform duration-200 ease-out [transform:translate(var(--shift-x,0px),var(--shift-y,0px))_scale(var(--zoom,1))] motion-reduce:transition-none"
+                    @error="onPosterError"
+                />
 
-                    <!-- top row: type badge + rating -->
-                    <div class="absolute inset-x-2 top-2 flex justify-between items-center">
-                        <span v-if="item.type === 'movie'" :class="badge({ tone: 'movie' })">
-                            <FilmIcon size="14" /> Film
-                        </span>
-                        <span v-else :class="badge({ tone: 'tv' })"> <TvIcon size="14" /> TV </span>
-                        <RatingBadge :rating="item.rating" />
-                    </div>
-
-                    <!-- bottom row: action group (left) + provider logos (right) -->
-                    <div class="absolute inset-x-2 bottom-2 z-10 flex justify-end items-center gap-1">
-                        <TitleActionBar :state="state" :pending="pending" :like-count="likeCount" @action="trigger" />
-                        <ProvidersBadge
-                            v-if="item.title_providers?.length"
-                            :title-providers="item.title_providers.slice(0, 3)"
-                        />
-                    </div>
+                <div class="absolute inset-x-2 top-2 flex items-center justify-between">
+                    <span :class="badge({ tone: item.type === 'movie' ? 'movie' : 'tv' })">
+                        <FilmIcon v-if="item.type === 'movie'" size="14" />
+                        <TvIcon v-else size="14" />
+                        {{ item.type === 'movie' ? 'Film' : 'TV' }}
+                        <span v-if="item.release_date" class="tabular-nums opacity-70">· {{ item.release_date }}</span>
+                    </span>
+                    <RatingBadge :rating="item.rating" />
                 </div>
 
-                <!-- body -->
-                <div class="p-2 flex flex-col">
-                    <h2 class="hidden md:block text-base font-semibold text-white">
+                <div class="absolute inset-x-2 bottom-2 z-10 flex items-center justify-end gap-1">
+                    <TitleActionBar :state="state" :pending="pending" :like-count="likeCount" @action="trigger" />
+                    <ProvidersBadge
+                        v-if="item.title_providers?.length"
+                        :title-providers="item.title_providers.slice(0, 3)"
+                    />
+                </div>
+            </div>
+
+            <div class="flex flex-1 flex-col gap-2 px-3 pt-2.5 pb-3">
+                <div class="flex items-start justify-between gap-2">
+                    <h2 class="min-h-[2lh] text-base font-semibold leading-snug text-white">
                         <button
                             type="button"
                             class="card-open line-clamp-2 cursor-pointer text-left outline-none after:absolute after:inset-0 after:content-['']"
@@ -64,33 +69,19 @@ const { state, pending, likeCount, trigger, rate, resolveRating } = useTitleActi
                             {{ item.name }}
                         </button>
                     </h2>
-                    <div class="md:hidden flex flex-row items-start justify-between gap-2">
-                        <h2 class="text-base font-semibold text-white">
-                            <button
-                                type="button"
-                                class="card-open line-clamp-2 cursor-pointer text-left outline-none after:absolute after:inset-0 after:content-['']"
-                                @click="props.onClick(item)"
-                            >
-                                {{ item.name }}
-                            </button>
-                        </h2>
-                        <div class="relative z-10 shrink-0">
-                            <TitleActionSheet
-                                :title="item"
-                                :state="state"
-                                :pending="pending"
-                                :like-count="likeCount"
-                                @action="trigger"
-                            />
-                        </div>
+                    <div class="relative z-10 shrink-0 md:hidden">
+                        <TitleActionSheet
+                            :title="item"
+                            :state="state"
+                            :pending="pending"
+                            :like-count="likeCount"
+                            @action="trigger"
+                        />
                     </div>
-                    <span v-if="item.release_date" class="mt-0.5 text-xs text-white/50">
-                        {{ item.release_date }}
-                    </span>
+                </div>
 
-                    <div v-if="showGenres" class="relative z-10 mt-1.5 flex w-fit flex-wrap gap-1.5">
-                        <GenreBadges :genres="item.genres.slice(0, 3)" />
-                    </div>
+                <div v-if="showGenres" class="relative z-10 h-5 overflow-hidden">
+                    <GenreBadges :genres="item.genres.slice(0, GENRE_LIMIT)" />
                 </div>
             </div>
         </div>

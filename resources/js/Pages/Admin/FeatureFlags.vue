@@ -45,7 +45,7 @@ function toggle(flag) {
     <Head title="Feature Flags" />
     <AppLayout>
         <div class="w-full max-w-3xl">
-            <SectionHeader title="Feature Flags" />
+            <SectionHeader title="Feature Flags" class="mb-6" />
             <p class="-mt-2 mb-8 text-sm text-white/50 leading-relaxed">
                 Runtime kill switches for scheduled work. A change applies from the next scheduler tick onward. Anything
                 already queued still runs to completion.
