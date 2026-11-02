@@ -1,7 +1,7 @@
 # ========================
 # 1. Node build stage
 # ========================
-FROM node:25-alpine AS frontend
+FROM node:26-alpine AS frontend
 
 WORKDIR /app
 
@@ -30,9 +30,7 @@ RUN apk add --no-cache \
       autoconf g++ make \
    && docker-php-ext-install pdo pdo_pgsql mbstring zip pcntl intl \
    && pecl install redis \
-   && docker-php-ext-enable redis \
-   && apk del postgresql-dev libzip-dev oniguruma-dev icu-dev unzip autoconf g++ make \
-   && apk add --no-cache libpq libzip oniguruma icu-libs
+   && docker-php-ext-enable redis
 
 COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
 
@@ -65,7 +63,7 @@ COPY --from=builder /var/www/vendor vendor
 COPY . .
 COPY --from=frontend /app/public/build public/build
 
-RUN chown -R www-data:www-data /var/www
+RUN chown -R www-data:www-data storage bootstrap/cache
 
 EXPOSE 9000
 
