@@ -94,9 +94,10 @@ Full-text search reads the `titles_searchable_index` table (`SearchableTitle` mo
 
 ### Other conventions worth knowing
 
+- **Providers** are one row per real service; every external id (TMDB provider ids, Watchmode names, Streaming Availability service ids) is a `provider_aliases` row, so never key on `slug` or names. `ProviderCatalog` owns lookups and creates providers for unseen TMDB ids (aliasing by normalized name first). Curated variant→main folds and third-party mappings live in `database/seeders/data/provider_aliases.php`, applied by `ProviderCatalogImporter` from both `TmdbProviderSeeder` (bundled snapshots) and the monthly `ImportTmdbProvidersJob` (live TMDB lists, so names and logos follow TMDB's current ones).
 - **Feature flags** use Laravel Pennant keyed by `App\Utils\Enum\FeatureFlag`, toggled at `/admin/feature-flags` behind `can:admin`.
 - **Repositories** exist only for `Person` and `TitlePerson` (`app/Repositories/Contracts/`). Everything else goes through services or Eloquent directly — don't add repositories elsewhere for symmetry.
-- **Monitoring:** Laravel Pulse (`pulse:check` every minute), Debugbar locally, Grafana Loki via Alloy in production (`alloy/config.alloy`).
+- **Monitoring:** Laravel Pulse (`pulse:check` every minute), Debugbar locally. In production, app and Horizon write JSON logs to stderr (`LOG_CHANNEL=stderr`, `LOG_STDERR_FORMATTER=Monolog\Formatter\JsonFormatter`), which Docker's `awslogs` driver ships to the CloudWatch groups `/tmdb/app` and `/tmdb/horizon`. Each line carries `request_id`, and `job` metadata on queued work.
 
 ## Environment Setup
 
@@ -123,7 +124,7 @@ ADMIN_USERNAME=              # seeded admin account
 ```bash
 docker-compose -f docker-compose.local.yml up   # app + nginx :8000 + pgvector postgres
 docker-compose up                               # postgres only
-docker-compose -f docker-compose.prod.yml up    # app + redis + fluent-bit, ECR images
+docker-compose -f docker-compose.prod.yml up    # app + horizon + redis, ECR images
 ```
 
 The Dockerfile is a multi-stage build: Node 25 Alpine builds frontend assets, PHP 8.4 FPM Alpine serves the app.

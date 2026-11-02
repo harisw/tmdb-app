@@ -66,6 +66,38 @@ class TitleGraphControllerTest extends TestCase
         $this->get('/graph?title_slug=anything')->assertInertia(fn ($page) => $page->has('starts', 0));
     }
 
+    public function test_graph_page_passes_the_trail_in_order(): void
+    {
+        $this->get('/graph?title_slug=root&trail=second,third')
+            ->assertInertia(fn ($page) => $page->where('trail', ['second', 'third']));
+    }
+
+    public function test_graph_page_trail_drops_blanks_duplicates_and_the_root(): void
+    {
+        $this->get('/graph?title_slug=root&trail='.urlencode(' second ,,root,second,third'))
+            ->assertInertia(fn ($page) => $page->where('trail', ['second', 'third']));
+    }
+
+    public function test_graph_page_trail_is_capped(): void
+    {
+        $slugs = collect(range(1, 30))->map(fn (int $i) => "title-{$i}");
+
+        $this->get('/graph?title_slug=root&trail='.$slugs->implode(','))
+            ->assertInertia(fn ($page) => $page->where('trail', $slugs->take(20)->all()));
+    }
+
+    public function test_graph_page_trail_is_empty_without_a_slug(): void
+    {
+        $this->get('/graph?trail=second,third')
+            ->assertInertia(fn ($page) => $page->where('trail', []));
+    }
+
+    public function test_graph_page_ignores_a_non_string_trail(): void
+    {
+        $this->get('/graph?title_slug=root&trail[]=second')
+            ->assertInertia(fn ($page) => $page->where('trail', []));
+    }
+
     public function test_neighbors_requires_title_slug(): void
     {
         $this->getJson('/graph/neighbors')

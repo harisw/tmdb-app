@@ -23,4 +23,17 @@ class CountrySeederTest extends TestCase
         $this->assertFalse(Cache::has('countries'));
         $this->assertGreaterThan(0, Country::count());
     }
+
+    public function test_seeding_maps_iso3_and_language_from_the_bundled_data(): void
+    {
+        $other = Language::factory()->create(['code' => 'other']);
+        $catalan = Language::factory()->create(['code' => 'ca']);
+
+        $this->seed(CountrySeeder::class);
+
+        $this->assertDatabaseHas('countries', ['iso2' => 'AD', 'iso3' => 'AND', 'name' => 'Andorra', 'language_id' => $catalan->id]);
+        $this->assertDatabaseHas('countries', ['iso2' => 'AE', 'iso3' => 'ARE', 'language_id' => $other->id]);
+        $this->assertDatabaseHas('countries', ['iso2' => 'MY', 'iso3' => 'MYS', 'language_id' => $other->id]);
+        $this->assertDatabaseHas('countries', ['iso2' => 'YU', 'iso3' => null, 'language_id' => $other->id]);
+    }
 }

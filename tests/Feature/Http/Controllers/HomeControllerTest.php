@@ -7,9 +7,7 @@ use App\Models\Genre;
 use App\Models\Keyword;
 use App\Models\Language;
 use App\Models\ProductionCompany;
-use App\Models\Provider;
 use App\Models\Title;
-use App\Models\TitleProvider;
 use App\Models\TitleSearchEmbedding;
 use App\Models\User;
 use App\Utils\Enum\FeatureFlag;
@@ -79,52 +77,6 @@ class HomeControllerTest extends TestCase
                 ->where('titles.meta.per_page', 30)
                 ->where('titles.meta.total', 35)
                 ->whereNot('titles.links.next', null)
-            );
-    }
-
-    public function test_all_genres_page_renders_genres_with_their_titles(): void
-    {
-        $genre = Genre::factory()->create();
-        $titles = Title::factory(2)->create();
-        $genre->titles()->attach($titles->pluck('id'));
-
-        $this->get('/genre/all')
-            ->assertOk()
-            ->assertInertia(fn ($page) => $page
-                ->component('AllGenres')
-                ->has('allGenres', 1)
-                ->has('allGenres.0.titles', 2)
-            );
-    }
-
-    public function test_all_providers_page_renders_providers_with_their_titles(): void
-    {
-        $title = Title::factory()->create();
-        $titleProvider = TitleProvider::factory()->create(['title_id' => $title->id]);
-        Provider::whereKey($titleProvider->provider_id)->update(['count' => 1000]);
-
-        $this->get('/provider/all')
-            ->assertOk()
-            ->assertInertia(fn ($page) => $page
-                ->component('AllProviders')
-                ->where('allProviders.0.titles.0.id', $title->id)
-            );
-    }
-
-    public function test_titles_by_genre_returns_only_that_genres_titles(): void
-    {
-        $genre = Genre::factory()->create(['slug' => 'drama']);
-        $other = Genre::factory()->create(['slug' => 'comedy']);
-
-        Title::factory(2)->create()->each(fn ($m) => $m->genres()->attach($genre));
-        Title::factory()->create()->each(fn ($m) => $m->genres()->attach($other));
-
-        $this->get('/genre/drama')
-            ->assertOk()
-            ->assertInertia(fn ($page) => $page
-                ->component('TitleByGenre')
-                ->has('genre')
-                ->has('titles.data', 2)
             );
     }
 

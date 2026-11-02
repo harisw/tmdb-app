@@ -3,6 +3,7 @@
 namespace Tests\Feature\Console;
 
 use App\Jobs\FetchTrendingTitlesJob;
+use App\Jobs\ImportTmdbProvidersJob;
 use App\Jobs\MaterializeTitleSimilaritiesBatchJob;
 use Carbon\CarbonImmutable;
 use Cron\CronExpression;
@@ -17,13 +18,13 @@ class ScheduleTest extends TestCase
     /**
      * @return array<int, CarbonImmutable>
      */
-    private function runsInWeek(Event $event): array
+    private function runsWithin(Event $event, int $days = 7): array
     {
         $start = CarbonImmutable::parse('2026-10-12 00:00', self::TIMEZONE);
 
         return collect((new CronExpression($event->expression))->getMultipleRunDates(200, $start, allowCurrentDate: true, timeZone: $event->timezone))
             ->map(fn (\DateTime $run) => CarbonImmutable::instance($run)->setTimezone(self::TIMEZONE))
-            ->filter(fn (CarbonImmutable $run) => $run->lessThan($start->addWeek()))
+            ->filter(fn (CarbonImmutable $run) => $run->lessThan($start->addDays($days)))
             ->values()
             ->all();
     }
@@ -45,7 +46,7 @@ class ScheduleTest extends TestCase
     public function test_every_event_runs_while_the_server_is_up(): void
     {
         foreach (app(Schedule::class)->events() as $event) {
-            $runs = $this->runsInWeek($event);
+            $runs = $this->runsWithin($event) ?: $this->runsWithin($event, days: 31);
             $runsWhileUp = array_filter($runs, $this->isServerUp(...));
 
             $this->assertNotEmpty($runsWhileUp, "{$event->getSummaryForDisplay()} never runs while the server is up");
@@ -60,7 +61,7 @@ class ScheduleTest extends TestCase
     {
         $runsPerWeek = collect(app(Schedule::class)->events())
             ->filter(fn (Event $event) => $event->description === FetchTrendingTitlesJob::class)
-            ->map(fn (Event $event) => count($this->runsInWeek($event)))
+            ->map(fn (Event $event) => count($this->runsWithin($event)))
             ->sort()
             ->values()
             ->all();
@@ -72,10 +73,21 @@ class ScheduleTest extends TestCase
     {
         $runsPerWeek = collect(app(Schedule::class)->events())
             ->filter(fn (Event $event) => $event->description === MaterializeTitleSimilaritiesBatchJob::class)
-            ->map(fn (Event $event) => count($this->runsInWeek($event)))
+            ->map(fn (Event $event) => count($this->runsWithin($event)))
             ->values()
             ->all();
 
         $this->assertSame([7 * 24], $runsPerWeek);
+    }
+
+    public function test_providers_are_imported_from_tmdb_monthly(): void
+    {
+        $runsPerMonth = collect(app(Schedule::class)->events())
+            ->filter(fn (Event $event) => $event->description === ImportTmdbProvidersJob::class)
+            ->map(fn (Event $event) => count($this->runsWithin($event, days: 31)))
+            ->values()
+            ->all();
+
+        $this->assertSame([1], $runsPerMonth);
     }
 }

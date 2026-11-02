@@ -13,7 +13,6 @@
         "dicebear/core": "^10.0",
         "dicebear/styles": "^10.1",
         "inertiajs/inertia-laravel": "^2.0",
-        "io238/laravel-iso-countries": "^1.4",
         "laravel/framework": "^13.0",
         "laravel/horizon": "^5.47",
         "laravel/pennant": "^1.24",

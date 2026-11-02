@@ -16,6 +16,9 @@ use Gate;
 use GuzzleHttp\Utils;
 use Http;
 use Illuminate\Cache\RateLimiting\Limit;
+use Illuminate\Queue\Events\JobProcessing;
+use Illuminate\Support\Facades\Context;
+use Illuminate\Support\Facades\Queue;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\ServiceProvider;
 use Laravel\Pennant\Feature;
@@ -42,15 +45,15 @@ class AppServiceProvider extends ServiceProvider
             return new TitleService;
         });
 
-        $this->app->singleton(ProviderCatalog::class, fn () => new ProviderCatalog);
+        $this->app->scoped(ProviderCatalog::class, fn () => new ProviderCatalog);
 
-        $this->app->singleton(StreamingAvailabilityService::class, fn ($app) => new StreamingAvailabilityService(
+        $this->app->scoped(StreamingAvailabilityService::class, fn ($app) => new StreamingAvailabilityService(
             apiKey: config('services.providers.movie_night.api_key'),
             baseUrl: config('services.providers.movie_night.base_url'),
             catalog: $app->make(ProviderCatalog::class),
         ));
 
-        $this->app->singleton(WatchmodeService::class, fn ($app) => new WatchmodeService(
+        $this->app->scoped(WatchmodeService::class, fn ($app) => new WatchmodeService(
             apiKey: config('services.providers.watchmode.api_key'),
             baseUrl: config('services.providers.watchmode.base_url'),
             catalog: $app->make(ProviderCatalog::class),
@@ -84,5 +87,12 @@ class AppServiceProvider extends ServiceProvider
         }
 
         RateLimiter::for('tmdb', fn () => Limit::perSecond(10));
+
+        Queue::before(fn (JobProcessing $event) => Context::add('job', [
+            'id' => $event->job->uuid(),
+            'name' => $event->job->resolveName(),
+            'queue' => $event->job->getQueue(),
+            'attempt' => $event->job->attempts(),
+        ]));
     }
 }

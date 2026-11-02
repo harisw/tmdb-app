@@ -6,51 +6,51 @@ use App\Data\DTOs\ProviderData;
 use App\Domain\Enums\StreamType;
 use App\Models\Country;
 use App\Models\CountryProvider;
-use App\Models\Provider;
 use App\Models\Title;
 use App\Models\TitleProvider;
+use App\Services\ProviderServices\ProviderCatalog;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Log;
-use Str;
 
 class WatchProviderSyncService
 {
     private Collection $countryMap;
 
-    private Collection $providersMap;
-
     private Collection $countryProvidersMap;
 
-    public function __construct()
+    public function __construct(private readonly ProviderCatalog $catalog)
     {
         $this->countryMap = Country::pluck('id', 'iso2');
-        $this->providersMap = Provider::pluck('id', 'slug');
-        $this->countryProvidersMap = CountryProvider::select('id', 'country_id', 'provider_id')
-            ->get()
-            ->keyBy(fn ($cp) => "{$cp->country_id}-{$cp->provider_id}");
+        $this->loadCountryProviders();
     }
 
     public function sync(Title $title, array $results): void
     {
         $entries = $this->normalizeEntries($results, StreamType::values());
+        $this->linkMissingCountryProviders($entries);
 
-        $missingProviders = $this->findMissingProviders($entries);
-        if ($missingProviders) {
-            Provider::upsert(array_values($missingProviders), ['slug'], ['name', 'tmdb_id', 'img_logo', 'priority']);
-            $this->providersMap = Provider::disableCache()->pluck('id', 'slug');
-        }
-
-        $missingCountryProviders = $this->findMissingCountryProviders($entries);
-        if ($missingCountryProviders) {
-            CountryProvider::upsert(array_values($missingCountryProviders), ['country_id', 'provider_id'], ['priority']);
-            $this->countryProvidersMap = CountryProvider::disableCache()
-                ->select('id', 'country_id', 'provider_id')
-                ->get()
-                ->keyBy(fn ($cp) => "{$cp->country_id}-{$cp->provider_id}");
-        }
-
-        $rows = $this->buildTitleProviderRows($title, $entries);
+        $rows = array_values($this->buildTitleProviderRows($title, $entries));
         $this->persistTitleProviders($title->id, $rows);
+    }
+
+    private function loadCountryProviders(): void
+    {
+        $this->countryProvidersMap = CountryProvider::disableCache()
+            ->select('id', 'country_id', 'provider_id')
+            ->get()
+            ->keyBy(fn ($cp) => "{$cp->country_id}-{$cp->provider_id}");
+    }
+
+    private function linkMissingCountryProviders(array $entries): void
+    {
+        $missingCountryProviders = $this->findMissingCountryProviders($entries);
+        if (! $missingCountryProviders) {
+            return;
+        }
+
+        CountryProvider::upsert(array_values($missingCountryProviders), ['country_id', 'provider_id'], ['priority']);
+        (new CountryProvider)->flushCache();
+        $this->loadCountryProviders();
     }
 
     private function normalizeEntries(array $results, array $validStreamTypes): array
@@ -69,8 +69,7 @@ class WatchProviderSyncService
 
             foreach ($countryData as $streamType => $providers) {
                 if (! in_array($streamType, $validStreamTypes, true)) {
-                    Log::warning(self::class.": skipping unknown stream type
-  [{$streamType}]");
+                    Log::warning(self::class.": skipping unknown stream type [{$streamType}]");
 
                     continue;
                 }
@@ -78,7 +77,7 @@ class WatchProviderSyncService
                 foreach (collect($providers)->unique('provider_id') as $raw) {
                     $entries[] = [
                         'country_id' => $countryId,
-                        'slug' => Str::slug($raw['provider_name']),
+                        'provider_id' => $this->catalog->findOrCreateTmdbProvider(ProviderData::from($raw)),
                         'stream_type' => $streamType,
                         'link' => $link,
                         'raw' => $raw,
@@ -90,29 +89,12 @@ class WatchProviderSyncService
         return $entries;
     }
 
-    private function findMissingProviders(array $entries): array
-    {
-        $missing = [];
-
-        foreach ($entries as $entry) {
-            $slug = $entry['slug'];
-            if (! $this->providersMap->has($slug) && ! isset($missing[$slug])) {
-                $missing[$slug] = ProviderData::from($entry['raw'])->toUpsertArray();
-            }
-        }
-
-        return $missing;
-    }
-
     private function findMissingCountryProviders(array $entries): array
     {
         $missing = [];
 
         foreach ($entries as $entry) {
-            $providerId = $this->providersMap->get($entry['slug']);
-            if (! $providerId) {
-                continue;
-            }
+            $providerId = $entry['provider_id'];
 
             $key = "{$entry['country_id']}-{$providerId}";
             if (! $this->countryProvidersMap->has($key) && ! isset($missing[$key])) {
@@ -133,10 +115,7 @@ class WatchProviderSyncService
         $now = now();
 
         foreach ($entries as $entry) {
-            $providerId = $this->providersMap->get($entry['slug']);
-            if (! $providerId) {
-                continue;
-            }
+            $providerId = $entry['provider_id'];
 
             $countryProvider =
                 $this->countryProvidersMap->get("{$entry['country_id']}-{$providerId}");
@@ -144,7 +123,7 @@ class WatchProviderSyncService
                 continue;
             }
 
-            $rows[] = [
+            $rows["{$countryProvider->id}-{$entry['stream_type']}"] = [
                 'title_id' => $title->id,
                 'country_provider_id' => $countryProvider->id,
                 'country_id' => $entry['country_id'],

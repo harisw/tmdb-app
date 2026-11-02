@@ -2,6 +2,7 @@
 
 namespace Tests\Feature\Service\ProviderServices;
 
+use App\Domain\Enums\ProviderSource;
 use App\Domain\Enums\StreamType;
 use App\Models\Country;
 use App\Models\CountryProvider;
@@ -45,7 +46,7 @@ class WatchmodeServiceTest extends TestCase
     public function test_builds_dto_for_a_mapped_provider_and_country(): void
     {
         $country = Country::factory()->create(['iso2' => 'US']);
-        $provider = Provider::factory()->create(['slug' => 'apple-tv']);
+        $provider = Provider::factory()->withAlias(ProviderSource::WATCHMODE, 'AppleTV')->create();
         CountryProvider::factory()->create(['country_id' => $country->id, 'provider_id' => $provider->id]);
         $title = Title::factory()->create(['tmdb_id' => 1550569, 'imdb_id' => null]);
 
@@ -67,7 +68,7 @@ class WatchmodeServiceTest extends TestCase
     public function test_normalizes_type_and_quality(array $source, StreamType $type, string $quality): void
     {
         $country = Country::factory()->create(['iso2' => 'US']);
-        $provider = Provider::factory()->create(['slug' => 'peacock-premium']);
+        $provider = Provider::factory()->withAlias(ProviderSource::WATCHMODE, 'Peacock')->create();
         CountryProvider::factory()->create(['country_id' => $country->id, 'provider_id' => $provider->id]);
         $title = Title::factory()->create(['tmdb_id' => 1550569]);
 
@@ -108,7 +109,7 @@ class WatchmodeServiceTest extends TestCase
 
     public function test_skips_entries_for_an_unseeded_region_without_crashing(): void
     {
-        Provider::factory()->create(['slug' => 'apple-tv']);
+        Provider::factory()->withAlias(ProviderSource::WATCHMODE, 'AppleTV')->create();
         $title = Title::factory()->create(['tmdb_id' => 1550569]);
 
         Http::fake(['watchmode.test/*' => Http::response([
@@ -123,7 +124,7 @@ class WatchmodeServiceTest extends TestCase
     public function test_deduplicates_identical_rows(): void
     {
         $country = Country::factory()->create(['iso2' => 'US']);
-        $provider = Provider::factory()->create(['slug' => 'apple-tv']);
+        $provider = Provider::factory()->withAlias(ProviderSource::WATCHMODE, 'AppleTV')->create();
         CountryProvider::factory()->create(['country_id' => $country->id, 'provider_id' => $provider->id]);
         $title = Title::factory()->create(['tmdb_id' => 1550569]);
 

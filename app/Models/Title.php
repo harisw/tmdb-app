@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Domain\Enums\CreditJob;
+use App\Domain\Enums\TitleSort;
 use App\Domain\Enums\TitleType;
 use App\Helpers\DateTimeHelper;
 use App\Models\Scopes\AvoidedKeywordScope;
@@ -185,6 +186,17 @@ class Title extends Model
         return $query->with(self::detailRelations())->latest();
     }
 
+    public function scopeSorted(Builder $query, TitleSort $sort): Builder
+    {
+        $ordered = match ($sort) {
+            TitleSort::POPULAR => $query->orderByDesc('titles.popularity'),
+            TitleSort::NEWEST => $query->orderByRaw('titles.release_date desc nulls last'),
+            TitleSort::RECENTLY_ADDED => $query->orderByDesc('titles.created_at'),
+        };
+
+        return $ordered->orderBy('titles.id');
+    }
+
     public function language(): BelongsTo
     {
         return $this->belongsTo(Language::class);
@@ -317,5 +329,15 @@ class Title extends Model
         }
 
         return $relations;
+    }
+
+    public static function cardRelations(): array
+    {
+        $relations = array_filter(self::detailRelations(), fn ($relation) => ! in_array($relation, ['genres', 'keywords'], true));
+
+        return [
+            'genres' => fn ($q) => $q->select(['genres.id', 'genres.slug', 'genres.name']),
+            ...$relations,
+        ];
     }
 }

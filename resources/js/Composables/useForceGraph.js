@@ -1,27 +1,20 @@
-import { forceSimulation, forceManyBody, forceLink, forceCenter, forceCollide } from 'd3-force'
-import { select as d3Select } from 'd3-selection'
+import { forceCenter, forceCollide, forceLink, forceManyBody, forceSimulation, forceX, forceY } from 'd3-force'
+import { pointer, select as d3Select } from 'd3-selection'
 import { zoom, zoomIdentity } from 'd3-zoom'
-import { drag } from 'd3-drag'
 import 'd3-transition'
-import { POSTER_PLACEHOLDER } from '../utils/img.js'
+import { prefersReducedMotion } from '../utils/motion.js'
+import { fitTransform } from './graph/camera.js'
+import { drawInLinks, igniteNodes } from './graph/entrance.js'
+import { endpointIds, linkKey } from './graph/links.js'
+import { createNodeDrag } from './graph/nodeDrag.js'
+import { appendLinks, appendNodes } from './graph/shapes.js'
+import { COLORS, NODE_RADIUS, linkAppearance, nodeOpacity, ringFor } from './graph/style.js'
 
-const NODE_R = 26
-const POSTER_R = 24
-const TAP_SLOP = 4
-const DOUBLE_TAP_MS = 260
-const LABEL_MAX = 22
-const DIMMED = 0.22
 const CAMERA_MS = 450
-const FIT_PADDING = 48
-
-const HUE = 'var(--color-glow-red)'
-const RING = {
-    root: { stroke: HUE, width: 3 },
-    expanded: { stroke: 'rgb(255 255 255 / 0.75)', width: 2 },
-    idle: { stroke: 'rgb(255 255 255 / 0.22)', width: 1.5 },
-}
-
-export const linkKey = (s, t) => [s, t].sort((a, b) => a - b).join('-')
+const ZOOM_EXTENT = [0.2, 4]
+const GATHER_STRENGTH = 0.04
+const SPAWN_JITTER = 24
+const SETTLE_TICKS = 200
 
 /**
  * A traversable force-directed graph rendered as SVG.
@@ -30,7 +23,7 @@ export const linkKey = (s, t) => [s, t].sort((a, b) => a - b).join('-')
  * every node with x/y/vx/vy on each tick, so wrapping them in reactivity would
  * be both wasteful and a source of update loops.
  */
-export function createForceGraph(svgEl, { onSelect, onExpand, onLinkClick, onBackground }) {
+export function createForceGraph(svgEl, { onSelect, onExpand, onLinkClick, onLinkHover, onBackground, onZoom }) {
     const nodes = []
     const links = []
     const nodeById = new Map()
@@ -38,11 +31,12 @@ export function createForceGraph(svgEl, { onSelect, onExpand, onLinkClick, onBac
 
     let width = svgEl.clientWidth || 800
     let height = svgEl.clientHeight || 600
-    let pendingTap = null
     let hoveredId = null
     let hoveredLinkKey = null
     let selectedId = null
     let selectedLinkKey = null
+    let linkFilter = () => true
+    let routeKeys = new Set()
 
     const svg = d3Select(svgEl)
     const root = svg.append('g')
@@ -53,299 +47,223 @@ export function createForceGraph(svgEl, { onSelect, onExpand, onLinkClick, onBac
         .force('charge', forceManyBody().strength(-420))
         .force(
             'link',
-            forceLink(links)
-                .id((d) => d.id)
-                .distance((l) => 70 + 120 * (1 - (l.score ?? 0.5)))
+            forceLink()
+                .id((node) => node.id)
+                .distance((link) => 70 + 120 * (1 - (link.score ?? 0.5)))
         )
-        .force('center', forceCenter(width / 2, height / 2))
-        .force('collide', forceCollide(NODE_R + 8))
+        .force('collide', forceCollide(NODE_RADIUS + 8))
         .on('tick', ticked)
+    gatherAround(width / 2, height / 2)
+
+    const nodeDrag = createNodeDrag(simulation, { onTap: onSelect, onDoubleTap: onExpand })
 
     const zoomBehavior = zoom()
-        .scaleExtent([0.2, 4])
-        .on('zoom', (event) => root.attr('transform', event.transform))
+        .scaleExtent(ZOOM_EXTENT)
+        .on('zoom', (event) => {
+            root.attr('transform', event.transform)
+            onZoom?.(event.transform)
+        })
     svg.call(zoomBehavior).on('dblclick.zoom', null)
     svg.on('click', (event) => {
         if (event.target === svgEl) onBackground?.()
     })
 
+    function gatherAround(x, y) {
+        simulation
+            .force('center', forceCenter(x, y))
+            .force('x', forceX(x).strength(GATHER_STRENGTH))
+            .force('y', forceY(y).strength(GATHER_STRENGTH))
+    }
+
+    function reheat(alpha) {
+        simulation.alpha(Math.max(simulation.alpha(), alpha)).restart()
+    }
+
     function ticked() {
         linkLayer
             .selectAll('g.link')
             .selectAll('line')
-            .attr('x1', (d) => d.source.x)
-            .attr('y1', (d) => d.source.y)
-            .attr('x2', (d) => d.target.x)
-            .attr('y2', (d) => d.target.y)
+            .attr('x1', (link) => link.source.x)
+            .attr('y1', (link) => link.source.y)
+            .attr('x2', (link) => link.target.x)
+            .attr('y2', (link) => link.target.y)
 
-        nodeLayer.selectAll('g.node').attr('transform', (d) => `translate(${d.x},${d.y})`)
+        nodeLayer.selectAll('g.node').attr('transform', (node) => `translate(${node.x},${node.y})`)
     }
 
-    function posterSrc(d) {
-        return d.poster_path || POSTER_PLACEHOLDER
-    }
+    const isShown = (link) => routeKeys.has(link.key) || linkFilter(link)
 
-    function endpointIds(link) {
-        return [link.source.id ?? link.source, link.target.id ?? link.target]
-    }
-
-    function litState() {
-        const linkKeyInFocus = hoveredLinkKey ?? selectedLinkKey
-        if (linkKeyInFocus) {
-            const link = links.find((l) => l.key === linkKeyInFocus)
-            return { nodeIds: new Set(link ? endpointIds(link) : []), linkKeys: new Set([linkKeyInFocus]) }
+    function litState(shownLinks) {
+        const focusedLinkKey = hoveredLinkKey ?? selectedLinkKey
+        if (focusedLinkKey) {
+            const link = shownLinks.find((candidate) => candidate.key === focusedLinkKey)
+            return { nodeIds: new Set(link ? endpointIds(link) : []), linkKeys: new Set([focusedLinkKey]) }
         }
 
-        const activeId = hoveredId ?? selectedId
-        if (activeId === null) return null
+        const focusedId = hoveredId ?? selectedId
+        if (focusedId === null) return null
 
-        const nodeIds = new Set([activeId])
-        const litLinks = new Set()
-        for (const link of links) {
-            const [source, target] = endpointIds(link)
-            if (source === activeId || target === activeId) {
-                nodeIds.add(source)
-                nodeIds.add(target)
-                litLinks.add(link.key)
-            }
+        const nodeIds = new Set([focusedId])
+        const litLinkKeys = new Set()
+        for (const link of shownLinks) {
+            const ends = endpointIds(link)
+            if (!ends.includes(focusedId)) continue
+            ends.forEach((id) => nodeIds.add(id))
+            litLinkKeys.add(link.key)
         }
-        return { nodeIds, linkKeys: litLinks }
+        return { nodeIds, linkKeys: litLinkKeys }
     }
 
     function applyState() {
-        const lit = litState()
+        const shownLinks = links.filter(isShown)
+        const lit = litState(shownLinks)
+        const connectedIds = new Set(shownLinks.flatMap(endpointIds))
 
-        linkLayer
-            .selectAll('line.link-visible')
-            .style('stroke', (d) => (lit?.linkKeys.has(d.key) ? HUE : '#ffffff'))
-            .attr('stroke-opacity', (d) => {
-                if (!lit) return 0.12 + 0.45 * d.score
-                return lit.linkKeys.has(d.key) ? 0.9 : 0.05
-            })
-            .attr('stroke-width', (d) => 0.75 + 1.75 * d.score + (lit?.linkKeys.has(d.key) ? 0.75 : 0))
+        linkLayer.selectAll('g.link').style('display', (link) => (isShown(link) ? null : 'none'))
+        linkLayer.selectAll('line.link-visible').each(function (link) {
+            const look = linkAppearance(link, { lit, onRoute: routeKeys.has(link.key) })
+            d3Select(this)
+                .style('stroke', look.stroke)
+                .attr('stroke-opacity', look.opacity)
+                .attr('stroke-width', look.width)
+        })
 
-        const nodeSel = nodeLayer
+        const nodeSelection = nodeLayer
             .selectAll('g.node')
-            .attr('opacity', (d) => (!lit || lit.nodeIds.has(d.id) ? 1 : DIMMED))
+            .attr('opacity', (node) => nodeOpacity(node, { lit, connected: node.root || connectedIds.has(node.id) }))
+            .attr('aria-pressed', (node) => String(node.id === selectedId))
 
-        nodeSel
+        nodeSelection
             .select('circle.ring')
-            .attr('class', (d) => (d.busy ? 'ring node-busy' : 'ring'))
-            .style('stroke', (d) => (d.busy ? '#ffffff' : ringFor(d).stroke))
-            .attr('stroke-width', (d) => ringFor(d).width)
-            .attr('stroke-dasharray', (d) => (d.busy ? '4 4' : null))
-
-        nodeSel.select('circle.halo').attr('opacity', (d) => (d.id === selectedId ? 1 : 0))
-        nodeSel.select('image').attr('opacity', (d) => (d.busy ? 0.35 : 1))
-        nodeSel.attr('aria-pressed', (d) => String(d.id === selectedId))
+            .attr('class', (node) => (node.busy ? 'ring node-busy' : 'ring'))
+            .style('stroke', (node) => (node.busy ? COLORS.busy : ringFor(node).stroke))
+            .attr('stroke-width', (node) => ringFor(node).width)
+            .attr('stroke-dasharray', (node) => (node.busy ? '4 4' : null))
+        nodeSelection.select('circle.halo').attr('opacity', (node) => (node.id === selectedId ? 1 : 0))
+        nodeSelection.select('image').attr('opacity', (node) => (node.busy ? 0.35 : 1))
     }
 
-    function ringFor(d) {
-        if (d.root) return RING.root
-        return d.expanded ? RING.expanded : RING.idle
+    function syncLinkForce(alpha) {
+        simulation.force('link').links(links.filter(isShown))
+        reheat(alpha)
     }
 
-    function dragBehavior() {
-        return drag()
-            .on('start', (event, d) => {
-                if (!event.active) simulation.alphaTarget(0.3).restart()
-                d.fx = d.x
-                d.fy = d.y
-                d._sx = event.x
-                d._sy = event.y
-            })
-            .on('drag', (event, d) => {
-                d.fx = event.x
-                d.fy = event.y
-            })
-            .on('end', (event, d) => {
-                if (!event.active) simulation.alphaTarget(0)
-                d.fx = null
-                d.fy = null
-                if (Math.hypot(event.x - d._sx, event.y - d._sy) >= TAP_SLOP) return
-
-                if (pendingTap) {
-                    const sameNode = pendingTap.id === d.id
-                    clearTimeout(pendingTap.timer)
-                    pendingTap = null
-                    if (sameNode) {
-                        onExpand(d)
-                        return
-                    }
-                }
-
-                pendingTap = {
-                    id: d.id,
-                    timer: setTimeout(() => {
-                        pendingTap = null
-                        onSelect(d)
-                    }, DOUBLE_TAP_MS),
-                }
-            })
+    function hoverNode(node) {
+        hoveredId = node?.id ?? null
+        applyState()
     }
 
-    function update() {
+    function hoverLink(link, event) {
+        const key = link?.key ?? null
+        if (key !== hoveredLinkKey) {
+            hoveredLinkKey = key
+            applyState()
+        }
+        onLinkHover?.(link, link ? pointer(event, svgEl) : null)
+    }
+
+    function render() {
         linkLayer
             .selectAll('g.link')
-            .data(links, (d) => d.key)
+            .data(links, (link) => link.key)
             .join((enter) => {
-                const g = enter.append('g').attr('class', 'link')
-
-                g.append('line')
-                    .attr('class', 'link-visible')
-                    .attr('stroke-linecap', 'round')
-                    .style('pointer-events', 'none')
-
-                g.append('line')
-                    .attr('class', 'link-hit')
-                    .attr('stroke', 'transparent')
-                    .attr('stroke-width', 16)
-                    .style('cursor', 'pointer')
-                    .on('mouseenter', (ev, d) => {
-                        hoveredLinkKey = d.key
-                        applyState()
-                    })
-                    .on('mouseleave', () => {
-                        hoveredLinkKey = null
-                        applyState()
-                    })
-                    .on('click', (ev, d) => {
-                        ev.stopPropagation()
-                        onLinkClick?.(d)
-                    })
-
-                return g
+                const entered = appendLinks(enter, { onHover: hoverLink, onClick: (link) => onLinkClick?.(link) })
+                drawInLinks(entered.select('line.link-visible'))
+                return entered
             })
 
         nodeLayer
             .selectAll('g.node')
-            .data(nodes, (d) => d.id)
+            .data(nodes, (node) => node.id)
             .join((enter) => {
-                const g = enter
-                    .append('g')
-                    .attr('class', 'node')
-                    .attr('tabindex', 0)
-                    .attr('role', 'button')
-                    .attr('aria-label', (d) => [d.name, d.year].filter(Boolean).join(', '))
-                    .style('cursor', 'pointer')
-                    .style('outline', 'none')
-                    .style('transition', 'opacity 200ms ease-out')
-                    .call(dragBehavior())
-                    .on('mouseenter focus', (ev, d) => {
-                        hoveredId = d.id
-                        applyState()
-                    })
-                    .on('mouseleave blur', () => {
-                        hoveredId = null
-                        applyState()
-                    })
-                    .on('keydown', (ev, d) => {
-                        if (ev.key === 'Enter' || ev.key === ' ') {
-                            ev.preventDefault()
-                            onSelect(d)
-                        }
-                    })
-
-                g.append('clipPath')
-                    .attr('id', (d) => `clip-${d.id}`)
-                    .append('circle')
-                    .attr('r', POSTER_R)
-
-                g.append('circle')
-                    .attr('class', 'halo')
-                    .attr('r', NODE_R + 6)
-                    .attr('fill', 'none')
-                    .style('stroke', HUE)
-                    .attr('stroke-width', 2)
-                    .attr('opacity', 0)
-
-                g.append('circle').attr('class', 'ring').attr('r', NODE_R).style('fill', 'var(--color-licorice)')
-
-                g.append('image')
-                    .attr('x', -POSTER_R)
-                    .attr('y', -POSTER_R)
-                    .attr('width', POSTER_R * 2)
-                    .attr('height', POSTER_R * 2)
-                    .attr('preserveAspectRatio', 'xMidYMid slice')
-                    .attr('clip-path', (d) => `url(#clip-${d.id})`)
-                    .attr('href', posterSrc)
-                    .on('error', function () {
-                        d3Select(this).attr('href', POSTER_PLACEHOLDER)
-                    })
-
-                g.append('text')
-                    .attr('y', NODE_R + 16)
-                    .attr('text-anchor', 'middle')
-                    .attr('fill', 'rgb(255 255 255 / 0.85)')
-                    .attr('font-size', 12)
-                    .attr('font-weight', 500)
-                    .attr('paint-order', 'stroke')
-                    .style('stroke', 'var(--color-licorice)')
-                    .attr('stroke-width', 4)
-                    .attr('stroke-linejoin', 'round')
-                    .style('pointer-events', 'none')
-                    .text((d) => (d.name.length > LABEL_MAX ? d.name.slice(0, LABEL_MAX - 1) + '…' : d.name))
-
-                g.append('title').text((d) => d.name)
-
-                return g
+                const entered = appendNodes(enter, {
+                    drag: nodeDrag.behavior,
+                    onHover: hoverNode,
+                    onActivate: onSelect,
+                })
+                igniteNodes(entered.select('g.node-body'))
+                return entered
             })
 
-        applyState()
         simulation.nodes(nodes)
-        simulation.force('link').links(links)
-        simulation.alpha(0.7).restart()
+        applyState()
+        syncLinkForce(0.7)
     }
 
-    function addNode(raw, extra = {}) {
+    function addNode(raw, extra = {}, origin = { x: width / 2, y: height / 2 }) {
         const existing = nodeById.get(raw.id)
         if (existing) {
             Object.assign(existing, extra)
             return existing
         }
-        const node = { ...raw, ...extra, x: width / 2, y: height / 2 }
+
+        const node = {
+            ...raw,
+            ...extra,
+            x: origin.x + (Math.random() - 0.5) * SPAWN_JITTER,
+            y: origin.y + (Math.random() - 0.5) * SPAWN_JITTER,
+        }
         nodeById.set(node.id, node)
         nodes.push(node)
         return node
     }
 
-    function addLink(l) {
-        const key = linkKey(l.source, l.target)
+    function addLink(raw) {
+        const key = linkKey(raw.source, raw.target)
         if (linkKeys.has(key)) return
         linkKeys.add(key)
-        links.push({ ...l, key })
+        links.push({ ...raw, key })
     }
 
-    /** Seed the graph from scratch. */
-    function load({ node, nodes: neighbours, links: edges }) {
+    function clear() {
         nodes.length = 0
         links.length = 0
         nodeById.clear()
         linkKeys.clear()
         selectedId = null
         selectedLinkKey = null
-        merge({ node, nodes: neighbours, links: edges }, true)
-        centerOnRoot()
-    }
-
-    /** Add one title's neighbourhood to the existing graph. */
-    function merge({ node, nodes: neighbours, links: edges }, isRoot = false) {
-        addNode(node, { root: isRoot ? true : nodeById.get(node.id)?.root, expanded: true })
-        neighbours.forEach((n) => addNode(n))
-        edges.forEach(addLink)
-        update()
-    }
-
-    function centerOnRoot() {
-        svg.call(zoomBehavior.transform, zoomIdentity)
+        routeKeys = new Set()
     }
 
     function camera() {
-        const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches
         return svg
             .interrupt()
             .transition()
-            .duration(reduced ? 0 : CAMERA_MS)
+            .duration(prefersReducedMotion() ? 0 : CAMERA_MS)
+    }
+
+    /** Seed the graph from scratch with the starting title's neighbourhood. */
+    function load(expansion) {
+        clear()
+        merge(expansion, true)
+        svg.call(zoomBehavior.transform, zoomIdentity)
+    }
+
+    /** Add one title's neighbourhood; new neighbours spawn from that title. */
+    function merge({ node, nodes: neighbours, links: edges }, isRoot = false) {
+        const parent = addNode(node, isRoot ? { root: true, expanded: true } : { expanded: true })
+        neighbours.forEach((neighbour) => addNode(neighbour, {}, parent))
+        edges.forEach(addLink)
+        render()
+    }
+
+    function settleAndFit() {
+        simulation.tick(SETTLE_TICKS)
+        ticked()
+        fitToView()
+    }
+
+    function setLinkFilter(predicate) {
+        linkFilter = predicate
+        applyState()
+        syncLinkForce(0.5)
+    }
+
+    function setRoute(keys) {
+        const shownBefore = links.filter(isShown).length
+        routeKeys = new Set(keys)
+        applyState()
+        if (links.filter(isShown).length !== shownBefore) syncLinkForce(0.3)
     }
 
     function focusOn(id) {
@@ -355,25 +273,7 @@ export function createForceGraph(svgEl, { onSelect, onExpand, onLinkClick, onBac
 
     function fitToView() {
         if (!nodes.length) return
-        const xs = nodes.map((n) => n.x)
-        const ys = nodes.map((n) => n.y)
-        const minX = Math.min(...xs) - NODE_R
-        const maxX = Math.max(...xs) + NODE_R
-        const minY = Math.min(...ys) - NODE_R
-        const maxY = Math.max(...ys) + NODE_R + 20
-        const [minScale, maxScale] = zoomBehavior.scaleExtent()
-        const scale = Math.min(
-            maxScale,
-            Math.max(
-                minScale,
-                Math.min((width - FIT_PADDING * 2) / (maxX - minX), (height - FIT_PADDING * 2) / (maxY - minY), 1.5)
-            )
-        )
-        const transform = zoomIdentity
-            .translate(width / 2, height / 2)
-            .scale(scale)
-            .translate(-(minX + maxX) / 2, -(minY + maxY) / 2)
-        camera().call(zoomBehavior.transform, transform)
+        camera().call(zoomBehavior.transform, fitTransform(nodes, { width, height, scaleExtent: ZOOM_EXTENT }))
     }
 
     function select(id) {
@@ -388,18 +288,18 @@ export function createForceGraph(svgEl, { onSelect, onExpand, onLinkClick, onBac
         applyState()
     }
 
-    function resize() {
-        width = svgEl.clientWidth || width
-        height = svgEl.clientHeight || height
-        simulation.force('center', forceCenter(width / 2, height / 2))
-        simulation.alpha(0.4).restart()
-    }
-
     function setBusy(id, isBusy) {
         const node = nodeById.get(id)
         if (!node) return
         node.busy = isBusy
         applyState()
+    }
+
+    function resize() {
+        width = svgEl.clientWidth || width
+        height = svgEl.clientHeight || height
+        gatherAround(width / 2, height / 2)
+        simulation.alpha(0.4).restart()
     }
 
     function pause() {
@@ -411,12 +311,26 @@ export function createForceGraph(svgEl, { onSelect, onExpand, onLinkClick, onBac
     }
 
     function destroy() {
-        if (pendingTap) clearTimeout(pendingTap.timer)
-        pendingTap = null
+        nodeDrag.cancel()
         simulation.stop()
         svg.on('.zoom', null).on('click', null)
         root.remove()
     }
 
-    return { load, merge, resize, destroy, setBusy, pause, resume, select, selectLink, focusOn, fitToView }
+    return {
+        load,
+        merge,
+        settleAndFit,
+        setLinkFilter,
+        setRoute,
+        select,
+        selectLink,
+        focusOn,
+        fitToView,
+        setBusy,
+        resize,
+        pause,
+        resume,
+        destroy,
+    }
 }

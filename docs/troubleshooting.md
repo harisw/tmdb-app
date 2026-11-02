@@ -59,7 +59,7 @@ ERROR: failed to build: failed to solve: failed to compute cache key:
 failed to calculate checksum of ref ...: "/docker/php/zz-app.ini": not found
 ```
 
-**Cause:** the file isn't in the build context. Our `.dockerignore` excludes the whole `docker/` directory (its nginx/fluent-bit configs are mounted at runtime, not baked in). Any `COPY docker/...` in the Dockerfile then can't find the file — even though it exists locally.
+**Cause:** the file isn't in the build context. Our `.dockerignore` excludes the whole `docker/` directory (its nginx configs are mounted at runtime, not baked in). Any `COPY docker/...` in the Dockerfile then can't find the file — even though it exists locally.
 
 **Fix:** re-include the specific file with a `!` negation *after* the exclusion (last match wins in `.dockerignore`):
 

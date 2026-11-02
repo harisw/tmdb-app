@@ -22,7 +22,7 @@ const { authModalOpen, authModalTab } = storeToRefs(ui)
                 <AmbientBackground />
                 <Navbar />
                 <div
-                    class="relative z-10 max-w-[2200px] mx-auto px-4 pt-24 pb-14 md:px-10 md:pt-28 lg:px-20 2xl:px-28 2xl:pt-36"
+                    class="relative z-10 max-w-[2200px] mx-auto px-(--page-gutter) pt-24 pb-14 [--page-gutter:--spacing(4)] md:pt-28 md:[--page-gutter:--spacing(10)] lg:[--page-gutter:--spacing(20)] 2xl:pt-36 2xl:[--page-gutter:--spacing(28)]"
                 >
                     <slot />
                 </div>

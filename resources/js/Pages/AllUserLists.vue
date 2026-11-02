@@ -18,15 +18,16 @@ const { openModal, closeModal, selectedItem, showModal } = useModal()
     <AppLayout>
         <div class="w-full">
             <div v-for="list in lists" :key="list.value" class="mb-15">
-                <SectionHeader :title="list.name" :href="list.url" />
                 <Carousel>
+                    <template #header>
+                        <SectionHeader :title="list.name" :href="list.url" />
+                    </template>
                     <TitleCard
                         v-for="item in list.titles"
                         :key="item.id"
                         :on-click="openModal"
                         :item="item"
                         :show-genres="false"
-                        size="w-36 sm:w-44 lg:w-3xs"
                     />
                 </Carousel>
             </div>

@@ -19,7 +19,7 @@ class DatabaseSeeder extends Seeder
             CountrySeeder::class,
             PersonSeeder::class,
             UserSeeder::class,
-            //            CountryProviderSeeder::class,
+            //            TmdbProviderSeeder::class,
             //            TitleSeeder::class,
             //            CountsSeeder::class,
         ]);
