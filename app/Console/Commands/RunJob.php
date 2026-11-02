@@ -17,6 +17,7 @@ use App\Jobs\MaterializeTitleSimilaritiesBatchJob;
 use App\Jobs\TitlesBatchInsertJob;
 use App\Utils\Enum\TimeWindow;
 use Illuminate\Console\Command;
+use Illuminate\Support\Facades\Context;
 use Log;
 
 class RunJob extends Command
@@ -40,6 +41,8 @@ class RunJob extends Command
      */
     public function handle(): void
     {
+        Context::add('trigger', 'run:job');
+
         $jobClass = $this->choice('Which job class do you want to run?',
             [FetchTrendingTitlesJob::class, FetchPopularTitlesJob::class, FetchUpcomingTitlesJob::class,
                 EnrichTitleProvidersBatchJob::class, TitlesBatchInsertJob::class,
@@ -94,7 +97,7 @@ class RunJob extends Command
             TitleType::values()
         ));
         $limit = (int) $this->ask('How many new titles to insert?');
-        Log::channel('user')->info('Running run Job', [
+        Log::info('Running run Job', [
             'timeWindow' => $timeWindow->value,
             'titleType' => $titleType->value,
             'limit' => $limit,
@@ -111,7 +114,7 @@ class RunJob extends Command
             TitleType::values()
         ));
         $limit = (int) $this->ask('How many new titles to insert?');
-        Log::channel('user')->info('Running run Job', [
+        Log::info('Running run Job', [
             'job' => $jobClass,
             'titleType' => $titleType->value,
             'limit' => $limit,

@@ -56,6 +56,11 @@ class TmdbApiService
         return $this->get("3/{$type->value}/{$tmdbId}/watch/providers");
     }
 
+    public function getWatchProviderList(TitleType $type): ?array
+    {
+        return $this->get("3/watch/providers/{$type->value}");
+    }
+
     public function getCredits(TitleType $type, int $tmdbId): ?array
     {
         $path = "3/{$type->value}/{$tmdbId}/".match ($type) {

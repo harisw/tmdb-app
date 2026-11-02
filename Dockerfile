@@ -59,6 +59,7 @@ COPY --from=builder /usr/local/etc/php/conf.d/ /usr/local/etc/php/conf.d/
 
 # App PHP overrides (memory_limit, upload sizes, timeouts) — FPM + CLI/Horizon
 COPY docker/php/zz-app.ini /usr/local/etc/php/conf.d/zz-app.ini
+COPY docker/php/zz-fpm.conf /usr/local/etc/php-fpm.d/zz-fpm.conf
 
 COPY --from=builder /var/www/vendor vendor
 COPY . .

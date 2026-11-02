@@ -8,6 +8,7 @@ use App\Jobs\EnrichTitleProvidersBatchJob;
 use App\Jobs\FetchPopularTitlesJob;
 use App\Jobs\FetchTrendingTitlesJob;
 use App\Jobs\FetchUpcomingTitlesJob;
+use App\Jobs\ImportTmdbProvidersJob;
 use App\Jobs\MaterializeTitleSimilaritiesBatchJob;
 use App\Utils\Enum\FeatureFlag;
 use App\Utils\Enum\TimeWindow;
@@ -49,6 +50,9 @@ Schedule::job(new FetchUpcomingTitlesJob(TitleType::MOVIE))
 
 Schedule::job(new FetchUpcomingTitlesJob(TitleType::TV))
     ->dailyAt('23:00');
+
+Schedule::job(new ImportTmdbProvidersJob)
+    ->monthlyOn(1, '19:00');
 
 Schedule::job(new EnrichTitleProvidersBatchJob)
     ->hourly()->withoutOverlapping();

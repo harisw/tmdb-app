@@ -3,19 +3,15 @@
 namespace App\Models;
 
 use GeneaLabs\LaravelModelCaching\CachedModel;
-use Illuminate\Database\Eloquent\Attributes\Scope;
-use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Carbon;
 
 /**
  * @property int $id
- * @property int $tmdb_id
  * @property string $slug
  * @property string $name
  * @property string|null $img_logo
@@ -26,6 +22,7 @@ use Illuminate\Support\Carbon;
  * @property-read int|null $countries_count
  * @property-read Collection<int, CountryProvider> $countryProviders
  * @property-read int|null $country_providers_count
+ * @property-read Collection<int, ProviderAlias> $aliases
  *
  * @method static \Database\Factories\ProviderFactory factory($count = null, $state = [])
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Provider newModelQuery()
@@ -37,7 +34,6 @@ use Illuminate\Support\Carbon;
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Provider whereName($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Provider wherePriority($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Provider whereSlug($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|Provider whereTmdbProviderId($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Provider whereUpdatedAt($value)
  *
  * @property int $count
@@ -46,7 +42,6 @@ use Illuminate\Support\Carbon;
  * @property-read mixed $url
  *
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Provider whereCount($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|Provider whereTmdbId($value)
  *
  * @mixin \Eloquent
  */
@@ -55,23 +50,19 @@ class Provider extends CachedModel
     use HasFactory;
 
     protected $fillable = [
-        'tmdb_id',
         'slug',
         'name',
         'img_logo',
         'priority',
-        'main_provider_id',
     ];
 
     protected $appends = ['url'];
 
     protected $casts = [
-        'tmdb_id' => 'integer',
         'slug' => 'string',
         'name' => 'string',
         'img_logo' => 'string',
         'priority' => 'integer',
-        'main_provider_id' => 'integer',
     ];
 
     public function getRouteKeyName(): string
@@ -102,19 +93,8 @@ class Provider extends CachedModel
             ->withPivot('priority');
     }
 
-    public function mainProvider(): BelongsTo
+    public function aliases(): HasMany
     {
-        return $this->belongsTo(self::class, 'main_provider_id');
-    }
-
-    #[Scope]
-    public function scopeWhereMainProvider(Builder $query): void
-    {
-        $query->whereNull('main_provider_id');
-    }
-
-    public function isMainProvider(): bool
-    {
-        return $this->main_provider_id === null;
+        return $this->hasMany(ProviderAlias::class);
     }
 }

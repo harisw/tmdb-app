@@ -2,11 +2,13 @@
 
 namespace Tests\Feature\Service;
 
+use App\Domain\Enums\ProviderSource;
 use App\Domain\Enums\StreamType;
 use App\Models\Country;
 use App\Models\CountryProvider;
 use App\Models\Provider;
 use App\Models\Title;
+use App\Services\ProviderServices\ProviderCatalog;
 use App\Services\WatchProviderSyncService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
@@ -14,6 +16,11 @@ use Tests\TestCase;
 class WatchProviderSyncServiceTest extends TestCase
 {
     use RefreshDatabase;
+
+    private function service(): WatchProviderSyncService
+    {
+        return app(WatchProviderSyncService::class);
+    }
 
     private function makeResults(string $iso2, string $streamType, array $providers, string $link = 'https://tmdb.org/watch'): array
     {
@@ -35,7 +42,7 @@ class WatchProviderSyncServiceTest extends TestCase
     public function test_inserts_title_provider_when_provider_and_country_provider_exist(): void
     {
         $country = Country::factory()->create(['iso2' => 'US']);
-        $provider = Provider::factory()->create(['tmdb_id' => 8, 'slug' => 'netflix']);
+        $provider = Provider::factory()->withTmdbId(8)->create(['slug' => 'netflix']);
         $countryProvider = CountryProvider::factory()->create([
             'country_id' => $country->id,
             'provider_id' => $provider->id,
@@ -44,7 +51,7 @@ class WatchProviderSyncServiceTest extends TestCase
 
         $results = $this->makeResults('US', 'flatrate', [$this->makeRawProvider(8)]);
 
-        (new WatchProviderSyncService)->sync($title, $results);
+        $this->service()->sync($title, $results);
 
         $this->assertDatabaseHas('title_providers', [
             'title_id' => $title->id,
@@ -63,9 +70,9 @@ class WatchProviderSyncServiceTest extends TestCase
 
         $results = $this->makeResults('US', 'flatrate', [$this->makeRawProvider(99, 'New Provider', 3)]);
 
-        (new WatchProviderSyncService)->sync($title, $results);
+        $this->service()->sync($title, $results);
 
-        $provider = Provider::where('tmdb_id', 99)->sole();
+        $provider = Provider::whereRelation('aliases', 'external_id', '99')->sole();
 
         $this->assertSame('New Provider', $provider->name);
         $this->assertDatabaseHas('country_providers', [
@@ -83,12 +90,12 @@ class WatchProviderSyncServiceTest extends TestCase
     public function test_creates_country_provider_when_provider_exists_but_not_linked_to_country(): void
     {
         $country = Country::factory()->create(['iso2' => 'US']);
-        $provider = Provider::factory()->create(['tmdb_id' => 8, 'slug' => 'netflix']);
+        $provider = Provider::factory()->withTmdbId(8)->create(['slug' => 'netflix']);
         $title = Title::factory()->create();
 
         $results = $this->makeResults('US', 'flatrate', [$this->makeRawProvider(8)]);
 
-        (new WatchProviderSyncService)->sync($title, $results);
+        $this->service()->sync($title, $results);
 
         $this->assertDatabaseHas('country_providers', [
             'country_id' => $country->id,
@@ -109,7 +116,7 @@ class WatchProviderSyncServiceTest extends TestCase
             'GB' => ['link' => 'https://tmdb.org/watch', 'flatrate' => [$raw]],
         ];
 
-        (new WatchProviderSyncService)->sync($title, $results);
+        $this->service()->sync($title, $results);
 
         $this->assertDatabaseCount('providers', 1);
         $this->assertDatabaseCount('country_providers', 2);
@@ -119,7 +126,7 @@ class WatchProviderSyncServiceTest extends TestCase
     public function test_deduplicates_same_provider_listed_twice_in_same_stream_type(): void
     {
         $country = Country::factory()->create(['iso2' => 'US']);
-        $provider = Provider::factory()->create(['tmdb_id' => 8, 'slug' => 'netflix']);
+        $provider = Provider::factory()->withTmdbId(8)->create(['slug' => 'netflix']);
         CountryProvider::factory()->create([
             'country_id' => $country->id,
             'provider_id' => $provider->id,
@@ -131,7 +138,7 @@ class WatchProviderSyncServiceTest extends TestCase
             'US' => ['link' => 'https://tmdb.org/watch', 'flatrate' => [$raw, $raw]],
         ];
 
-        (new WatchProviderSyncService)->sync($title, $results);
+        $this->service()->sync($title, $results);
 
         $this->assertDatabaseCount('title_providers', 1);
     }
@@ -142,7 +149,7 @@ class WatchProviderSyncServiceTest extends TestCase
 
         $results = $this->makeResults('XX', 'flatrate', [$this->makeRawProvider(8)]);
 
-        (new WatchProviderSyncService)->sync($title, $results);
+        $this->service()->sync($title, $results);
 
         $this->assertDatabaseCount('title_providers', 0);
     }
@@ -154,7 +161,7 @@ class WatchProviderSyncServiceTest extends TestCase
 
         $results = $this->makeResults('US', 'cinema_only', [$this->makeRawProvider(8)]);
 
-        (new WatchProviderSyncService)->sync($title, $results);
+        $this->service()->sync($title, $results);
 
         $this->assertDatabaseCount('title_providers', 0);
     }
@@ -162,7 +169,7 @@ class WatchProviderSyncServiceTest extends TestCase
     public function test_resync_replaces_existing_title_providers_instead_of_accumulating(): void
     {
         $country = Country::factory()->create(['iso2' => 'US']);
-        $provider = Provider::factory()->create(['tmdb_id' => 8, 'slug' => 'netflix']);
+        $provider = Provider::factory()->withTmdbId(8)->create(['slug' => 'netflix']);
         CountryProvider::factory()->create([
             'country_id' => $country->id,
             'provider_id' => $provider->id,
@@ -170,7 +177,7 @@ class WatchProviderSyncServiceTest extends TestCase
         $title = Title::factory()->create();
 
         $results = $this->makeResults('US', 'flatrate', [$this->makeRawProvider(8)]);
-        $service = new WatchProviderSyncService;
+        $service = $this->service();
 
         $service->sync($title, $results);
         $service->sync($title, $results);
@@ -180,7 +187,7 @@ class WatchProviderSyncServiceTest extends TestCase
     public function test_resync_replaces_only_the_synced_titles_rows(): void
     {
         $country = Country::factory()->create(['iso2' => 'US']);
-        $provider = Provider::factory()->create(['tmdb_id' => 8, 'slug' => 'netflix']);
+        $provider = Provider::factory()->withTmdbId(8)->create(['slug' => 'netflix']);
         CountryProvider::factory()->create([
             'country_id' => $country->id,
             'provider_id' => $provider->id,
@@ -189,7 +196,7 @@ class WatchProviderSyncServiceTest extends TestCase
         $otherTitle = Title::factory()->create();
 
         $results = $this->makeResults('US', 'flatrate', [$this->makeRawProvider(8)]);
-        $service = new WatchProviderSyncService;
+        $service = $this->service();
 
         $service->sync($title, $results);
         $service->sync($otherTitle, $results);
@@ -198,5 +205,77 @@ class WatchProviderSyncServiceTest extends TestCase
         $this->assertDatabaseCount('title_providers', 2);
         $this->assertDatabaseHas('title_providers', ['title_id' => $title->id, 'type' => StreamType::RENT->value]);
         $this->assertDatabaseMissing('title_providers', ['title_id' => $title->id, 'type' => StreamType::FLATRATE->value]);
+    }
+
+    public function test_links_existing_provider_when_tmdb_renamed_it(): void
+    {
+        $country = Country::factory()->create(['iso2' => 'US']);
+        $provider = Provider::factory()->withTmdbId(2358)->create([
+            'slug' => 'lionsgate-play-amazon-channel',
+            'name' => 'Lionsgate Play Amazon Channel',
+        ]);
+        $title = Title::factory()->create();
+
+        $results = $this->makeResults('US', 'flatrate', [$this->makeRawProvider(2358, 'Lionsgate+ Amazon Channel')]);
+
+        $this->service()->sync($title, $results);
+
+        $this->assertDatabaseCount('providers', 1);
+        $this->assertSame('lionsgate-play-amazon-channel', $provider->fresh()->slug);
+        $this->assertDatabaseHas('title_providers', [
+            'title_id' => $title->id,
+            'country_id' => $country->id,
+            'provider_id' => $provider->id,
+        ]);
+    }
+
+    public function test_links_existing_provider_when_another_tmdb_id_shares_its_name(): void
+    {
+        Country::factory()->create(['iso2' => 'US']);
+        $provider = Provider::factory()->withTmdbId(119)->create([
+            'slug' => 'amazon-prime-video',
+            'name' => 'Amazon Prime Video',
+        ]);
+        $title = Title::factory()->create();
+
+        $results = $this->makeResults('US', 'flatrate', [$this->makeRawProvider(9, 'Amazon Prime Video')]);
+
+        $this->service()->sync($title, $results);
+
+        $this->assertDatabaseCount('providers', 1);
+        $this->assertEqualsCanonicalizing(['119', '9'], $provider->aliases()->pluck('external_id')->all());
+        $this->assertDatabaseHas('title_providers', ['title_id' => $title->id, 'provider_id' => $provider->id]);
+    }
+
+    public function test_inserts_one_provider_when_new_tmdb_ids_share_a_name(): void
+    {
+        Country::factory()->create(['iso2' => 'US']);
+        $title = Title::factory()->create();
+
+        $results = $this->makeResults('US', 'flatrate', [
+            $this->makeRawProvider(510, 'Discovery Plus'),
+            $this->makeRawProvider(520, 'Discovery Plus'),
+        ]);
+
+        $this->service()->sync($title, $results);
+
+        $this->assertDatabaseCount('providers', 1);
+        $this->assertDatabaseCount('title_providers', 1);
+    }
+
+    public function test_new_providers_are_visible_to_the_next_jobs_provider_catalog(): void
+    {
+        Country::factory()->create(['iso2' => 'US']);
+        $title = Title::factory()->create();
+        $this->assertNull(app(ProviderCatalog::class)->providerId(ProviderSource::TMDB, '99'));
+
+        $results = $this->makeResults('US', 'flatrate', [$this->makeRawProvider(99, 'NewFlix')]);
+        $this->service()->sync($title, $results);
+        app()->forgetScopedInstances();
+
+        $this->assertSame(
+            Provider::whereRelation('aliases', 'external_id', '99')->value('id'),
+            app(ProviderCatalog::class)->providerId(ProviderSource::TMDB, '99'),
+        );
     }
 }

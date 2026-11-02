@@ -1,74 +1,58 @@
 name: tmdb
 
 services:
-  app:
-    image: ${ECR_URI}/tmdb-app:latest
-    env_file:
-      - /opt/tmdb/.env
-    ports:
-      - '127.0.0.1:9000:9000'
-    volumes:
-      - /opt/tmdb/public:/var/www/public
-      - laravel_logs:/var/www/storage/logs
-    restart: unless-stopped
-    networks:
-      - laravel-network
-    logging:
-      driver: awslogs
-      options:
-        awslogs-group: /tmdb/app
-        awslogs-region: ${AWS_DEFAULT_REGION:-ap-southeast-1}
-        awslogs-stream: app
-        awslogs-create-group: "true"
-  redis:
-    image: redis:7-alpine
-    restart: unless-stopped
-    volumes:
-      - redis-data:/data
-    networks:
-      - laravel-network
-    command: redis-server --maxmemory 256mb --maxmemory-policy volatile-lru
+    app:
+        image: ${ECR_URI}/tmdb-app:latest
+        env_file:
+            - /opt/tmdb/.env
+        ports:
+            - '127.0.0.1:9000:9000'
+        volumes:
+            - /opt/tmdb/public:/var/www/public
+        restart: unless-stopped
+        networks:
+            - laravel-network
+        logging:
+            driver: awslogs
+            options:
+                awslogs-group: /tmdb/app
+                awslogs-region: ${AWS_DEFAULT_REGION:-ap-northeast-2}
+                awslogs-stream: app
+                awslogs-create-group: 'true'
+                mode: non-blocking
+                max-buffer-size: 4m
+    redis:
+        image: redis:7-alpine
+        restart: unless-stopped
+        volumes:
+            - redis-data:/data
+        networks:
+            - laravel-network
+        command: redis-server --maxmemory 256mb --maxmemory-policy volatile-lru
 
-  horizon:
-    image: ${ECR_URI}/tmdb-app:latest
-    env_file:
-      - /opt/tmdb/.env
-    command: php artisan horizon
-    restart: unless-stopped
-    depends_on:
-      - redis
-    volumes:
-      - laravel_logs:/var/www/storage/logs
-    networks:
-      - laravel-network
-    logging:
-      driver: awslogs
-      options:
-        awslogs-group: /tmdb/horizon
-        awslogs-region: ${AWS_DEFAULT_REGION:-ap-southeast-1}
-        awslogs-stream: horizon
-        awslogs-create-group: "true"
-
-  fluent-bit:
-    image: amazon/aws-for-fluent-bit:2.32.2
-    restart: unless-stopped
-    environment:
-      - AWS_DEFAULT_REGION=${AWS_DEFAULT_REGION:-ap-southeast-1}
-    volumes:
-      # read-only: this container only ever tails the files app/horizon write
-      - laravel_logs:/var/www/storage/logs:ro
-      - ./docker/fluent-bit/fluent-bit.conf:/fluent-bit/etc/fluent-bit.conf:ro
-      - ./docker/fluent-bit/parsers.conf:/fluent-bit/etc/parsers.conf:ro
-    networks:
-      - laravel-network
-    # keeps memory bounded on a resource-constrained host; Fluent Bit itself
-    # typically sits well under this at idle
-    mem_limit: 64m
+    horizon:
+        image: ${ECR_URI}/tmdb-app:latest
+        env_file:
+            - /opt/tmdb/.env
+        command: php artisan horizon
+        restart: unless-stopped
+        depends_on:
+            - redis
+        networks:
+            - laravel-network
+        logging:
+            driver: awslogs
+            options:
+                awslogs-group: /tmdb/horizon
+                awslogs-region: ${AWS_DEFAULT_REGION:-ap-northeast-2}
+                awslogs-stream: horizon
+                awslogs-create-group: 'true'
+                mode: non-blocking
+                max-buffer-size: 4m
 
 volumes:
-  redis-data:
-  laravel_logs:
+    redis-data:
 
 networks:
-  laravel-network:
-    driver: bridge
+    laravel-network:
+        driver: bridge

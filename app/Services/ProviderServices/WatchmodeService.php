@@ -3,6 +3,7 @@
 namespace App\Services\ProviderServices;
 
 use App\Data\DTOs\TitleProviderData;
+use App\Domain\Enums\ProviderSource;
 use App\Domain\Enums\StreamQuality;
 use App\Models\Title;
 use Illuminate\Http\Client\PendingRequest;
@@ -11,17 +12,6 @@ use Illuminate\Support\Facades\Http;
 
 class WatchmodeService
 {
-    private const APP_SLUG_BY_PROVIDER_NAME = [
-        'Amazon' => 'amazon-video',
-        'AppleTV' => 'apple-tv',
-        'Fandango at Home' => 'fandango-at-home',
-        'Rakuten TV' => 'rakuten-tv',
-        'maxdome Store' => 'maxdome-store',
-        'Sky Store' => 'sky-store',
-        'Peacock' => 'peacock-premium',
-        'Peacock Premium' => 'peacock-premium',
-    ];
-
     private PendingRequest $client;
 
     public function __construct(
@@ -54,7 +44,7 @@ class WatchmodeService
 
     private function toDTO(array $item, Title $title): ?TitleProviderData
     {
-        $providerId = $this->catalog->providerId(self::APP_SLUG_BY_PROVIDER_NAME[$item['name']] ?? null);
+        $providerId = $this->catalog->providerId(ProviderSource::WATCHMODE, $item['name']);
         $countryId = $this->catalog->countryId($item['region']);
 
         $countryProviderId = $providerId && $countryId

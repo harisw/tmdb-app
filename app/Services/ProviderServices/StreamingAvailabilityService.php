@@ -3,10 +3,10 @@
 namespace App\Services\ProviderServices;
 
 use App\Data\DTOs\TitleProviderData;
+use App\Domain\Enums\ProviderSource;
 use App\Domain\Enums\StreamQuality;
 use App\Domain\Enums\StreamType;
 use App\Models\Country;
-use App\Models\Provider;
 use App\Models\Title;
 use Arr;
 use Illuminate\Http\Client\PendingRequest;
@@ -16,21 +16,6 @@ use Illuminate\Support\Facades\Log;
 
 class StreamingAvailabilityService
 {
-    private const APP_SLUG_BY_SERVICE_ID = [
-        'netflix' => 'netflix',
-        'prime' => 'amazon-prime-video',
-        'disney' => 'disney-plus',
-        'apple' => 'apple-tv',
-        'hbo' => 'hbo-max',
-        'crunchyroll' => 'crunchyroll',
-        'crave' => 'crave',
-        'hulu' => 'hulu',
-        'roku' => 'the-roku-channel',
-        'starz' => 'starz',
-        'paramount' => 'paramount-plus',
-        'peacock' => 'peacock-premium',
-    ];
-
     private PendingRequest $client;
 
     public function __construct(
@@ -46,9 +31,13 @@ class StreamingAvailabilityService
             ->timeout(30);
     }
 
-    public function getTopShows(Country $country, Provider $provider): Collection
+    public function getTopShows(Country $country, string $serviceId): Collection
     {
-        $shows = $this->get("shows/top?country={$country->iso2}&service={$this->getProviderKey($provider)}") ?? [];
+        if (! $this->catalog->providerId(ProviderSource::STREAMING_AVAILABILITY, $serviceId)) {
+            return collect();
+        }
+
+        $shows = $this->get("shows/top?country={$country->iso2}&service={$serviceId}") ?? [];
 
         return collect($shows)->flatMap(function (array $show) use ($country) {
             $title = $this->getTitle($show);
@@ -74,7 +63,7 @@ class StreamingAvailabilityService
 
     private function toDTO(array $option, Title $title, Country $country): ?TitleProviderData
     {
-        $providerId = $this->catalog->providerId(self::APP_SLUG_BY_SERVICE_ID[$option['service']['id']] ?? null);
+        $providerId = $this->catalog->providerId(ProviderSource::STREAMING_AVAILABILITY, $option['service']['id']);
         $countryProviderId = $providerId
             ? $this->catalog->countryProviderId($country->id, $providerId)
             : null;
@@ -91,12 +80,6 @@ class StreamingAvailabilityService
             'link' => $option['link'],
             'quality' => StreamQuality::mapString($option['quality'] ?? ''),
         ]);
-    }
-
-    private function getProviderKey(Provider $provider): string
-    {
-        return array_search($provider->slug, self::APP_SLUG_BY_SERVICE_ID, strict: true)
-            ?: throw new \RuntimeException('Provider is not supported: '.$provider->toJson());
     }
 
     private function getTitle(array $showWithProviders): ?Title

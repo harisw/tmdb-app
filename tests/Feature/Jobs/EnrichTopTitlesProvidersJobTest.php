@@ -2,6 +2,7 @@
 
 namespace Tests\Feature\Jobs;
 
+use App\Domain\Enums\ProviderSource;
 use App\Jobs\EnrichTopTitlesProvidersJob;
 use App\Models\Country;
 use App\Models\CountryProvider;
@@ -36,8 +37,8 @@ class EnrichTopTitlesProvidersJobTest extends TestCase
     public function test_upserts_top_titles_for_the_country_ranked_providers_without_duplicates(): void
     {
         $country = Country::factory()->create(['iso2' => 'KR']);
-        $netflix = Provider::factory()->create(['slug' => 'netflix']);
-        $disney = Provider::factory()->create(['slug' => 'disney-plus']);
+        $netflix = Provider::factory()->withAlias(ProviderSource::STREAMING_AVAILABILITY, 'netflix')->create();
+        $disney = Provider::factory()->withAlias(ProviderSource::STREAMING_AVAILABILITY, 'disney')->create();
         CountryProvider::factory()->create(['country_id' => $country->id, 'provider_id' => $netflix->id]);
         $title = Title::factory()->create(['imdb_id' => 'tt1234567']);
 

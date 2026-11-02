@@ -18,6 +18,7 @@ storage/logs
 tests
 docker
 !docker/php/zz-app.ini
+!docker/php/zz-fpm.conf
 pipeline
 docs
 .github
