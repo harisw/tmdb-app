@@ -2,7 +2,7 @@ name: tmdb
 
 services:
     app:
-        image: ${ECR_URI}/tmdb-app:latest
+        image: ${ECR_URI}/tmdb-app:${IMAGE_TAG:-latest}
         env_file:
             - /opt/tmdb/.env
         ports:
@@ -31,7 +31,7 @@ services:
         command: redis-server --maxmemory 256mb --maxmemory-policy volatile-lru
 
     horizon:
-        image: ${ECR_URI}/tmdb-app:latest
+        image: ${ECR_URI}/tmdb-app:${IMAGE_TAG:-latest}
         env_file:
             - /opt/tmdb/.env
         command: php artisan horizon
