@@ -25,4 +25,4 @@ yarn-error.log
 /.zed
 /pipeline/data
 .taste-skill/
-.impeccable/
+.impeccable/*:Zone.Identifier
