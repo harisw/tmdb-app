@@ -26,3 +26,4 @@ yarn-error.log
 /pipeline/data
 .taste-skill/
 .impeccable/
+*:Zone.Identifier

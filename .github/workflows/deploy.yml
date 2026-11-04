@@ -1,114 +1,133 @@
 name: CI/CD
 
 on:
-  push:
-    branches: [ master, development ]
-    paths-ignore:
-      - 'docs/**'
-      - 'infra/**'
-      - '**.md'
-  pull_request:
-    branches: [ master, development ]
+    push:
+        branches: [master, development]
+        paths-ignore:
+            - 'docs/**'
+            - 'infra/**'
+            - '**.md'
+    pull_request:
+        branches: [master, development]
 
 jobs:
-  test:
-    runs-on: ubuntu-latest
+    test:
+        runs-on: ubuntu-latest
 
-    services:
-      postgres:
-        image: pgvector/pgvector:pg17
-        env:
-          POSTGRES_DB: tmdb_test
-          POSTGRES_USER: user
-          POSTGRES_PASSWORD: password
-        ports:
-          - 5432:5432
-        options: >-
-          --health-cmd pg_isready
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
+        services:
+            postgres:
+                image: pgvector/pgvector:pg17
+                env:
+                    POSTGRES_DB: tmdb_test
+                    POSTGRES_USER: user
+                    POSTGRES_PASSWORD: password
+                ports:
+                    - 5432:5432
+                options: >-
+                    --health-cmd pg_isready
+                    --health-interval 10s
+                    --health-timeout 5s
+                    --health-retries 5
 
-    steps:
-      - uses: actions/checkout@v4.2.2
+        steps:
+            - uses: actions/checkout@v4.2.2
 
-      - name: Setup PHP
-        uses: shivammathur/setup-php@v2
-        with:
-          php-version: '8.4'
-          extensions: pdo, pdo_pgsql, mbstring, zip, pcntl
-          coverage: none
+            - name: Setup PHP
+              uses: shivammathur/setup-php@v2
+              with:
+                  php-version: '8.4'
+                  extensions: pdo, pdo_pgsql, mbstring, zip, pcntl
+                  coverage: none
 
-      - name: Install dependencies
-        run: composer install --optimize-autoloader --no-interaction
+            - name: Get Composer cache directory
+              id: composer-cache
+              run: echo "dir=$(composer config cache-files-dir)" >> "$GITHUB_OUTPUT"
 
-      - name: Copy env
-        run: cp .env.example .env
+            - name: Cache Composer packages
+              uses: actions/cache@v6.1.0
+              with:
+                  path: ${{ steps.composer-cache.outputs.dir }}
+                  key: composer-${{ runner.os }}-${{ hashFiles('composer.lock') }}
+                  restore-keys: composer-${{ runner.os }}-
 
-      - name: Generate app key
-        run: php artisan key:generate
+            - name: Install dependencies
+              run: composer install --optimize-autoloader --no-interaction
 
-      - name: Run tests
-        env:
-          DB_CONNECTION: pgsql
-          DB_HOST: 127.0.0.1
-          DB_PORT: 5432
-          DB_DATABASE: tmdb_test
-          DB_USERNAME: user
-          DB_PASSWORD: password
-        run: php artisan test
+            - name: Copy env
+              run: cp .env.example .env
 
-  frontend:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4.2.2
+            - name: Generate app key
+              run: php artisan key:generate
 
-      - name: Setup Node
-        uses: actions/setup-node@v4
-        with:
-          node-version: '26'
-          cache: 'npm'
+            - name: Run tests
+              env:
+                  DB_CONNECTION: pgsql
+                  DB_HOST: 127.0.0.1
+                  DB_PORT: 5432
+                  DB_DATABASE: tmdb_test
+                  DB_USERNAME: user
+                  DB_PASSWORD: password
+              run: php artisan test
 
-      - name: Install dependencies
-        run: npm ci
+    frontend:
+        runs-on: ubuntu-latest
+        steps:
+            - uses: actions/checkout@v4.2.2
 
-      - name: Format check
-        run: npm run format:check
+            - name: Setup Node
+              uses: actions/setup-node@v4
+              with:
+                  node-version: '26'
+                  cache: 'npm'
 
-      - name: Lint
-        run: npm run lint
+            - name: Install dependencies
+              run: npm ci
 
-      - name: Build frontend
-        run: npm run build
+            - name: Format check
+              run: npm run format:check
 
-  deploy:
-    runs-on: ubuntu-latest
-    needs: [ test, frontend ]
-    if: github.ref == 'refs/heads/master'
-    steps:
-      - uses: actions/checkout@v4.2.2
+            - name: Lint
+              run: npm run lint
 
-      - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@v4.0.3
-        with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: ${{ secrets.AWS_REGION }}
+            - name: Build frontend
+              run: npm run build
 
-      - name: Login to ECR
-        id: login-ecr
-        uses: aws-actions/amazon-ecr-login@v2.0.1
+    deploy:
+        runs-on: ubuntu-latest
+        needs: [test, frontend]
+        if: github.ref == 'refs/heads/master'
+        steps:
+            - uses: actions/checkout@v4.2.2
 
-      - name: Build and push app image
-        env:
-          ECR_URI: ${{ steps.login-ecr.outputs.registry }}
-        run: |
-          docker build -t $ECR_URI/tmdb-app:latest .
-          docker push $ECR_URI/tmdb-app:latest
+            - name: Configure AWS credentials
+              uses: aws-actions/configure-aws-credentials@v4.0.3
+              with:
+                  aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+                  aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+                  aws-region: ${{ secrets.AWS_REGION }}
 
-      - name: Deploy to EC2
-        run: |
-          aws ssm send-command \
-            --instance-ids ${{ secrets.EC2_INSTANCE_ID }} \
-            --document-name "AWS-RunShellScript" \
-            --parameters 'commands=["/opt/tmdb/deploy.sh"]'
+            - name: Login to ECR
+              id: login-ecr
+              uses: aws-actions/amazon-ecr-login@v2.0.1
+
+            - name: Set up Docker Buildx
+              uses: docker/setup-buildx-action@v4.4.1
+
+            - name: Build and push app image
+              uses: docker/build-push-action@v7.4.0
+              with:
+                  context: .
+                  push: true
+                  provenance: false
+                  tags: |
+                      ${{ steps.login-ecr.outputs.registry }}/tmdb-app:latest
+                      ${{ steps.login-ecr.outputs.registry }}/tmdb-app:${{ github.sha }}
+                  cache-from: type=gha
+                  cache-to: type=gha,mode=max
+
+            - name: Deploy to EC2
+              run: |
+                  aws ssm send-command \
+                    --instance-ids ${{ secrets.EC2_INSTANCE_ID }} \
+                    --document-name "AWS-RunShellScript" \
+                    --parameters 'commands=["/opt/tmdb/deploy.sh"]'

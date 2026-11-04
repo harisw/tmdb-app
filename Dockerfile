@@ -63,6 +63,9 @@ COPY --from=builder /var/www/vendor vendor
 COPY . .
 COPY --from=frontend /app/public/build public/build
 
+RUN --mount=type=bind,from=composer:2,source=/usr/bin/composer,target=/usr/bin/composer \
+    composer dump-autoload --optimize --no-dev --no-scripts --no-interaction
+
 RUN chown -R www-data:www-data storage bootstrap/cache
 
 EXPOSE 9000

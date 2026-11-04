@@ -1,0 +1,82 @@
+name: PR notes
+
+on:
+    pull_request:
+        types: [opened]
+
+permissions:
+    contents: read
+    pull-requests: write
+
+jobs:
+    notes:
+        if: >-
+            github.event.pull_request.head.repo.full_name == github.repository &&
+            (github.event.pull_request.body == null || github.event.pull_request.body == '')
+        runs-on: ubuntu-latest
+        steps:
+            - uses: actions/checkout@v4.2.2
+              with:
+                  fetch-depth: 0
+
+            - name: Collect commits and diff
+              env:
+                  BASE_SHA: ${{ github.event.pull_request.base.sha }}
+                  HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+              run: |
+                  {
+                    echo "Commits:"
+                    git log --oneline "$BASE_SHA..$HEAD_SHA"
+                    echo
+                    echo "Diff (may be truncated):"
+                    git diff "$BASE_SHA...$HEAD_SHA" -- . ':!package-lock.json' ':!composer.lock' ':!public/build' \
+                      | head -c 24000
+                  } > changes.txt
+
+            - name: Generate notes with Groq
+              env:
+                  GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
+                  SYSTEM_PROMPT: |
+                      You write pull request descriptions for a Laravel 13 + Vue 3 + Inertia app.
+                      From the commits and diff, write GitHub markdown with these sections, skipping empty ones:
+                      "## Summary" (2 sentences), "### Changes" (bullets grouped by backend, frontend, CI, infra),
+                      "### Rollout" (migrations, new queues, feature flags, env keys, scheduled jobs).
+                      Describe only what the diff shows. Do not guess motivation. No preamble.
+              run: |
+                  if [ -z "$GROQ_API_KEY" ]; then
+                    echo "::error::GROQ_API_KEY secret is not set"
+                    exit 1
+                  fi
+                  jq -n --arg system "$SYSTEM_PROMPT" --rawfile changes changes.txt '{
+                    model: "openai/gpt-oss-120b",
+                    reasoning_effort: "low",
+                    temperature: 0.2,
+                    max_completion_tokens: 2000,
+                    messages: [{role: "system", content: $system}, {role: "user", content: $changes}]
+                  }' > request.json
+                  curl --fail-with-body -sS https://api.groq.com/openai/v1/chat/completions \
+                    -H "Authorization: Bearer $GROQ_API_KEY" \
+                    -H "Content-Type: application/json" \
+                    -d @request.json > response.json
+                  jq -r '.choices[0].message.content // empty' response.json > notes.md
+                  if [ ! -s notes.md ]; then
+                    echo "::error::Groq returned no content"
+                    cat response.json
+                    exit 1
+                  fi
+
+            - name: Write PR body if still empty
+              env:
+                  GH_TOKEN: ${{ github.token }}
+                  PR_NUMBER: ${{ github.event.pull_request.number }}
+              run: |
+                  if [ -n "$(gh pr view "$PR_NUMBER" --json body -q .body)" ]; then
+                    echo "Body was filled in meanwhile; leaving it alone."
+                    exit 0
+                  fi
+                  {
+                    echo "> Generated from the diff only. Add the **why** before review."
+                    echo
+                    cat notes.md
+                  } > body.md
+                  gh pr edit "$PR_NUMBER" --body-file body.md
