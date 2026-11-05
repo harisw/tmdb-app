@@ -23,13 +23,18 @@
 
 ## At a glance
 
+<p align="center">
+  <a href="https://chill.harisw.com/graph">
+    <img src="https://github.com/user-attachments/assets/8400a455-e5fb-45de-92e1-8efeed4a5244" alt="Chill knowledge graph explorer: browsing similar titles as a force-directed graph" width="900">
+  </a>
+</p>
 Chill is a full-stack app built and run by one developer. It pulls the movie/TV catalogue from TMDB on a schedule and adds three things TMDB, Letterboxd and JustWatch don't offer together:
 
-| | |
-|---|---|
-| **Explainable recommendations** | Every "similar title" carries ranked, readable reasons (shared cast, crew, genres, keywords, themes). You can browse them as a force-directed graph. |
+|                                    |                                                                                                                                                                   |
+| ---------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Explainable recommendations**    | Every "similar title" carries ranked, readable reasons (shared cast, crew, genres, keywords, themes). You can browse them as a force-directed graph.              |
 | **Search that understands intent** | Full-text, fuzzy and vector search fused into one ranking, with LLM-assisted query expansion (HyDE) behind a feature flag. Scored against an 86-query golden set. |
-| **A personal taste layer** | Likes, watchlist, watched, ratings and "My List", plus streaming availability for the user's country. |
+| **A personal taste layer**         | Likes, watchlist, watched, ratings and "My List", plus streaming availability for the user's country.                                                             |
 
 **What it shows about the engineering:**
 
@@ -37,8 +42,6 @@ Chill is a full-stack app built and run by one developer. It pulls the movie/TV 
 - **Backend architecture:** queue-driven ingestion and enrichment pipelines, typed DTOs at the API boundary, an `Illuminate\Pipeline` reason engine, and global query scopes.
 - **Testing:** about 380 PHPUnit tests run in CI against real PostgreSQL + pgvector (no SQLite stand-in).
 - **Cloud & DevOps:** Docker multi-stage builds, GitHub Actions → ECR → EC2 via SSM (no SSH), Terraform-managed AWS + Cloudflare, structured JSON logs in CloudWatch, and cost controls like scheduled start/stop of AWS resources.
-
-<!-- Add a screenshot or GIF of the graph explorer here, e.g. docs/images/graph.gif -->
 
 ---
 
@@ -78,7 +81,7 @@ flowchart LR
 
 ### 4. Ingestion and enrichment pipeline
 
-- Scheduled jobs walk TMDB's trending, popular and upcoming feeds. Each one keeps paging until it has inserted *N new* titles, so it goes deeper as the catalogue fills.
+- Scheduled jobs walk TMDB's trending, popular and upcoming feeds. Each one keeps paging until it has inserted _N new_ titles, so it goes deeper as the catalogue fills.
 - Credits, watch providers and embeddings are backfilled by jobs on dedicated queues (`enrichment`, `embeddings`), with one Horizon supervisor per queue in production.
 - Incoming payloads are parsed into typed DTOs (`spatie/laravel-data`) that map TMDB field names to the domain model at the boundary.
 - Streaming providers from three sources (TMDB, Watchmode, Streaming Availability) are merged into one canonical record per service using an alias table, so duplicate names never fork the data.
@@ -102,24 +105,24 @@ flowchart LR
 
 - **CI/CD:** each PR runs PHPUnit against a pgvector Postgres service container, plus Prettier and ESLint checks and a Vite build. Merges to `master` build and push the image to ECR and deploy through **SSM Session Manager**, so the instance has no inbound SSH port.
 - **Terraform** (`infra/`) manages:
-  - an EventBridge Scheduler and Lambdas that start and stop AWS resources outside active hours to cut cost
-  - scheduled database exports to S3 with lifecycle rules, plus a CloudWatch alarm and SNS alert if an export goes missing
-  - a Cloudflare Worker that serves a maintenance page while the stack is down
+    - an EventBridge Scheduler and Lambdas that start and stop AWS resources outside active hours to cut cost
+    - scheduled database exports to S3 with lifecycle rules, plus a CloudWatch alarm and SNS alert if an export goes missing
+    - a Cloudflare Worker that serves a maintenance page while the stack is down
 - **Observability:** JSON logs to stderr, shipped to CloudWatch by Docker's `awslogs` driver, with a `request_id` on every line and job metadata on queued work. Laravel Pulse covers app health, and Langfuse covers LLM traces.
 
 ---
 
 ## Tech stack
 
-| Layer | Technology |
-|---|---|
-| **Backend** | Laravel 13, PHP 8.4, spatie/laravel-data, Laravel Pennant (feature flags), Socialite (Google OAuth) |
-| **Frontend** | Vue 3, Inertia.js v2, Pinia, Tailwind CSS v4, daisyUI 5, Reka UI, d3-force, Vite 6 |
-| **Data** | PostgreSQL 17 + pgvector, `tsvector` full-text search, `pg_trgm` |
-| **AI / ML** | OpenAI embeddings, OpenAI/Groq LLMs via a failover gateway, Langfuse tracing |
-| **Queues** | Redis + Laravel Horizon (production), database driver (local) |
-| **Infra** | Docker, Nginx, AWS (EC2, RDS, ECR, S3, Lambda, EventBridge, CloudWatch, SNS, SSM), Cloudflare Workers, Terraform |
-| **Quality** | PHPUnit (about 380 tests), Laravel Pint, ESLint, Prettier, Husky + lint-staged, GitHub Actions |
+| Layer        | Technology                                                                                                       |
+| ------------ | ---------------------------------------------------------------------------------------------------------------- |
+| **Backend**  | Laravel 13, PHP 8.4, spatie/laravel-data, Laravel Pennant (feature flags), Socialite (Google OAuth)              |
+| **Frontend** | Vue 3, Inertia.js v2, Pinia, Tailwind CSS v4, daisyUI 5, Reka UI, d3-force, Vite 6                               |
+| **Data**     | PostgreSQL 17 + pgvector, `tsvector` full-text search, `pg_trgm`                                                 |
+| **AI / ML**  | OpenAI embeddings, OpenAI/Groq LLMs via a failover gateway, Langfuse tracing                                     |
+| **Queues**   | Redis + Laravel Horizon (production), database driver (local)                                                    |
+| **Infra**    | Docker, Nginx, AWS (EC2, RDS, ECR, S3, Lambda, EventBridge, CloudWatch, SNS, SSM), Cloudflare Workers, Terraform |
+| **Quality**  | PHPUnit (about 380 tests), Laravel Pint, ESLint, Prettier, Husky + lint-staged, GitHub Actions                   |
 
 ---
 
@@ -191,12 +194,12 @@ npm run lint && npm run format:check           # frontend checks
 
 ## Documentation
 
-| Doc | Contents |
-|---|---|
-| [`docs/deployment.md`](docs/deployment.md) | AWS setup, security groups, ECR, SSM-based deploys |
-| [`docs/testing.md`](docs/testing.md) | Test database setup |
-| [`docs/troubleshooting.md`](docs/troubleshooting.md) | Common local issues |
-| [`docs/troubleshooting-aws.md`](docs/troubleshooting-aws.md) | Production / AWS issues |
+| Doc                                                          | Contents                                           |
+| ------------------------------------------------------------ | -------------------------------------------------- |
+| [`docs/deployment.md`](docs/deployment.md)                   | AWS setup, security groups, ECR, SSM-based deploys |
+| [`docs/testing.md`](docs/testing.md)                         | Test database setup                                |
+| [`docs/troubleshooting.md`](docs/troubleshooting.md)         | Common local issues                                |
+| [`docs/troubleshooting-aws.md`](docs/troubleshooting-aws.md) | Production / AWS issues                            |
 
 ---
 
