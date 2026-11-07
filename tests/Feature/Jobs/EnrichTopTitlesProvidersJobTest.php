@@ -3,6 +3,7 @@
 namespace Tests\Feature\Jobs;
 
 use App\Domain\Enums\ProviderSource;
+use App\Jobs\EnrichTopTitlesProvidersBatchJob;
 use App\Jobs\EnrichTopTitlesProvidersJob;
 use App\Models\Country;
 use App\Models\CountryProvider;
@@ -12,7 +13,9 @@ use App\Models\TitleProvider;
 use App\Services\ProviderServices\ProviderCatalog;
 use App\Services\ProviderServices\StreamingAvailabilityService;
 use App\Services\ProviderServices\TitleProviderWriter;
+use Illuminate\Bus\PendingBatch;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Bus;
 use Illuminate\Support\Facades\Http;
 use Tests\TestCase;
 
@@ -32,6 +35,18 @@ class EnrichTopTitlesProvidersJobTest extends TestCase
                 'quality' => 'hd',
             ]]],
         ];
+    }
+
+    public function test_batch_dispatches_a_job_for_each_country_with_ranked_services(): void
+    {
+        Bus::fake();
+        Country::factory()->create(['iso2' => 'KR']);
+        Country::factory()->create(['iso2' => 'FR']);
+
+        (new EnrichTopTitlesProvidersBatchJob)->handle();
+
+        Bus::assertBatched(fn (PendingBatch $batch) => $batch->jobs->count() === 1
+            && $batch->jobs->first() instanceof EnrichTopTitlesProvidersJob);
     }
 
     public function test_upserts_top_titles_for_the_country_ranked_providers_without_duplicates(): void

@@ -19,7 +19,7 @@ class GenreController extends Controller
     {
         $genres = Genre::query()
             ->where('count', '>', 0)
-            ->with(['titles' => fn (BelongsToMany $titles) => $titles
+            ->with(['titles' => /** @param BelongsToMany<Title, Genre> $titles */ fn (BelongsToMany $titles) => $titles
                 ->with(Title::cardRelations())
                 ->sorted(TitleSort::POPULAR)
                 ->limit(self::ROW_SIZE),

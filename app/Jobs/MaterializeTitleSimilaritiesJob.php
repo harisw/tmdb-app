@@ -9,6 +9,7 @@ use DB;
 use Illuminate\Contracts\Queue\ShouldBeUnique;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Log;
 
 class MaterializeTitleSimilaritiesJob implements ShouldBeUnique, ShouldQueue
@@ -41,6 +42,7 @@ class MaterializeTitleSimilaritiesJob implements ShouldBeUnique, ShouldQueue
 
         $minScore = config('features.knowledge_graph.min_score');
 
+        /** @var Collection<int, object{id: int, score: float}> $neighbours */
         $neighbours = collect(DB::select(<<<'SQL'
             SELECT
                 t.id,

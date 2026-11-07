@@ -87,7 +87,7 @@ class SearchEvaluate extends Command
     }
 
     /**
-     * @param  Collection<int, array{recall: float, mrr: float}>  $scores
+     * @param  Collection<int, array{query: string, category: string, relevant: array<int, int>, recall: float, mrr: float}>  $scores
      * @return array<int, string|int>
      */
     private function summaryRow(string $category, Collection $scores): array

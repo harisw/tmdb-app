@@ -87,7 +87,7 @@ class TitlesBatchInsertJob implements ShouldQueue
 
     private function openCsvHandle(): mixed
     {
-        $localFile = env('SEED_CSV_LOCAL');
+        $localFile = config('services.seed.csv_local');
 
         if (! $localFile) {
             $dataDir = base_path('database/seeders/data');
@@ -102,7 +102,7 @@ class TitlesBatchInsertJob implements ShouldQueue
             return fopen($localFile, 'r');
         }
 
-        $s3Key = env('SEED_CSV_S3_KEY');
+        $s3Key = config('services.seed.csv_s3_key');
         if ($s3Key) {
             Log::info("Using S3 CSV: {$s3Key}");
 

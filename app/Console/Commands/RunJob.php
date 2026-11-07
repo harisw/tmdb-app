@@ -130,37 +130,37 @@ class RunJob extends Command
 
     private function runEnrichTitleProvidersLink(): void
     {
-        $limit = (int) $this->ask('Limit titles?', 100);
+        $limit = (int) $this->ask('Limit titles?', '100');
         EnrichTitleProvidersLinkBatchJob::dispatch($limit);
     }
 
     private function runTitleBatchInsert(): void
     {
-        $batchSize = (int) $this->ask('Size of batch?', 10_000);
+        $batchSize = (int) $this->ask('Size of batch?', '10000');
         TitlesBatchInsertJob::dispatch($batchSize);
     }
 
     private function runEnrichTitleCredits(): void
     {
-        $limit = (int) $this->ask('Limit titles?', 10);
+        $limit = (int) $this->ask('Limit titles?', '10');
         EnrichTitleCreditsBatchJob::dispatch($limit);
     }
 
     private function runEnrichTitleEmbeddings(): void
     {
-        $limit = (int) $this->ask('Limit titles?', 10);
+        $limit = (int) $this->ask('Limit titles?', '10');
         EnrichTitleEmbeddingsBatchJob::dispatch($limit);
     }
 
     private function runEnrichSearchEmbeddings(): void
     {
-        $limit = (int) $this->ask('Limit titles?', 1000);
+        $limit = (int) $this->ask('Limit titles?', '1000');
         EnrichSearchEmbeddingsBatchJob::dispatch($limit);
     }
 
     private function runMaterializeSimilarities(): void
     {
-        $limit = (int) $this->ask('Limit titles?', 1000);
+        $limit = (int) $this->ask('Limit titles?', '1000');
         $includeFresh = $this->confirm('Include titles materialized within the last week? (No = only stale or missing)', false);
         MaterializeTitleSimilaritiesBatchJob::dispatch($limit, $includeFresh);
     }

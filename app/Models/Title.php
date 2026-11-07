@@ -28,7 +28,7 @@ use Spatie\SchemalessAttributes\Casts\SchemalessAttributes;
  * @property TitleType $type
  * @property mixed $rating
  * @property string $status
- * @property Carbon $release_date
+ * @property Carbon|null $release_date
  * @property int $revenue
  * @property string $runtime
  * @property string|null $backdrop_path
@@ -92,7 +92,6 @@ use Spatie\SchemalessAttributes\Casts\SchemalessAttributes;
  * @property-read Collection<int, TitlePerson> $crew
  * @property-read int|null $crew_count
  * @property-read Language $language
- * @property-read TitlePerson|null $pivot
  * @property-read Collection<int, Provider> $providers
  * @property-read int|null $providers_count
  * @property-read Collection<int, TitleProvider> $titleProviders
@@ -248,6 +247,9 @@ class Title extends Model
         ];
     }
 
+    /**
+     * @return BelongsToMany<self, $this, TitleSimilarity>
+     */
     public function similarTitles(): BelongsToMany
     {
         return $this->belongsToMany(__CLASS__, 'title_similarities', 'title_id', 'similar_title_id')

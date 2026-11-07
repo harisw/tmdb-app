@@ -22,7 +22,7 @@ use Spatie\SchemalessAttributes\Casts\SchemalessAttributes;
  * @property string|null $profile_path
  * @property float $popularity
  * @property int|null $tmdb_id
- * @property SchemalessAttributes $extra_attributes
+ * @property \Spatie\SchemalessAttributes\SchemalessAttributes $extra_attributes
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
  * @property-read Collection<int, Title> $titles

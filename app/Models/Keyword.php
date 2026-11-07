@@ -55,6 +55,9 @@ class Keyword extends Model
             ->orderByDesc('count');
     }
 
+    /**
+     * @return BelongsToMany<Title, $this>
+     */
     public function titles(): BelongsToMany
     {
         return $this->belongsToMany(Title::class);

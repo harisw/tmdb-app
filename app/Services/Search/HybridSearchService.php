@@ -57,6 +57,7 @@ class HybridSearchService
 
     public function qualifiesForHyde(string $text): bool
     {
+        /** @var \IntlRuleBasedBreakIterator $boundaries */
         $boundaries = IntlBreakIterator::createWordInstance();
         $boundaries->setText($text);
         $words = 0;
@@ -165,6 +166,7 @@ class HybridSearchService
      */
     private function fullTextMatches(string $text, int $limit): Collection
     {
+        /** @var Collection<int, object{id: int, score: float, has_name_match: bool}> */
         return Title::query()
             ->join('searchable_titles', 'searchable_titles.title_id', '=', 'titles.id')
             ->selectRaw(
@@ -185,6 +187,7 @@ class HybridSearchService
      */
     private function trigramMatches(string $text, int $limit): Collection
     {
+        /** @var Collection<int, object{id: int, score: float, best_similarity: float}> */
         return DB::transaction(function () use ($text, $limit) {
             DB::statement('SET LOCAL pg_trgm.word_similarity_threshold = '.self::TRIGRAM_THRESHOLD);
 

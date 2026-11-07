@@ -47,8 +47,8 @@ class SearchExplain extends Command
         $hypothesis = $hydeSkipReason === null ? $this->documentGenerator->generate($query) : null;
         $hyde = $hypothesis === null ? collect() : $this->searchService->hypothesisScores($hypothesis->document, self::WINDOW);
         $titleGuess = $hypothesis?->title === null ? null : $this->searchService->lexicalMatches($hypothesis->title, self::WINDOW);
-        $titleFullText = $titleGuess?->fullText ?? collect();
-        $titleTrigram = $titleGuess?->trigram ?? collect();
+        $titleFullText = $titleGuess->fullText ?? collect();
+        $titleTrigram = $titleGuess->trigram ?? collect();
         $hybridWithHyde = $this->searchService->fusedScores([...$lexical->lists(), $hyde, $titleFullText, $titleTrigram]);
         $fusion = $this->searchService->fusionMethod()->value;
 

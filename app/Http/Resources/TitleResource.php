@@ -2,9 +2,13 @@
 
 namespace App\Http\Resources;
 
+use App\Models\Title;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
+/**
+ * @mixin Title
+ */
 class TitleResource extends JsonResource
 {
     public function toArray(Request $request): array

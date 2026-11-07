@@ -65,7 +65,7 @@ class TitleSeeder extends Seeder
 
     private function openCsvHandle(): mixed
     {
-        $localFile = env('SEED_CSV_LOCAL');
+        $localFile = config('services.seed.csv_local');
 
         if (! $localFile) {
             $dataDir = base_path('database/seeders/data');
@@ -81,7 +81,7 @@ class TitleSeeder extends Seeder
             return fopen($localFile, 'r');
         }
 
-        $s3Key = env('SEED_CSV_S3_KEY');
+        $s3Key = config('services.seed.csv_s3_key');
         if ($s3Key) {
             $this->command->info("Using S3 CSV: {$s3Key}");
 
