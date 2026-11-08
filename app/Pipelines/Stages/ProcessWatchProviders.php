@@ -16,8 +16,10 @@ class ProcessWatchProviders
 
     public function handle(EnrichmentContext $ctx, Closure $next): mixed
     {
-        $results = $this->tmdb->getWatchProviders($ctx->title->type, $ctx->title->tmdb_id)['results'];
-        $this->sync->sync($ctx->title, $results);
+        $results = $this->tmdb->getWatchProviders($ctx->title->type, $ctx->title->tmdb_id)['results'] ?? null;
+        if (is_array($results)) {
+            $this->sync->sync($ctx->title, $results);
+        }
 
         return $next($ctx);
     }
