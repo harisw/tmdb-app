@@ -6,6 +6,7 @@ on:
         paths-ignore:
             - 'docs/**'
             - 'infra/**'
+            - 'tools/**'
             - '**.md'
     pull_request:
         branches: [master, development]
@@ -58,6 +59,9 @@ jobs:
 
             - name: Generate app key
               run: php artisan key:generate
+
+            - name: Static analysis
+              run: composer analyse -- --no-progress --error-format=github
 
             - name: Run tests
               env:

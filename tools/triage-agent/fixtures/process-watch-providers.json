@@ -1,0 +1,18 @@
+{
+  "fingerprint": "d96aebf547693359",
+  "error_class": "ErrorException",
+  "message": "Undefined array key \"results\"",
+  "stack_trace": [
+    {"file": "app/Pipelines/Stages/ProcessWatchProviders.php", "line": 19},
+    {"file": "vendor/laravel/framework/src/Illuminate/Pipeline/Pipeline.php", "line": 219},
+    {"file": "app/Pipelines/Stages/ProcessKeywords.php", "line": 31},
+    {"file": "vendor/laravel/framework/src/Illuminate/Pipeline/Pipeline.php", "line": 219},
+    {"file": "vendor/laravel/framework/src/Illuminate/Pipeline/Pipeline.php", "line": 137},
+    {"file": "app/Jobs/EnrichTitleJob.php", "line": 39},
+    {"file": "vendor/laravel/framework/src/Illuminate/Container/BoundMethod.php", "line": 36}
+  ],
+  "occurrences": 1244,
+  "first_seen": "2026-10-24T00:00:00Z",
+  "last_seen": "2026-11-07T00:00:00Z",
+  "request_ids": []
+}

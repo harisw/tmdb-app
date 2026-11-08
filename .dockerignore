@@ -26,6 +26,7 @@ docker
 !docker/php/zz-app.ini
 !docker/php/zz-fpm.conf
 pipeline
+tools
 docs
 .github
 docker-compose*.yml
