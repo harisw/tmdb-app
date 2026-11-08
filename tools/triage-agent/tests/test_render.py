@@ -2,7 +2,7 @@ from fakes import raw_event, triage_result
 
 from triage_agent.agents.sessions import FIX_SCHEMA, fix_from_output
 from triage_agent.github import render
-from triage_agent.github.client import marker
+from triage_agent.github.base import marker
 from triage_agent.llm.triage import triage_prompt
 from triage_agent.models import CheckResult, Fix, Repro, VerifyResult
 from triage_agent.sanitize import clean_event

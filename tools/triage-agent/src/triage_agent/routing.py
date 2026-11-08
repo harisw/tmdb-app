@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 from enum import StrEnum
 
-from triage_agent.github.client import TERMINAL_LABELS, Issue, Pull
+from triage_agent.github.base import TERMINAL_LABELS, Issue, Pull
 
 REPORT_OUTCOME = "report_outcome"
 

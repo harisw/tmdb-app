@@ -1,6 +1,6 @@
 import pytest
 
-from triage_agent.github.client import AGENT_LABEL, NEEDS_HUMAN_LABEL, Issue, Pull
+from triage_agent.github.base import AGENT_LABEL, NEEDS_HUMAN_LABEL, Issue, Pull
 from triage_agent.routing import REPORT_OUTCOME, Action, after_verify, decide_existing_work
 
 

@@ -1,4 +1,4 @@
-from triage_agent.github.client import marker
+from triage_agent.github.base import marker
 from triage_agent.models import ErrorEvent, Fix, Repro, TriageResult, VerifyResult
 from triage_agent.sanitize import fenced, public_message, single_line
 

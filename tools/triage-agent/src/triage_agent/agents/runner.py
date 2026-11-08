@@ -64,10 +64,15 @@ async def run_agent(spec: AgentSpec, prompt: str) -> AgentRun:
         return AgentRun(None, Usage(), "agent returned no result")
     usage = usage_of(result)
     if result.subtype != "success" or result.is_error:
-        return AgentRun(None, usage, f"agent stopped: {result.subtype}")
+        return AgentRun(None, usage, f"agent stopped: {result.subtype} ({stop_details(result)})")
     if not isinstance(result.structured_output, dict):
-        return AgentRun(None, usage, "agent returned no structured output")
+        return AgentRun(None, usage, f"agent returned no structured output ({stop_details(result)})")
     return AgentRun(result.structured_output, usage)
+
+
+def stop_details(result: ResultMessage) -> str:
+    denied = sorted({str(denial.get("tool_name", "unknown")) for denial in result.permission_denials or []})
+    return f"stop_reason={result.stop_reason}, denied_tools={','.join(denied) or 'none'}"
 
 
 def agent_env(config_dir: Path | None) -> dict[str, str]:

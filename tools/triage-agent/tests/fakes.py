@@ -83,6 +83,7 @@ class FakeWorkspace:
     files: dict[str, str] = field(default_factory=dict)
     prepared: list[str] = field(default_factory=list)
     commits: list[tuple[str, str]] = field(default_factory=list)
+    pushes: list[str] = field(default_factory=list)
     suite_runs: int = 0
 
     def prepare(self, fingerprint: str) -> Path:
@@ -118,6 +119,9 @@ class FakeWorkspace:
     def commit(self, worktree: Path, branch: str, message: str) -> str:
         self.commits.append((branch, message))
         return "abc123"
+
+    def push(self, worktree: Path, branch: str) -> None:
+        self.pushes.append(branch)
 
     def close(self) -> None:
         pass

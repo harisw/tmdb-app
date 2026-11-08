@@ -6,10 +6,16 @@ AUTO_LABEL = "triage:auto"
 NEEDS_HUMAN_LABEL = "triage:needs-human"
 NOT_REPRODUCED_LABEL = "triage:not-reproduced"
 VERIFY_FAILED_LABEL = "triage:verify-failed"
+AGENT_BRANCH_PREFIX = "agent/fix-"
 TERMINAL_LABELS = frozenset({NEEDS_HUMAN_LABEL, NOT_REPRODUCED_LABEL, VERIFY_FAILED_LABEL})
 
 IssueState = Literal["open", "closed"]
 
+class GitHubError(RuntimeError):
+    pass
+
+class GitHubTransientError(GitHubError):
+    pass
 
 @dataclass(frozen=True)
 class Issue:
@@ -47,7 +53,7 @@ def note_marker(key: str) -> str:
 
 
 def branch_name(fingerprint: str) -> str:
-    return f"agent/fix-{fingerprint}"
+    return f"{AGENT_BRANCH_PREFIX}{fingerprint}"
 
 
 def is_issue_for(issue: Issue, fingerprint: str, bot_login: str) -> bool:

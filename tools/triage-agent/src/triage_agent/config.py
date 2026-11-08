@@ -27,7 +27,7 @@ class Limits:
 class Settings:
     repo_path: Path
     github_repo: str
-    github_token: str | None
+    github_token: str | None = field(repr=False)
     bot_login: str
     base_ref: str = "master"
     work_dir: Path = Path("/tmp/triage-agent")
@@ -58,7 +58,7 @@ def load_settings(env: MutableMapping[str, str] = os.environ, *, dry_run: bool) 
 
     github_token = env.get("GITHUB_TOKEN") or None
     if not dry_run and not github_token:
-        raise ConfigError("GITHUB_TOKEN is required unless running with --dry-run.")
+        raise ConfigError("GITHUB_TOKEN is required with --live.")
 
     settings = Settings(
         repo_path=Path(env.get("TRIAGE_REPO_PATH", ".")).resolve(),

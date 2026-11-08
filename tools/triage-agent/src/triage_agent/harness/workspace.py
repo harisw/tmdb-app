@@ -42,6 +42,8 @@ class Workspace(Protocol):
 
     def commit(self, worktree: Path, branch: str, message: str) -> str: ...
 
+    def push(self, worktree: Path, branch: str) -> None: ...
+
     def close(self) -> None: ...
 
 
@@ -100,6 +102,11 @@ class DockerWorkspace:
     def commit(self, worktree: Path, branch: str, message: str) -> str:
         return git.commit_to_branch(worktree, branch, message)
 
+    def push(self, worktree: Path, branch: str) -> None:
+        if self._settings.github_token is None:
+            raise HarnessError("GITHUB_TOKEN is required to push")
+        git.push_branch(worktree, self._settings.github_repo, branch, self._settings.github_token)
+        
     def close(self) -> None:
         if self._database:
             self._docker("rm", "--force", self._database, check=False)

@@ -5,11 +5,12 @@ from typing import Any
 
 from langgraph.checkpoint.memory import InMemorySaver
 from langgraph.graph import END, START, StateGraph
+from langgraph.types import RetryPolicy
 
 from triage_agent.agents.sessions import Fixer, Reproducer
 from triage_agent.config import Settings
 from triage_agent.github import render
-from triage_agent.github.client import (
+from triage_agent.github.base import (
     AGENT_LABEL,
     AUTO_LABEL,
     NEEDS_HUMAN_LABEL,
@@ -17,6 +18,7 @@ from triage_agent.github.client import (
     TERMINAL_LABELS,
     VERIFY_FAILED_LABEL,
     GitHub,
+    GitHubTransientError,
     branch_name,
     comment_once,
     find_issue,
@@ -32,6 +34,7 @@ from triage_agent.state import TriageState, fresh_run
 
 EXCERPT_RADIUS = 20
 MAX_EXCERPTS = 3
+GITHUB_RETRY = RetryPolicy(max_attempts=3, initial_interval=2.0, backoff_factor=2.0, retry_on=GitHubTransientError)
 OUTCOME_LABELS = {
     Outcome.NEEDS_HUMAN: NEEDS_HUMAN_LABEL,
     Outcome.NOT_REPRODUCED: NOT_REPRODUCED_LABEL,
@@ -53,14 +56,14 @@ def build_graph(deps: Deps) -> Any:
     nodes = _Nodes(deps)
     graph = StateGraph(TriageState)
     graph.add_node("normalize_event", nodes.normalize_event)
-    graph.add_node("check_existing_work", nodes.check_existing_work)
+    graph.add_node("check_existing_work", nodes.check_existing_work, retry_policy=GITHUB_RETRY)
     graph.add_node("triage", nodes.triage)
-    graph.add_node("upsert_issue", nodes.upsert_issue)
+    graph.add_node("upsert_issue", nodes.upsert_issue, retry_policy=GITHUB_RETRY)
     graph.add_node("reproduce", nodes.reproduce)
     graph.add_node("fix", nodes.fix)
     graph.add_node("verify", nodes.verify)
-    graph.add_node("open_pr", nodes.open_pr)
-    graph.add_node(REPORT_OUTCOME, nodes.report_outcome)
+    graph.add_node("open_pr", nodes.open_pr, retry_policy=GITHUB_RETRY)
+    graph.add_node(REPORT_OUTCOME, nodes.report_outcome, retry_policy=GITHUB_RETRY)
 
     graph.add_edge(START, "normalize_event")
     graph.add_edge("normalize_event", "check_existing_work")
@@ -125,7 +128,7 @@ class _Nodes:
     def upsert_issue(self, state: TriageState) -> TriageState:
         event, triage = state["event"], state.get("triage")
         title, body = render.issue_title(event), render.issue_body(event, triage)
-        existing, decision = state.get("issue"), state.get("decision")
+        existing, decision = state.get("issue") or self._find_issue_ref(event.fingerprint), state.get("decision")
 
         if existing:
             reopening = decision is not None and decision.action is Action.REOPEN_AND_CONTINUE
@@ -204,7 +207,10 @@ class _Nodes:
         event, issue, repro, fix, result = state["event"], state["issue"], state["repro"], state["fix"], state["verify"]
         assert issue is not None and repro is not None and fix is not None and result is not None
         branch = branch_name(event.fingerprint)
-        self.workspace.commit(Path(state["worktree"] or ""), branch, render.commit_message(fix, issue.number))
+        worktree = Path(state["worktree"] or "")
+        self.workspace.commit(worktree, branch, render.commit_message(fix, issue.number))
+        if not self.settings.dry_run:
+            self.workspace.push(worktree, branch)
 
         title, body = render.pull_title(fix), render.pull_body(event, issue.number, repro, fix, result)
         open_pulls = [pull for pull in self.github.pulls_for_branch(branch) if pull.state == "open"]
@@ -224,6 +230,10 @@ class _Nodes:
             key, body = note
             comment_once(self.github, issue.number, key, body, self.settings.bot_login)
         return TriageState()
+
+    def _find_issue_ref(self, fingerprint: str) -> IssueRef | None:
+        issue = find_issue(self.github, fingerprint, self.settings.bot_login)
+        return IssueRef(issue.number, issue.url) if issue else None
 
     def _outcome_note(self, state: TriageState, outcome: Outcome) -> tuple[str, str] | None:
         event, decision = state["event"], state.get("decision")

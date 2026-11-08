@@ -4,7 +4,7 @@ from dataclasses import replace
 from pathlib import Path
 from typing import Any
 
-from triage_agent.github.client import AGENT_LABEL, Comment, Issue, IssueState, Pull
+from triage_agent.github.base import AGENT_LABEL, Comment, Issue, IssueState, Pull
 
 Echo = Callable[[str], None]
 

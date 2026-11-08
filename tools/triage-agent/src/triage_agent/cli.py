@@ -8,7 +8,9 @@ from typing import Any
 
 from triage_agent.agents.sessions import AgentSdkFixer, AgentSdkReproducer
 from triage_agent.config import ConfigError, Settings, load_settings
+from triage_agent.github.base import GitHub
 from triage_agent.github.memory import InMemoryGitHub
+from triage_agent.github.rest import RestGitHub
 from triage_agent.graph import Deps, build_graph
 from triage_agent.harness.workspace import DockerWorkspace
 from triage_agent.llm.triage import AgentSdkTriager
@@ -51,12 +53,27 @@ def _log(settings: Settings, fingerprint: str, state: TriageState, duration: flo
     append_run(settings.runs_log, record)
 
 
+def build_github(settings: Settings, state_file: Path | None) -> GitHub:
+    if settings.dry_run:
+        if state_file:
+            return InMemoryGitHub.from_state_file(state_file, settings.github_repo, settings.bot_login, echo=print)
+        return InMemoryGitHub(settings.github_repo, settings.bot_login, echo=print)
+
+    assert settings.github_token is not None
+    github = RestGitHub(settings.github_repo, settings.github_token)
+    login = github.authenticated_login()
+    if login != settings.bot_login:
+        raise ConfigError(f"TRIAGE_BOT_LOGIN is {settings.bot_login!r} but the token belongs to {login!r}; later runs would not find their own issues.")
+    return github
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(prog="triage-agent", description="Turn a production error into an issue and a verified draft fix.")
     subcommands = parser.add_subparsers(dest="command", required=True)
     run = subcommands.add_parser("run", help="Run the workflow for one error event")
     run.add_argument("--fixture", type=Path, required=True, help="Error event JSON file")
     run.add_argument("--github-state", type=Path, help="Seed the dry-run GitHub with issues and PRs from a JSON file")
+    run.add_argument("--live", action="store_true", help="Write to real GitHub instead of printing what would happen")
     subcommands.add_parser("graph", help="Print the workflow graph as a Mermaid diagram")
     args = parser.parse_args(argv)
 
@@ -64,18 +81,17 @@ def main(argv: list[str] | None = None) -> int:
         print(build_graph(Deps(None, None, None, None, None, None)).get_graph().draw_mermaid())  # type: ignore[arg-type]
         return 0
 
+    if args.live and args.github_state:
+        parser.error("--live and --github-state cannot be combined")
+
     try:
-        settings = load_settings(dry_run=True)
+        settings = load_settings(dry_run=not args.live)
+        github = build_github(settings, args.github_state)
     except ConfigError as error:
         print(f"error: {error}", file=sys.stderr)
         return 2
 
     raw_event = json.loads(args.fixture.read_text())
-    if args.github_state:
-        github = InMemoryGitHub.from_state_file(args.github_state, settings.github_repo, settings.bot_login, echo=print)
-    else:
-        github = InMemoryGitHub(settings.github_repo, settings.bot_login, echo=print)
-
     workspace = DockerWorkspace(settings)
     deps = Deps(
         settings=settings,

@@ -22,7 +22,7 @@ from fakes import (
 )
 
 from triage_agent.cli import execute
-from triage_agent.github.client import (
+from triage_agent.github.base import (
     AGENT_LABEL,
     AUTO_LABEL,
     NEEDS_HUMAN_LABEL,

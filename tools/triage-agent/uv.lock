@@ -1311,6 +1311,7 @@ source = { editable = "." }
 dependencies = [
     { name = "boto3" },
     { name = "claude-agent-sdk" },
+    { name = "httpx" },
     { name = "langgraph" },
     { name = "pydantic" },
 ]
@@ -1324,6 +1325,7 @@ dev = [
 requires-dist = [
     { name = "boto3", specifier = ">=1.35" },
     { name = "claude-agent-sdk", specifier = ">=0.2.179" },
+    { name = "httpx", specifier = ">=0.28.1" },
     { name = "langgraph", specifier = ">=1.2.20" },
     { name = "pydantic", specifier = ">=2.9" },
 ]
