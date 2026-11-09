@@ -105,7 +105,7 @@ class _Nodes:
     def check_existing_work(self, state: TriageState) -> TriageState:
         event = state["event"]
         issue = find_issue(self.github, event.fingerprint, self.settings.bot_login)
-        pulls = self.github.pulls_for_branch(branch_name(event.fingerprint), self.settings.base_ref)
+        pulls = self.github.pulls_for_branch(branch_name(event.fingerprint, self.settings.base_ref))
         decision = decide_existing_work(issue, pulls, self.github.open_agent_pull_count(), self.settings.max_open_agent_prs)
         update = TriageState(decision=decision, final_node="check_existing_work", reason=decision.reason)
         if issue:
@@ -206,14 +206,14 @@ class _Nodes:
     def open_pr(self, state: TriageState) -> TriageState:
         event, issue, repro, fix, result = state["event"], state["issue"], state["repro"], state["fix"], state["verify"]
         assert issue is not None and repro is not None and fix is not None and result is not None
-        branch = branch_name(event.fingerprint)
+        branch = branch_name(event.fingerprint, self.settings.base_ref)
         worktree = Path(state["worktree"] or "")
         self.workspace.commit(worktree, branch, render.commit_message(fix, issue.number))
         if not self.settings.dry_run:
             self.workspace.push(worktree, branch)
 
         title, body = render.pull_title(fix), render.pull_body(event, issue.number, repro, fix, result)
-        open_pulls = [pull for pull in self.github.pulls_for_branch(branch, self.settings.base_ref) if pull.state == "open"]
+        open_pulls = [pull for pull in self.github.pulls_for_branch(branch) if pull.state == "open"]
         if open_pulls:
             pull = self.github.update_pull(open_pulls[0].number, title=title, body=body)
         else:

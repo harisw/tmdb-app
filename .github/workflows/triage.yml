@@ -32,7 +32,9 @@ jobs:
                   FIXTURE: ${{ inputs.fixture }}
               run: |
                   [[ "$FIXTURE" =~ ^fixtures/[A-Za-z0-9_-]+\.json$ ]]
-                  echo "fingerprint=$(jq -er .fingerprint "$FIXTURE")" >> "$GITHUB_OUTPUT"
+                  fingerprint=$(jq -er .fingerprint "$FIXTURE")
+                  [[ "$fingerprint" =~ ^[A-Za-z0-9_-]{1,64}$ ]]
+                  echo "fingerprint=$fingerprint" >> "$GITHUB_OUTPUT"
 
     triage:
         runs-on: ubuntu-latest

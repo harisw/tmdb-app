@@ -9,7 +9,7 @@ def issue(state: str = "open", labels: frozenset[str] = frozenset({AGENT_LABEL})
 
 
 def pull(number: int, state: str, merged: bool = False) -> Pull:
-    return Pull(number, f"pull/{number}", "agent/fix-x", state, merged, True, "master")  # type: ignore[arg-type]
+    return Pull(number, f"pull/{number}", "agent/fix-x", state, merged, True)  # type: ignore[arg-type]
 
 
 @pytest.mark.parametrize(

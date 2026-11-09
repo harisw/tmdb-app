@@ -18,7 +18,9 @@ reviews:
         global scopes read ambient request and auth state.
     - path: "app/**/*Provider*.php"
       instructions: >-
-        Providers are identified through provider_aliases rows. Flag lookups keyed on slug or name.
+        Providers are identified through provider_aliases rows. Flag lookups keyed on slug or name,
+        except in ProviderCatalog::createTmdbAlias(), which matches an unseen TMDB provider by
+        normalized name before creating its alias.
     - path: "tools/triage-agent/**"
       instructions: >-
         This repository is public. Flag anything that could write raw production error text to

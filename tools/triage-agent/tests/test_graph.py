@@ -23,6 +23,7 @@ from fakes import (
 
 from triage_agent.cli import execute
 from triage_agent.github.base import (
+    AGENT_BRANCH_PREFIX,
     AGENT_LABEL,
     AUTO_LABEL,
     NEEDS_HUMAN_LABEL,
@@ -85,9 +86,9 @@ def test_happy_path_opens_a_draft_pr_linked_to_a_new_issue(harness: Harness):
     assert issue.labels == {AGENT_LABEL, AUTO_LABEL}
     assert issue.body.split("\n", 1)[0] == marker(FINGERPRINT)
     [pull] = harness.github.pulls.values()
-    assert pull.head == branch_name(FINGERPRINT) and pull.draft
+    assert pull.head == branch_name(FINGERPRINT, "master") and pull.draft
     assert harness.workspace.commits == [
-        (branch_name(FINGERPRINT), f"fix: guard missing watch provider results\n\nDefault to an empty list.\n\nRefs #{issue.number}")
+        (branch_name(FINGERPRINT, "master"), f"fix: guard missing watch provider results\n\nDefault to an empty list.\n\nRefs #{issue.number}")
     ]
     [run] = harness.runs()
     assert run["outcome"] == "pr_opened"
@@ -195,7 +196,7 @@ def test_reusing_the_thread_id_does_not_leak_state_between_runs(harness: Harness
 
 def test_regression_reopens_the_same_issue_and_clears_terminal_labels(harness: Harness):
     number = harness.seed_issue(state="closed", labels=[AGENT_LABEL, AUTO_LABEL, NOT_REPRODUCED_LABEL])
-    harness.github.seed_pull(head=branch_name(FINGERPRINT), state="closed", merged=True)
+    harness.github.seed_pull(head=branch_name(FINGERPRINT, "master"), state="closed", merged=True)
 
     state = harness.run()
 
@@ -209,7 +210,7 @@ def test_regression_reopens_the_same_issue_and_clears_terminal_labels(harness: H
 
 def test_rejected_pr_is_never_retried(harness: Harness):
     number = harness.seed_issue()
-    harness.github.seed_pull(head=branch_name(FINGERPRINT), state="closed", merged=False)
+    harness.github.seed_pull(head=branch_name(FINGERPRINT, "master"), state="closed", merged=False)
 
     state = harness.run()
 
@@ -221,12 +222,32 @@ def test_rejected_pr_is_never_retried(harness: Harness):
 
 
 def test_closed_pr_on_another_base_does_not_block_this_base(harness: Harness):
-    harness.github.seed_pull(head=branch_name(FINGERPRINT), state="closed", merged=False, base="triage-sandbox")
+    harness.github.seed_pull(head=branch_name(FINGERPRINT, "triage-sandbox"), state="closed", merged=False)
 
     state = harness.run()
 
     assert state["outcome"] is Outcome.PR_OPENED
     assert harness.reproducer.calls == 1
+
+
+def test_open_pr_on_another_base_keeps_its_own_head_branch(harness: Harness):
+    sandbox_branch = branch_name(FINGERPRINT, "triage-sandbox")
+    sandbox_pull = harness.github.seed_pull(head=sandbox_branch)
+
+    state = harness.run()
+
+    assert state["outcome"] is Outcome.PR_OPENED
+    new_pull = next(pull for pull in harness.github.pulls.values() if pull.number != sandbox_pull.number)
+    assert new_pull.head == branch_name(FINGERPRINT, "master")
+    assert sandbox_branch not in [branch for branch, _ in harness.workspace.commits]
+
+
+def test_branch_name_is_unique_per_base_and_stays_pushable():
+    master, sandbox = branch_name("abc", "master"), branch_name("abc", "triage-sandbox")
+
+    assert master == "agent/fix-master/abc"
+    assert master != sandbox
+    assert master.startswith(AGENT_BRANCH_PREFIX) and sandbox.startswith(AGENT_BRANCH_PREFIX)
 
 
 def test_at_capacity_stops_before_any_llm_call(tmp_path: Path):

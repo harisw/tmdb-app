@@ -36,7 +36,6 @@ def raw_pull(number: int, ref: str = "agent/fix-abc", **overrides: Any) -> dict[
         "state": "open",
         "merged_at": None,
         "draft": True,
-        "base": {"ref": "master"},
         **overrides,
     }
 
@@ -80,10 +79,9 @@ def test_pulls_for_branch_filter_by_owner_and_report_merged():
         seen.append(request)
         return httpx.Response(200, json=[raw_pull(5, merged_at="2026-11-08T00:00:00Z", state="closed")])
 
-    [pull] = github(handler).pulls_for_branch("agent/fix-abc", "master")
+    [pull] = github(handler).pulls_for_branch("agent/fix-abc")
 
     assert seen[0].url.params["head"] == "harisw:agent/fix-abc"
-    assert seen[0].url.params["base"] == "master"
     assert seen[0].url.params["state"] == "all"
     assert pull.merged is True
 

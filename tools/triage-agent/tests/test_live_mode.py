@@ -85,7 +85,7 @@ def test_live_run_pushes_the_branch_before_opening_the_pr(tmp_path: Path):
     state, workspace, _ = run_with(tmp_path, github, dry_run=False)
 
     assert state["outcome"] is Outcome.PR_OPENED
-    assert workspace.pushes == [f"agent/fix-{FINGERPRINT}"]
+    assert workspace.pushes == [f"agent/fix-master/{FINGERPRINT}"]
 
 
 def test_dry_run_never_pushes(tmp_path: Path):

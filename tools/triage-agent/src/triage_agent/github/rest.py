@@ -42,8 +42,8 @@ class RestGitHub:
     def agent_issues(self) -> list[Issue]:
         return [_issue(raw) for raw in self._paged("/issues", labels=AGENT_LABEL, state="all") if "pull_request" not in raw]
 
-    def pulls_for_branch(self, branch: str, base: str) -> list[Pull]:
-        return [_pull(raw) for raw in self._paged("/pulls", head=f"{self._owner}:{branch}", base=base, state="all")]
+    def pulls_for_branch(self, branch: str) -> list[Pull]:
+        return [_pull(raw) for raw in self._paged("/pulls", head=f"{self._owner}:{branch}", state="all")]
 
     def open_agent_pull_count(self) -> int:
         return sum(1 for raw in self._paged("/pulls", state="open") if raw["head"]["ref"].startswith(AGENT_BRANCH_PREFIX))
@@ -118,5 +118,4 @@ def _pull(raw: dict[str, Any]) -> Pull:
         state=raw["state"],
         merged=raw.get("merged_at") is not None,
         draft=raw["draft"],
-        base=raw["base"]["ref"],
     )
