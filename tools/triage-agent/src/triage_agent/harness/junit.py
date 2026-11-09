@@ -1,5 +1,5 @@
-import xml.etree.ElementTree as ElementTree
 from dataclasses import dataclass, field
+from xml.etree import ElementTree
 
 
 @dataclass(frozen=True)

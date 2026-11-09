@@ -40,5 +40,5 @@ def fresh_run(event: ErrorEvent) -> TriageState:
         final_node="normalize_event",
         outcome=None,
         reason="",
-        usage=Overwrite(Usage()),
+        usage=Overwrite(Usage()),  # type: ignore[typeddict-item]
     )

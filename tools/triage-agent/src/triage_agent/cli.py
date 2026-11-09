@@ -61,8 +61,7 @@ def build_github(settings: Settings, state_file: Path | None) -> GitHub:
 
     assert settings.github_token is not None
     github = RestGitHub(settings.github_repo, settings.github_token)
-    login = github.authenticated_login()
-    if login != settings.bot_login:
+    if settings.verify_bot_login and (login := github.authenticated_login()) != settings.bot_login:
         raise ConfigError(f"TRIAGE_BOT_LOGIN is {settings.bot_login!r} but the token belongs to {login!r}; later runs would not find their own issues.")
     return github
 

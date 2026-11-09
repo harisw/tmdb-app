@@ -52,8 +52,8 @@ def note_marker(key: str) -> str:
     return f"<!-- triage-note: {key} -->"
 
 
-def branch_name(fingerprint: str) -> str:
-    return f"{AGENT_BRANCH_PREFIX}{fingerprint}"
+def branch_name(fingerprint: str, base: str) -> str:
+    return f"{AGENT_BRANCH_PREFIX}{base}/{fingerprint}"
 
 
 def is_issue_for(issue: Issue, fingerprint: str, bot_login: str) -> bool:

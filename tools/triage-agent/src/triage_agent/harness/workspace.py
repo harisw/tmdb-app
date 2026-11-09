@@ -169,7 +169,7 @@ class DockerWorkspace:
             return subprocess.CompletedProcess(args, 124, "", f"timed out after {self._settings.test_timeout_seconds:.0f}s")
 
     def _docker(self, *args: str, check: bool = True, timeout: float = 120) -> subprocess.CompletedProcess[str]:
-        completed = subprocess.run(["docker", *args], capture_output=True, text=True, timeout=timeout)
+        completed = subprocess.run(["docker", *args], check=False, capture_output=True, text=True, timeout=timeout)
         if check and completed.returncode != 0:
             raise HarnessError(f"docker {args[0]} failed: {completed.stderr.strip()[-2000:]}")
         return completed

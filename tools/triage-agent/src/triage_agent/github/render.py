@@ -69,8 +69,8 @@ def pull_body(event: ErrorEvent, issue_number: int, repro: Repro, fix: Fix, veri
             f"## Root cause\n{single_line(fix.root_cause, 1500)}",
             f"## Change\n{single_line(fix.summary, 1500)}",
             f"## Risks\n{_risks_section(fix)}",
-            f"## Reproduction test\n`{repro.test_path}` failed with `{event.error_class}` before the change and passes after it.\n\n"
-            f"{single_line(repro.explanation, 800)}",
+            (f"## Reproduction test\n`{repro.test_path}` failed with `{event.error_class}` before the change and passes after it.\n\n"
+            f"{single_line(repro.explanation, 800)}"),
             f"## Verification\n{checks}",
         ]
     ) + "\n"

@@ -4,6 +4,7 @@ from pathlib import Path
 from typing import Any
 
 from claude_agent_sdk import ClaudeAgentOptions, HookMatcher, ResultMessage, query
+from claude_agent_sdk.types import HookEvent
 
 from triage_agent.config import Limits
 from triage_agent.models import Usage
@@ -28,7 +29,7 @@ class AgentSpec:
     schema: dict[str, Any]
     cwd: Path | None = None
     tools: tuple[str, ...] = ()
-    hooks: dict[str, list[HookMatcher]] | None = None
+    hooks: dict[HookEvent, list[HookMatcher]] | None = None
     mcp_servers: dict[str, Any] | None = None
     extra_allowed_tools: tuple[str, ...] = ()
     config_dir: Path | None = None
