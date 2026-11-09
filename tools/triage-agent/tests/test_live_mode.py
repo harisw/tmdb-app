@@ -109,9 +109,12 @@ def test_build_github_skips_the_login_check_when_it_is_disabled(monkeypatch: pyt
     assert build_github(live, None) is not None
 
 
-@pytest.mark.parametrize(("actions", "expected"), [("true", False), (None, True)])
-def test_login_check_is_off_only_inside_github_actions(actions: str | None, expected: bool):
-    env = {"CLAUDE_CODE_OAUTH_TOKEN": "x", "GITHUB_REPO": REPO, **({"GITHUB_ACTIONS": actions} if actions else {})}
+@pytest.mark.parametrize(
+    ("extra", "expected"),
+    [({"TRIAGE_GITHUB_APP_TOKEN": "true"}, False), ({"GITHUB_ACTIONS": "true"}, True), ({}, True)],
+)
+def test_only_an_explicit_app_token_skips_the_login_check(extra: dict[str, str], expected: bool):
+    env = {"CLAUDE_CODE_OAUTH_TOKEN": "x", "GITHUB_REPO": REPO, **extra}
 
     assert load_settings(env, dry_run=True).verify_bot_login is expected
 

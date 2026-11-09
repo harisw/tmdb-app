@@ -70,7 +70,7 @@ def load_settings(env: MutableMapping[str, str] = os.environ, *, dry_run: bool) 
         work_dir=Path(env.get("TRIAGE_WORK_DIR", "/tmp/triage-agent")),
         runs_log=Path(env.get("TRIAGE_RUNS_LOG", "runs.jsonl")),
         dry_run=dry_run,
-        verify_bot_login=env.get("GITHUB_ACTIONS") != "true",
+        verify_bot_login=env.get("TRIAGE_GITHUB_APP_TOKEN") != "true",
         max_open_agent_prs=int(env.get("MAX_OPEN_AGENT_PRS", "2")),
         max_diff_lines=int(env.get("MAX_DIFF_LINES", "300")),
     )

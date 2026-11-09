@@ -72,6 +72,7 @@ jobs:
               env:
                   CLAUDE_CODE_OAUTH_TOKEN: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
                   GITHUB_TOKEN: ${{ steps.app.outputs.token }}
+                  TRIAGE_GITHUB_APP_TOKEN: "true"
                   GITHUB_REPO: ${{ github.repository }}
                   TRIAGE_BOT_LOGIN: ${{ inputs.live && format('{0}[bot]', steps.app.outputs.app-slug) || 'triage-agent[bot]' }}
                   TRIAGE_BASE_REF: ${{ github.ref_name }}
