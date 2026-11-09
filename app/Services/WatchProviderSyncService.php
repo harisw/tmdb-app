@@ -35,7 +35,7 @@ class WatchProviderSyncService
 
     private function loadCountryProviders(): void
     {
-        $this->countryProvidersMap = CountryProvider::select('id', 'country_id', 'provider_id')
+        $this->countryProvidersMap = CountryProvider::select(['id', 'country_id', 'provider_id'])
             ->get()
             ->keyBy(fn ($cp) => "{$cp->country_id}-{$cp->provider_id}");
     }
