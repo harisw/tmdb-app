@@ -48,7 +48,6 @@ class ProviderCatalogImporter
         }));
 
         (new Provider)->flushCache();
-        (new CountryProvider)->flushCache();
         Cache::forget('top-providers');
     }
 

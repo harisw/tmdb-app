@@ -35,8 +35,7 @@ class WatchProviderSyncService
 
     private function loadCountryProviders(): void
     {
-        $this->countryProvidersMap = CountryProvider::disableCache()
-            ->select('id', 'country_id', 'provider_id')
+        $this->countryProvidersMap = CountryProvider::select('id', 'country_id', 'provider_id')
             ->get()
             ->keyBy(fn ($cp) => "{$cp->country_id}-{$cp->provider_id}");
     }
@@ -49,7 +48,6 @@ class WatchProviderSyncService
         }
 
         CountryProvider::upsert(array_values($missingCountryProviders), ['country_id', 'provider_id'], ['priority']);
-        (new CountryProvider)->flushCache();
         $this->loadCountryProviders();
     }
 
