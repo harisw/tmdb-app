@@ -26,7 +26,7 @@ from triage_agent.github.base import (
 from triage_agent.harness.expected import check_expected_failure
 from triage_agent.harness.verify import VerifyInputs, verify
 from triage_agent.harness.workspace import Workspace
-from triage_agent.llm.triage import Triager, TriageFailed
+from triage_agent.llm.triage import TriageFailed, Triager
 from triage_agent.models import CheckResult, IssueRef, Outcome, PullRef, Repro, VerifyResult
 from triage_agent.routing import REPORT_OUTCOME, Action, after_verify, decide_existing_work, needs_human
 from triage_agent.sanitize import clean_event
@@ -105,7 +105,7 @@ class _Nodes:
     def check_existing_work(self, state: TriageState) -> TriageState:
         event = state["event"]
         issue = find_issue(self.github, event.fingerprint, self.settings.bot_login)
-        pulls = self.github.pulls_for_branch(branch_name(event.fingerprint))
+        pulls = self.github.pulls_for_branch(branch_name(event.fingerprint), self.settings.base_ref)
         decision = decide_existing_work(issue, pulls, self.github.open_agent_pull_count(), self.settings.max_open_agent_prs)
         update = TriageState(decision=decision, final_node="check_existing_work", reason=decision.reason)
         if issue:
@@ -213,7 +213,7 @@ class _Nodes:
             self.workspace.push(worktree, branch)
 
         title, body = render.pull_title(fix), render.pull_body(event, issue.number, repro, fix, result)
-        open_pulls = [pull for pull in self.github.pulls_for_branch(branch) if pull.state == "open"]
+        open_pulls = [pull for pull in self.github.pulls_for_branch(branch, self.settings.base_ref) if pull.state == "open"]
         if open_pulls:
             pull = self.github.update_pull(open_pulls[0].number, title=title, body=body)
         else:

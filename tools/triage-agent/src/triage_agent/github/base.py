@@ -42,6 +42,7 @@ class Pull:
     state: IssueState
     merged: bool
     draft: bool
+    base: str
 
 
 def marker(fingerprint: str) -> str:
@@ -64,7 +65,7 @@ def is_issue_for(issue: Issue, fingerprint: str, bot_login: str) -> bool:
 class GitHub(Protocol):
     def agent_issues(self) -> list[Issue]: ...
 
-    def pulls_for_branch(self, branch: str) -> list[Pull]: ...
+    def pulls_for_branch(self, branch: str, base: str) -> list[Pull]: ...
 
     def open_agent_pull_count(self) -> int: ...
 

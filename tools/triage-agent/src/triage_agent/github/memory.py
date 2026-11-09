@@ -37,17 +37,17 @@ class InMemoryGitHub:
         self.issue_comments[number] = [Comment(**comment) for comment in comments or []]
         return issue
 
-    def seed_pull(self, *, head: str, state: IssueState = "open", merged: bool = False, draft: bool = True) -> Pull:
+    def seed_pull(self, *, head: str, state: IssueState = "open", merged: bool = False, draft: bool = True, base: str = "master") -> Pull:
         number = self._take_number()
-        pull = Pull(number, self._url("pull", number), head, state, merged, draft)
+        pull = Pull(number, self._url("pull", number), head, state, merged, draft, base)
         self.pulls[number] = pull
         return pull
 
     def agent_issues(self) -> list[Issue]:
         return [issue for issue in self.issues.values() if AGENT_LABEL in issue.labels]
 
-    def pulls_for_branch(self, branch: str) -> list[Pull]:
-        return [pull for pull in self.pulls.values() if pull.head == branch]
+    def pulls_for_branch(self, branch: str, base: str) -> list[Pull]:
+        return [pull for pull in self.pulls.values() if pull.head == branch and pull.base == base]
 
     def open_agent_pull_count(self) -> int:
         return sum(1 for pull in self.pulls.values() if pull.state == "open" and pull.head.startswith("agent/fix-"))
@@ -86,7 +86,7 @@ class InMemoryGitHub:
 
     def create_pull(self, *, head: str, base: str, title: str, body: str) -> Pull:
         number = self._take_number()
-        pull = Pull(number, self._url("pull", number), head, "open", False, True)
+        pull = Pull(number, self._url("pull", number), head, "open", False, True, base)
         self.pulls[number] = pull
         self._record(f"create draft PR #{number} {head} -> {base} {title!r}", body)
         return pull

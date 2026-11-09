@@ -220,6 +220,15 @@ def test_rejected_pr_is_never_retried(harness: Harness):
     assert "closed without merging" in comment
 
 
+def test_closed_pr_on_another_base_does_not_block_this_base(harness: Harness):
+    harness.github.seed_pull(head=branch_name(FINGERPRINT), state="closed", merged=False, base="triage-sandbox")
+
+    state = harness.run()
+
+    assert state["outcome"] is Outcome.PR_OPENED
+    assert harness.reproducer.calls == 1
+
+
 def test_at_capacity_stops_before_any_llm_call(tmp_path: Path):
     harness = Harness(tmp_path, max_open_agent_prs=2)
     harness.github.seed_pull(head="agent/fix-aaaa")

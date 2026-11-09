@@ -8,10 +8,11 @@ import pytest
 from fakes import BOT, REPO, FakeFixer, FakeReproducer, FakeTriager, FakeWorkspace, passing_case, raw_event, report, settings
 from langgraph.types import RetryPolicy
 
-from triage_agent import cli, graph as graph_module
+from triage_agent import cli
+from triage_agent import graph as graph_module
 from triage_agent.agents.runner import stop_details
 from triage_agent.cli import build_github, execute
-from triage_agent.config import ConfigError, Settings
+from triage_agent.config import ConfigError, Settings, load_settings
 from triage_agent.github.base import GitHubTransientError, Issue
 from triage_agent.github.memory import InMemoryGitHub
 from triage_agent.graph import Deps
@@ -99,6 +100,20 @@ def test_build_github_rejects_a_token_for_a_different_account(monkeypatch: pytes
 
     with pytest.raises(ConfigError, match="someone-else"):
         build_github(live, None)
+
+
+def test_build_github_skips_the_login_check_when_it_is_disabled(monkeypatch: pytest.MonkeyPatch, tmp_path: Path):
+    monkeypatch.setattr(cli, "RestGitHub", lambda repo, token: SimpleNamespace(authenticated_login=lambda: pytest.fail("/user was called")))
+    live = replace(settings(tmp_path, dry_run=False), github_token="secret", verify_bot_login=False)
+
+    assert build_github(live, None) is not None
+
+
+@pytest.mark.parametrize(("actions", "expected"), [("true", False), (None, True)])
+def test_login_check_is_off_only_inside_github_actions(actions: str | None, expected: bool):
+    env = {"CLAUDE_CODE_OAUTH_TOKEN": "x", "GITHUB_REPO": REPO, **({"GITHUB_ACTIONS": actions} if actions else {})}
+
+    assert load_settings(env, dry_run=True).verify_bot_login is expected
 
 
 def test_build_github_stays_in_memory_for_dry_runs(tmp_path: Path):

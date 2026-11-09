@@ -183,7 +183,7 @@ def _spec(settings: Settings, worktree: Path, system_prompt: str, schema: dict[s
         schema=schema,
         cwd=worktree,
         tools=TOOLS,
-        hooks={"PreToolUse": [HookMatcher(matcher=None, hooks=[guard], on_failure="block")]},
+        hooks={"PreToolUse": [HookMatcher(matcher=None, hooks=[guard], on_failure="block")]},  # type: ignore[list-item]
         mcp_servers={"harness": create_sdk_mcp_server("harness", tools=[run_repro_test])},
         extra_allowed_tools=(RUN_TEST_TOOL,),
         config_dir=settings.agent_config_dir,

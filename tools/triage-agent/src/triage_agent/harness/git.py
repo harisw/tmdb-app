@@ -1,10 +1,11 @@
 import base64
-import os
 import hashlib
+import os
 import subprocess
 from collections.abc import Mapping
 from dataclasses import dataclass
 from pathlib import Path
+
 from triage_agent.github.base import AGENT_BRANCH_PREFIX
 
 AGENT_IDENTITY = ("-c", "user.name=triage-agent", "-c", "user.email=triage-agent@users.noreply.github.com")
@@ -21,7 +22,7 @@ class Change:
 
 
 def git(cwd: Path, *args: str, check: bool = True, env: Mapping[str, str] | None = None) -> str:
-    completed = subprocess.run(["git", *args], cwd=cwd, capture_output=True, text=True, env={**os.environ, **env} if env else None)
+    completed = subprocess.run(["git", *args], cwd=cwd, check=False, capture_output=True, text=True, env={**os.environ, **env} if env else None)
     if check and completed.returncode != 0:
         raise GitError(f"git {' '.join(args)} failed: {completed.stderr.strip()}")
     return completed.stdout
@@ -41,7 +42,7 @@ def remove_worktree(repo: Path, path: Path) -> None:
 
 
 def show_file(repo: Path, ref: str, path: str) -> str | None:
-    completed = subprocess.run(["git", "show", f"{ref}:{path}"], cwd=repo, capture_output=True, text=True)
+    completed = subprocess.run(["git", "show", f"{ref}:{path}"], cwd=repo, check=False, capture_output=True, text=True)
     return completed.stdout if completed.returncode == 0 else None
 
 

@@ -15,7 +15,11 @@ dependencies = [
 triage-agent = "triage_agent.cli:main"
 
 [dependency-groups]
-dev = ["pytest>=8.3"]
+dev = [
+    "mypy>=2.4.1",
+    "pytest>=8.3",
+    "ruff>=0.17.4",
+]
 
 [build-system]
 requires = ["hatchling"]
@@ -26,3 +30,6 @@ packages = ["src/triage_agent"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+
+[tool.ruff]
+line-length = 200

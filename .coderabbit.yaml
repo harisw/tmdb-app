@@ -1,0 +1,30 @@
+language: en-US
+reviews:
+  high_level_summary_in_walkthrough: true
+  auto_review:
+    enabled: true
+    drafts: true
+    base_branches:
+      - "^triage-sandbox$"
+  path_instructions:
+    - path: "app/**"
+      instructions: >-
+        Flag any change that deletes, clears or overwrites existing rows when an external API
+        returns an error, null or empty response. Treat a successful empty response and a failed
+        response as different cases.
+    - path: "app/{Jobs,Console}/**"
+      instructions: >-
+        Title queries in jobs and commands must call withoutGlobalScopes() explicitly, because the
+        global scopes read ambient request and auth state.
+    - path: "app/**/*Provider*.php"
+      instructions: >-
+        Providers are identified through provider_aliases rows. Flag lookups keyed on slug or name.
+    - path: "tools/triage-agent/**"
+      instructions: >-
+        This repository is public. Flag anything that could write raw production error text to
+        issues, PRs, workflow logs or artifacts without going through sanitize.py. Flag changes
+        that widen the fix allowlist, raise turn limits, or pass secrets to agent sessions.
+    - path: ".github/workflows/**"
+      instructions: >-
+        Workflow inputs must reach shell scripts through env, not inline expressions. Flag broader
+        token permissions and anything that could print a secret.
