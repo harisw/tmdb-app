@@ -2,7 +2,6 @@
 
 namespace App\Services\ProviderServices;
 
-use App\Models\CountryProvider;
 use App\Models\Provider;
 use Illuminate\Support\Facades\DB;
 use InvalidArgumentException;
@@ -26,7 +25,6 @@ class ProviderMerger
         });
 
         (new Provider)->flushCache();
-        (new CountryProvider)->flushCache();
     }
 
     /**
