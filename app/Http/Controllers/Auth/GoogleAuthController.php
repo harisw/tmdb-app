@@ -7,6 +7,7 @@ use App\Http\Controllers\Controller;
 use App\Services\UserService;
 use Auth;
 use Laravel\Socialite\Socialite;
+use Laravel\Socialite\Two\User;
 
 class GoogleAuthController extends Controller
 {
@@ -19,6 +20,7 @@ class GoogleAuthController extends Controller
 
     public function callback()
     {
+        /** @var User $googleUser */
         $googleUser = Socialite::driver('google')->user();
 
         $data = new GoogleUserData(

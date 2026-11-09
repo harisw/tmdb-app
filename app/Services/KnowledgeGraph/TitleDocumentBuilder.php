@@ -69,7 +69,7 @@ class TitleDocumentBuilder
                 CreditJob::PRODUCER => 'Producers: ',
                 CreditJob::WRITER => 'Writers: ',
                 CreditJob::ART_DIRECTOR => 'Art Directors: ',
-                default => throw new \Exception("Job '{$job}' not found"),
+                default => throw new \Exception("Job '{$job->value}' not found"),
             }.$people->join(', ');
         }
     }

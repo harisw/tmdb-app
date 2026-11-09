@@ -29,6 +29,7 @@
         "barryvdh/laravel-ide-helper": "^3.5",
         "fakerphp/faker": "^1.23",
         "fruitcake/laravel-debugbar": "^4.2",
+        "larastan/larastan": "^3.0",
         "laravel/boost": "^2.5",
         "laravel/pail": "^1.2.2",
         "laravel/pint": "^1.13",
@@ -75,7 +76,8 @@
         ],
         "pint": [
             "./vendor/bin/pint"
-        ]
+        ],
+        "analyse": "vendor/bin/phpstan analyse --memory-limit=1G"
     },
     "extra": {
         "laravel": {

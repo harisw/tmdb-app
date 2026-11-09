@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Scopes\AvoidedKeywordScope;
 use App\Models\Title;
+use App\Models\TitleSimilarity;
 use App\Services\KnowledgeGraph\ConstellationService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -54,12 +55,15 @@ class TitleGraphController extends Controller
         return response()->json([
             'node' => $title->toGraphNode(),
             'nodes' => $neighbours->map(fn (Title $t) => $t->toGraphNode())->values(),
-            'links' => $neighbours->map(fn (Title $t) => [
-                'source' => $title->id,
-                'target' => $t->id,
-                'score' => round($t->pivot->score, 3),
-                'reasons' => $t->pivot->reasons,
-            ])->values(),
+            'links' => $neighbours->map(function (Title $neighbour) use ($title): array {
+                /** @var Title&object{pivot: TitleSimilarity} $neighbour */
+                return [
+                    'source' => $title->id,
+                    'target' => $neighbour->id,
+                    'score' => round($neighbour->pivot->score, 3),
+                    'reasons' => $neighbour->pivot->reasons,
+                ];
+            })->values(),
         ]);
     }
 

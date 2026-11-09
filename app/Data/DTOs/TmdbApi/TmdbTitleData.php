@@ -27,7 +27,6 @@ class TmdbTitleData extends Data
         #[MapInputName('vote_average')]
         public readonly float $rating,
         public readonly string $status,
-        #[MapInputName('release_date', 'first_air_date')]
         public readonly ?string $release_date,
         public readonly ?int $revenue,
         public readonly ?int $runtime,
@@ -55,5 +54,14 @@ class TmdbTitleData extends Data
             TmdbProductionCompanyData::class,
             $production_companies->toCollection()->unique('slug')->values()->all()
         );
+    }
+
+    /**
+     * @param  array<string, mixed>  $properties
+     * @return array<string, mixed>
+     */
+    public static function prepareForPipeline(array $properties): array
+    {
+        return [...$properties, 'release_date' => $properties['release_date'] ?? $properties['first_air_date'] ?? null];
     }
 }

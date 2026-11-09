@@ -19,12 +19,12 @@ class UserSeeder extends Seeder
         ], [
             'name' => 'Admin',
             'email' => 'admin@mail.com',
-            'username' => env('ADMIN_USERNAME'),
-            'password' => bcrypt(env('ADMIN_PASSWORD')),
+            'username' => config('app.admin_username'),
+            'password' => bcrypt(config('app.admin_password')),
             'email_verified_at' => now(),
             'extra_attributes' => [
                 'avatar' => [
-                    'seed' => env('ADMIN_USERNAME'),
+                    'seed' => config('app.admin_username'),
                     'style' => AvatarService::getRandomStyle(),
                 ],
             ],

@@ -40,6 +40,9 @@ class Language extends Model
 
     public $timestamps = false;
 
+    /**
+     * @return HasMany<Title, $this>
+     */
     public function titles(): HasMany
     {
         return $this->hasMany(Title::class);

@@ -71,6 +71,7 @@ class ConstellationService
         $nodes = collect([$seed])->merge($neighbours)->keyBy('id');
         $links = collect();
 
+        /** @var Title&object{pivot: TitleSimilarity} $neighbour */
         foreach ($neighbours as $neighbour) {
             $this->link($links, $seed->id, $neighbour->id, $neighbour->pivot->score, $neighbour->pivot->reasons);
         }

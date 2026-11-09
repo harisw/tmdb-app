@@ -19,7 +19,7 @@ class ProviderCatalogImporter
     /** @var Collection<int, int> */
     private Collection $providerIdsByTmdbId;
 
-    /** @var Collection<string, true> */
+    /** @var Collection<string, bool> */
     private Collection $usedSlugs;
 
     /** @var Collection<string, int> */
@@ -84,7 +84,7 @@ class ProviderCatalogImporter
     {
         $existingIds = $members
             ->map(fn (ProviderData $member) => $this->providerIdsByTmdbId->get($member->tmdb_id))
-            ->filter()
+            ->filter(fn (?int $id) => $id !== null)
             ->unique();
         $targetId = $this->providerIdsByTmdbId->get($canonical->tmdb_id) ?? $existingIds->first();
         if (! $targetId) {
@@ -209,6 +209,6 @@ class ProviderCatalogImporter
     private function loadLookups(): void
     {
         $this->providerIdsByTmdbId = ProviderAlias::where('source', ProviderSource::TMDB)->pluck('provider_id', 'external_id');
-        $this->usedSlugs = Provider::disableCache()->pluck('slug')->flip()->map(fn () => true);
+        $this->usedSlugs = Provider::disableCache()->pluck('slug')->mapWithKeys(fn (string $slug) => [$slug => true]);
     }
 }

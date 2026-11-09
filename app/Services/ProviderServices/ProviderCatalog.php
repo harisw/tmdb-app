@@ -109,7 +109,7 @@ class ProviderCatalog
         $normalizedName = self::normalizeName($name);
         $matches = fn (?string $candidate) => $candidate !== null && self::normalizeName($candidate) === $normalizedName;
 
-        return Provider::disableCache()->get(['id', 'name'])->first(fn (Provider $p) => $matches($p->name))?->id
+        return Provider::disableCache()->get(['id', 'name'])->first(fn (Provider $p) => $matches($p->name))->id
             ?? ProviderAlias::get(['provider_id', 'name'])->first(fn (ProviderAlias $a) => $matches($a->name))?->provider_id;
     }
 

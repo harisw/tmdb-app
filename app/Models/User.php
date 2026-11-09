@@ -116,7 +116,7 @@ class User extends Authenticatable implements MustVerifyEmail
         return $this->belongsTo(Country::class);
     }
 
-    public function avatarUrl(): Attribute
+    protected function avatarUrl(): Attribute
     {
         $avatar = $this->extra_attributes['avatar'];
 
@@ -126,6 +126,9 @@ class User extends Authenticatable implements MustVerifyEmail
         );
     }
 
+    /**
+     * @return BelongsToMany<Title, $this, UserTitleState>
+     */
     public function titles(): BelongsToMany
     {
         return $this->belongsToMany(Title::class, 'user_title_states')

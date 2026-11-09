@@ -81,4 +81,8 @@ return [
     'avatar' => [
         'base_url' => env('AVATAR_BASE_URL', 'https://api.dicebear.com/10.x/'),
     ],
+    'seed' => [
+        'csv_local' => env('SEED_CSV_LOCAL'),
+        'csv_s3_key' => env('SEED_CSV_S3_KEY'),
+    ],
 ];

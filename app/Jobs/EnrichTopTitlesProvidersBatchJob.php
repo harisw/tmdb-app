@@ -13,7 +13,7 @@ class EnrichTopTitlesProvidersBatchJob implements ShouldQueue
 
     public function handle(): void
     {
-        $jobs = Country::whereIn('iso2', array_keys(EnrichTopTitlesProvidersJob::PROVIDER_SLUGS_BY_COUNTRY))
+        $jobs = Country::whereIn('iso2', array_keys(EnrichTopTitlesProvidersJob::SERVICE_IDS_BY_COUNTRY))
             ->get()
             ->map(
                 fn (Country $country) => new EnrichTopTitlesProvidersJob($country)->delay(now()->addMinute())
