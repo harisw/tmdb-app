@@ -11,6 +11,7 @@ from triage_agent.cli import MAX_SCAN_EVENTS, execute, scan_events
 from triage_agent.config import load_settings
 from triage_agent.github.base import AGENT_LABEL, NEEDS_HUMAN_LABEL, branch_name, marker
 from triage_agent.github.memory import InMemoryGitHub
+from triage_agent.harness.git import Change
 from triage_agent.harness.verify import VerifyInputs, verify
 from triage_agent.models import ErrorEvent, Fix, Usage
 from triage_agent.sanitize import clean_event, redact, sensitive_values
@@ -156,6 +157,30 @@ def test_verification_fails_without_repeating_the_leaked_value():
 
     assert not check.passed
     assert "jane.doe" not in check.detail
+
+
+def test_verification_rejects_a_production_value_in_a_changed_path():
+    inputs = VerifyInputs(
+        changes=[Change("tests/Feature/jane.doe@example.comTest.php", "A")],
+        repro_path=TEST_PATH,
+        repro_hash_before="a",
+        repro_hash_after="a",
+        diff_lines=1,
+        suite=report(),
+        pint=(True, ""),
+        larastan=None,
+        changed_text="<?php // clean",
+        forbidden_values=sensitive_values(MESSAGE),
+    )
+
+    check = next(check for check in verify(inputs, allowed_prefixes=("tests/",), max_diff_lines=300).checks if check.name.startswith("no production"))
+
+    assert not check.passed
+
+
+def test_seeding_an_issue_rejects_a_close_time_without_a_timezone():
+    with pytest.raises(ValueError, match="timezone offset"):
+        InMemoryGitHub(REPO, BOT).seed_issue(body="b", state="closed", closed_at="2026-11-09T06:19:44")
 
 
 def test_graph_passes_last_seen_to_the_reopen_guard(tmp_path: Path):

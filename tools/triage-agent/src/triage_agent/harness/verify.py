@@ -70,7 +70,8 @@ def _diff_size(inputs: VerifyInputs, max_diff_lines: int) -> CheckResult:
 
 
 def _no_production_values(inputs: VerifyInputs) -> CheckResult:
-    leaked = sum(1 for value in inputs.forbidden_values if value in inputs.changed_text)
+    searched = "\n".join([*(change.path for change in inputs.changes), inputs.changed_text])
+    leaked = sum(1 for value in inputs.forbidden_values if value in searched)
     return CheckResult("no production values in changed files", leaked == 0, f"{leaked} value(s) from the production error appear in the changed files" if leaked else "")
 
 
