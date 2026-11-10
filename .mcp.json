@@ -1,12 +1,19 @@
 {
     "mcpServers": {
         "laravel-boost": {
-            "command": "wsl.exe",
+            "command": "php",
             "args": [
-                "/usr/bin/php8.5",
-                "/home/harimxn/tmdb-app/artisan",
+                "artisan",
                 "boost:mcp"
             ]
+        },
+        "docs-langchain": {
+            "type": "http",
+            "url": "https://docs.langchain.com/mcp"
+        },
+        "reference-langchain": {
+            "type": "http",
+            "url": "https://reference.langchain.com/mcp"
         }
     }
 }
