@@ -6,6 +6,16 @@ reviews:
     drafts: true
     base_branches:
       - "^triage-sandbox$"
+  path_filters:
+    - "!docs/**"
+    - "!*.md"
+    - "!LICENSE"
+    - "!.ai/**"
+    - "!.claude/**"
+    - "!.github/skills/**"
+    - "!.mcp.json"
+    - "!boost.json"
+    - "!_ide_helper*.php"
   path_instructions:
     - path: "app/**"
       instructions: >-
