@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+from datetime import datetime
 from typing import Literal, Protocol
 
 AGENT_LABEL = "agent"
@@ -26,6 +27,7 @@ class Issue:
     state: IssueState
     labels: frozenset[str]
     author: str
+    closed_at: datetime | None = None
 
 
 @dataclass(frozen=True)

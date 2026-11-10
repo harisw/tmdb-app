@@ -1,4 +1,5 @@
 from collections.abc import Iterator
+from datetime import datetime
 from typing import Any
 from urllib.parse import quote
 
@@ -107,6 +108,7 @@ def _issue(raw: dict[str, Any]) -> Issue:
         state=raw["state"],
         labels=frozenset(label["name"] for label in raw["labels"]),
         author=raw["user"]["login"],
+        closed_at=datetime.fromisoformat(raw["closed_at"]) if raw.get("closed_at") else None,
     )
 
 

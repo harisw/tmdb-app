@@ -1,3 +1,5 @@
+from datetime import UTC, datetime, timedelta
+
 import pytest
 
 from triage_agent.github.base import AGENT_LABEL, NEEDS_HUMAN_LABEL, Issue, Pull
@@ -32,6 +34,21 @@ def pull(number: int, state: str, merged: bool = False) -> Pull:
 )
 def test_existing_work_decisions(current_issue: Issue | None, pulls: list[Pull], open_count: int, expected: Action):
     assert decide_existing_work(current_issue, pulls, open_count, 2).action is expected
+
+
+CLOSED_AT = datetime(2026, 11, 9, 6, 19, tzinfo=UTC)
+
+
+@pytest.mark.parametrize(
+    ("hours_after_close", "expected"),
+    [(9, Action.NOTE_OCCURRENCE), (24, Action.NOTE_OCCURRENCE), (25, Action.REOPEN_AND_CONTINUE)],
+)
+def test_a_closed_issue_only_reopens_after_the_fix_had_time_to_ship(hours_after_close: int, expected: Action):
+    closed = Issue(1, "url", "t", "b", "closed", frozenset({AGENT_LABEL}), "bot", CLOSED_AT)
+
+    decision = decide_existing_work(closed, [pull(5, "closed", merged=True)], 0, 2, CLOSED_AT + timedelta(hours=hours_after_close))
+
+    assert decision.action is expected
 
 
 @pytest.mark.parametrize(

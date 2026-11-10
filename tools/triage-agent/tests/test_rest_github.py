@@ -1,5 +1,6 @@
 import json
 from collections.abc import Callable
+from datetime import UTC, datetime
 from typing import Any
 
 import httpx
@@ -70,6 +71,14 @@ def test_issue_with_no_body_maps_to_an_empty_string():
     assert issues[0].body == ""
     assert issues[0].labels == {"agent"}
     assert issues[0].author == "harisw"
+
+
+def test_issue_keeps_the_time_it_was_closed():
+    closed = raw_issue(1, state="closed", closed_at="2026-11-09T06:19:44Z")
+
+    [issue] = github(lambda request: httpx.Response(200, json=[closed])).agent_issues()
+
+    assert issue.closed_at == datetime(2026, 11, 9, 6, 19, 44, tzinfo=UTC)
 
 
 def test_pulls_for_branch_filter_by_owner_and_report_merged():

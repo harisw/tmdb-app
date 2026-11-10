@@ -20,6 +20,8 @@ class VerifyInputs:
     suite: TestReport
     pint: tuple[bool, str]
     larastan: tuple[bool, str] | None
+    changed_text: str = ""
+    forbidden_values: tuple[str, ...] = ()
 
 
 def verify(inputs: VerifyInputs, *, allowed_prefixes: Sequence[str], max_diff_lines: int) -> VerifyResult:
@@ -27,6 +29,7 @@ def verify(inputs: VerifyInputs, *, allowed_prefixes: Sequence[str], max_diff_li
         _repro_unchanged(inputs),
         _paths_allowed(inputs, allowed_prefixes),
         _diff_size(inputs, max_diff_lines),
+        _no_production_values(inputs),
         _repro_ran_and_passed(inputs),
         _suite(inputs.suite),
         CheckResult("pint --test", inputs.pint[0], _clip(inputs.pint[1])),
@@ -64,6 +67,11 @@ def _allowed(path: str, allowed_prefixes: Sequence[str]) -> bool:
 def _diff_size(inputs: VerifyInputs, max_diff_lines: int) -> CheckResult:
     within = inputs.diff_lines <= max_diff_lines
     return CheckResult(f"diff within {max_diff_lines} lines", within, f"{inputs.diff_lines} lines changed")
+
+
+def _no_production_values(inputs: VerifyInputs) -> CheckResult:
+    leaked = sum(1 for value in inputs.forbidden_values if value in inputs.changed_text)
+    return CheckResult("no production values in changed files", leaked == 0, f"{leaked} value(s) from the production error appear in the changed files" if leaked else "")
 
 
 def _repro_ran_and_passed(inputs: VerifyInputs) -> CheckResult:

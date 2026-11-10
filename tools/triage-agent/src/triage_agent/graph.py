@@ -1,5 +1,5 @@
 import asyncio
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from pathlib import Path
 from typing import Any
 
@@ -27,9 +27,9 @@ from triage_agent.harness.expected import check_expected_failure
 from triage_agent.harness.verify import VerifyInputs, verify
 from triage_agent.harness.workspace import Workspace
 from triage_agent.llm.triage import TriageFailed, Triager
-from triage_agent.models import CheckResult, IssueRef, Outcome, PullRef, Repro, VerifyResult
+from triage_agent.models import CheckResult, Fix, IssueRef, Outcome, PullRef, Repro, VerifyResult
 from triage_agent.routing import REPORT_OUTCOME, Action, after_verify, decide_existing_work, needs_human
-from triage_agent.sanitize import clean_event
+from triage_agent.sanitize import clean_event, redact, sensitive_values
 from triage_agent.state import TriageState, fresh_run
 
 EXCERPT_RADIUS = 20
@@ -106,7 +106,7 @@ class _Nodes:
         event = state["event"]
         issue = find_issue(self.github, event.fingerprint, self.settings.bot_login)
         pulls = self.github.pulls_for_branch(branch_name(event.fingerprint, self.settings.base_ref))
-        decision = decide_existing_work(issue, pulls, self.github.open_agent_pull_count(), self.settings.max_open_agent_prs)
+        decision = decide_existing_work(issue, pulls, self.github.open_agent_pull_count(), self.settings.max_open_agent_prs, event.last_seen)
         update = TriageState(decision=decision, final_node="check_existing_work", reason=decision.reason)
         if issue:
             update["issue"] = IssueRef(issue.number, issue.url)
@@ -123,7 +123,8 @@ class _Nodes:
             result, usage = await self.triager.triage(event, self._source_excerpts(state))
         except TriageFailed as error:
             return TriageState(triage=None, final_node="triage", reason=str(error), usage=error.usage)
-        return TriageState(triage=result, final_node="triage", usage=usage)
+        public = result.model_copy(update={"summary": redact(result.summary, event.message), "likely_area": redact(result.likely_area, event.message)})
+        return TriageState(triage=public, final_node="triage", usage=usage)
 
     def upsert_issue(self, state: TriageState) -> TriageState:
         event, triage = state["event"], state.get("triage")
@@ -169,7 +170,7 @@ class _Nodes:
 
         test_hash = self.workspace.file_hash(worktree, attempt.test_path)
         assert test_hash is not None
-        return TriageState(**base, repro=Repro(attempt.test_path, test_hash, attempt.explanation), reason=check.reason)
+        return TriageState(**base, repro=Repro(attempt.test_path, test_hash, redact(attempt.explanation, event.message)), reason=check.reason)
 
     async def fix(self, state: TriageState) -> TriageState:
         repro, triage, previous = state["repro"], state["triage"], state.get("verify")
@@ -177,7 +178,7 @@ class _Nodes:
         feedback = "\n".join(f"{check.name}: {check.detail}" for check in previous.failures) if previous else None
         attempt = await self.fixer.fix(state["event"], triage, repro, Path(state["worktree"] or ""), feedback)
         return TriageState(
-            fix=attempt.fix,
+            fix=_redact_fix(attempt.fix, state["event"].message),
             fix_attempts=state["fix_attempts"] + 1,
             final_node="fix",
             reason=attempt.error or "",
@@ -190,7 +191,7 @@ class _Nodes:
         if state.get("fix") is None:
             result = VerifyResult(False, (CheckResult("fix session", False, state.get("reason") or "no fix produced"),))
         else:
-            result = await self._run_checks(worktree, repro)
+            result = await self._run_checks(worktree, repro, state["event"].message)
 
         update = TriageState(verify=result, final_node="verify")
         if after_verify(result.passed, state["fix_attempts"], self.settings.max_fix_attempts) == REPORT_OUTCOME:
@@ -250,7 +251,7 @@ class _Nodes:
             return f"verify-failed:{last_seen}", render.verify_failed_comment(result, state["fix_attempts"])
         return None
 
-    async def _run_checks(self, worktree: Path, repro: Repro) -> VerifyResult:
+    async def _run_checks(self, worktree: Path, repro: Repro, message: str) -> VerifyResult:
         changes = self.workspace.changes(worktree)
         php_paths = [change.path for change in changes if change.path.endswith(".php") and "D" not in change.status]
         suite = await self.workspace.run_tests(worktree)
@@ -265,6 +266,8 @@ class _Nodes:
             suite=suite,
             pint=pint,
             larastan=larastan,
+            changed_text="\n".join(self.workspace.read_file(worktree, change.path) or "" for change in changes),
+            forbidden_values=sensitive_values(message),
         )
         return verify(inputs, allowed_prefixes=self.settings.fix_allowed_prefixes, max_diff_lines=self.settings.max_diff_lines)
 
@@ -281,6 +284,18 @@ class _Nodes:
             start, end = max(0, center - EXCERPT_RADIUS), min(len(lines), center + EXCERPT_RADIUS + 1)
             excerpts[frame.file] = "\n".join(f"{number + 1}: {lines[number]}" for number in range(start, end))
         return excerpts
+
+
+def _redact_fix(fix: Fix | None, message: str) -> Fix | None:
+    if fix is None:
+        return None
+    return replace(
+        fix,
+        root_cause=redact(fix.root_cause, message),
+        commit_subject=redact(fix.commit_subject, message),
+        summary=redact(fix.summary, message),
+        risks=tuple(redact(risk, message) for risk in fix.risks),
+    )
 
 
 def _not_reproduced(base: TriageState, reason: str) -> TriageState:

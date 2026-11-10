@@ -116,6 +116,9 @@ class FakeWorkspace:
         content = self.files.get(path)
         return hashlib.sha256(content.encode()).hexdigest() if content is not None else None
 
+    def read_file(self, worktree: Path, path: str) -> str | None:
+        return self.files.get(path)
+
     def commit(self, worktree: Path, branch: str, message: str) -> str:
         self.commits.append((branch, message))
         return "abc123"
