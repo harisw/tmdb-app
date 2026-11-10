@@ -23,6 +23,7 @@ HIGH_RISK_PATTERNS = (
 )
 QUOTED = re.compile(r"\"([^\"]*)\"|'([^']*)'")
 IDENTIFIER = re.compile(r"^[A-Za-z_][A-Za-z0-9_.:\\-]{0,63}$")
+MIN_SENSITIVE_LENGTH = 4
 NUMBER = re.compile(r"(?<!SQLSTATE\[)\b\d+(?:\.\d+)?\b")
 
 
@@ -51,6 +52,19 @@ def public_message(message: str) -> str:
     text = QUOTED.sub(_keep_identifier, scrub(message))
     text = NUMBER.sub("<num>", text)
     return _clip(" ".join(text.split()), MAX_PUBLIC_MESSAGE_LENGTH)
+
+
+def sensitive_values(message: str) -> tuple[str, ...]:
+    quoted = [value for match in QUOTED.finditer(message) if not IDENTIFIER.match(value := match.group(1) or match.group(2) or "")]
+    high_risk = [match.group(0) for pattern, _ in HIGH_RISK_PATTERNS for match in pattern.finditer(message)]
+    values = {value for value in [*quoted, *high_risk] if len(value) >= MIN_SENSITIVE_LENGTH}
+    return tuple(sorted(values, key=len, reverse=True))
+
+
+def redact(text: str, message: str) -> str:
+    for value in sensitive_values(message):
+        text = text.replace(value, "<redacted>")
+    return text
 
 
 def data_block(tag: str, payload: Any) -> str:

@@ -1,9 +1,11 @@
 from dataclasses import dataclass
+from datetime import datetime, timedelta
 from enum import StrEnum
 
 from triage_agent.github.base import TERMINAL_LABELS, Issue, Pull
 
 REPORT_OUTCOME = "report_outcome"
+REOPEN_GRACE = timedelta(hours=24)
 
 
 class Action(StrEnum):
@@ -26,7 +28,7 @@ class ExistingWorkDecision:
         return self.action in (Action.CONTINUE, Action.REOPEN_AND_CONTINUE)
 
 
-def decide_existing_work(issue: Issue | None, pulls: list[Pull], open_agent_pulls: int, max_open_agent_pulls: int) -> ExistingWorkDecision:
+def decide_existing_work(issue: Issue | None, pulls: list[Pull], open_agent_pulls: int, max_open_agent_pulls: int, last_seen: datetime | None = None) -> ExistingWorkDecision:
     number = issue.number if issue else None
     latest_pull = max(pulls, key=lambda pull: pull.number) if pulls else None
 
@@ -37,11 +39,17 @@ def decide_existing_work(issue: Issue | None, pulls: list[Pull], open_agent_pull
     if issue and issue.state == "open" and issue.labels & TERMINAL_LABELS:
         labels = ", ".join(sorted(issue.labels & TERMINAL_LABELS))
         return ExistingWorkDecision(Action.NOTE_OCCURRENCE, f"issue already handled ({labels})", number)
+    if issue and _seen_before_fix_shipped(issue, last_seen):
+        return ExistingWorkDecision(Action.NOTE_OCCURRENCE, "last seen too soon after the issue closed to count as a recurrence", number)
     if open_agent_pulls >= max_open_agent_pulls:
         return ExistingWorkDecision(Action.AT_CAPACITY, f"{open_agent_pulls} agent PRs open (max {max_open_agent_pulls})", number)
     if issue and issue.state == "closed":
         return ExistingWorkDecision(Action.REOPEN_AND_CONTINUE, "closed issue recurred", number)
     return ExistingWorkDecision(Action.CONTINUE, "no open work for this fingerprint", number)
+
+
+def _seen_before_fix_shipped(issue: Issue, last_seen: datetime | None) -> bool:
+    return issue.state == "closed" and issue.closed_at is not None and last_seen is not None and last_seen <= issue.closed_at + REOPEN_GRACE
 
 
 def needs_human(is_code_bug: bool, confidence: float, threshold: float) -> bool:

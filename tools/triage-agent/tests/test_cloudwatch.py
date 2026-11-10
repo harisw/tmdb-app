@@ -16,9 +16,14 @@ START = datetime(2026, 11, 1, tzinfo=UTC)
 END = datetime(2026, 11, 2, tzinfo=UTC)
 
 
-def row(record: Any, timestamp: str = "2026-11-01 10:00:00.000") -> list[dict[str, str]]:
+def row(record: Any, timestamp: str = "2026-11-01 10:00:00.000", occurrences: int = 1) -> list[dict[str, str]]:
     message = record if isinstance(record, str) else json.dumps(record)
-    return [{"field": "@timestamp", "value": timestamp}, {"field": "@message", "value": message}]
+    return [
+        {"field": "occurrences", "value": str(occurrences)},
+        {"field": "first_seen", "value": timestamp},
+        {"field": "last_seen", "value": timestamp},
+        {"field": "sample", "value": message},
+    ]
 
 
 class FakeLogs:
@@ -158,3 +163,21 @@ def test_keeps_the_latest_distinct_valid_request_ids():
     [event] = source(client).fetch(START, END)
 
     assert event.request_ids == ("req-3", "req-1")
+
+
+def test_groups_on_the_server_so_a_flood_cannot_hit_the_row_limit():
+    client = FakeLogs([complete()])
+
+    source(client).fetch(START, END)
+
+    assert "stats count(*)" in client.started["queryString"]
+
+
+def test_adds_up_occurrences_from_rows_with_the_same_fingerprint():
+    record = make_record(make_exception())
+    client = FakeLogs([complete(row(record, occurrences=40), row(record, "2026-11-01 12:00:00.000", occurrences=2))])
+
+    [event] = source(client).fetch(START, END)
+
+    assert event.occurrences == 42
+    assert event.last_seen == datetime(2026, 11, 1, 12, tzinfo=UTC)

@@ -12,11 +12,11 @@ variable "rds_instance_identifier" {
 variable "start_cron_weekday" {
   description = "Cron to start resources (KST, per schedule_expression_timezone)"
   type        = string
-  default     = "cron(0 17 ? * MON-FRI *)"
+  default     = "cron(0 10 ? * MON-FRI *)"
 }
 
 variable "stop_cron_weekday" {
   description = "Cron to stop resources (KST, per schedule_expression_timezone)"
   type        = string
-  default     = "cron(0 3 ? * MON-FRI *)"
+  default     = "cron(0 1 ? * MON-FRI *)"
 }

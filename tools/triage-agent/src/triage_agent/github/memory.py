@@ -1,6 +1,7 @@
 import json
 from collections.abc import Callable
 from dataclasses import replace
+from datetime import datetime
 from pathlib import Path
 from typing import Any
 
@@ -30,9 +31,9 @@ class InMemoryGitHub:
             github.seed_pull(**raw)
         return github
 
-    def seed_issue(self, *, body: str, state: IssueState = "open", labels: list[str] | None = None, author: str | None = None, title: str = "seeded", comments: list[dict[str, str]] | None = None) -> Issue:
+    def seed_issue(self, *, body: str, state: IssueState = "open", labels: list[str] | None = None, author: str | None = None, title: str = "seeded", comments: list[dict[str, str]] | None = None, closed_at: str | None = None) -> Issue:
         number = self._take_number()
-        issue = Issue(number, self._url("issues", number), title, body, state, frozenset(labels or [AGENT_LABEL]), author or self.bot_login)
+        issue = Issue(number, self._url("issues", number), title, body, state, frozenset(labels or [AGENT_LABEL]), author or self.bot_login, _aware(closed_at) if closed_at else None)
         self.issues[number] = issue
         self.issue_comments[number] = [Comment(**comment) for comment in comments or []]
         return issue
@@ -107,3 +108,10 @@ class InMemoryGitHub:
         self.writes.append(action)
         if self._echo:
             self._echo(f"[dry-run] would {action}" + (f"\n{body}\n" if body else ""))
+
+
+def _aware(timestamp: str) -> datetime:
+    parsed = datetime.fromisoformat(timestamp)
+    if parsed.tzinfo is None:
+        raise ValueError(f"closed_at needs a timezone offset, got {timestamp!r}")
+    return parsed

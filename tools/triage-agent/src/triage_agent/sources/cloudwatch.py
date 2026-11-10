@@ -16,9 +16,13 @@ MAX_RESULTS = 10_000
 MAX_REQUEST_IDS = 5
 VALID_REQUEST_ID = re.compile(REQUEST_ID_PATTERN)
 PENDING_STATUSES = frozenset({"Scheduled", "Running"})
-QUERY = f"""fields @timestamp, @message
-| filter level_name in ["ERROR", "CRITICAL", "ALERT", "EMERGENCY"]
-| sort @timestamp desc
+QUERY = f"""filter level_name in ["ERROR", "CRITICAL", "ALERT", "EMERGENCY"]
+| fields coalesce(context.exception.class, "LogMessage") as error_class,
+    coalesce(context.exception.file, "") as origin,
+    coalesce(context.exception.message, message) as detail,
+    coalesce(extra.job.name, "") as job
+| stats count(*) as occurrences, min(@timestamp) as first_seen, max(@timestamp) as last_seen, latest(@message) as sample
+    by error_class, origin, detail, job
 | limit {MAX_RESULTS}"""
 
 
@@ -44,7 +48,9 @@ class LogEntry:
     error_class: str
     message: str
     stack_trace: tuple[StackFrame, ...]
-    timestamp: datetime
+    occurrences: int
+    first_seen: datetime
+    last_seen: datetime
     request_id: str | None
 
 
@@ -102,7 +108,7 @@ class CloudWatchErrorSource:
 def _parse_row(row: list[dict[str, str]]) -> LogEntry | None:
     fields = {field["field"]: field["value"] for field in row}
     try:
-        record = json.loads(fields.get("@message", ""))
+        record = json.loads(fields.get("sample", ""))
     except json.JSONDecodeError:
         return None
     if not isinstance(record, dict):
@@ -114,7 +120,9 @@ def _parse_row(row: list[dict[str, str]]) -> LogEntry | None:
         error_class=str(exception.get("class", "Unknown")) if exception else "LogMessage",
         message=str((exception or record).get("message", "")),
         stack_trace=parse_frames(exception) if exception else (),
-        timestamp=_parse_timestamp(fields["@timestamp"]),
+        occurrences=int(fields["occurrences"]),
+        first_seen=_parse_timestamp(fields["first_seen"]),
+        last_seen=_parse_timestamp(fields["last_seen"]),
         request_id=_request_id(record),
     )
 
@@ -139,7 +147,7 @@ def _group(entries: list[LogEntry]) -> list[ErrorEvent]:
 
 
 def _to_event(group: list[LogEntry]) -> ErrorEvent:
-    newest_first = sorted(group, key=lambda entry: entry.timestamp, reverse=True)
+    newest_first = sorted(group, key=lambda entry: entry.last_seen, reverse=True)
     latest = newest_first[0]
     request_ids = list(dict.fromkeys(entry.request_id for entry in newest_first if entry.request_id))
     return ErrorEvent(
@@ -147,8 +155,8 @@ def _to_event(group: list[LogEntry]) -> ErrorEvent:
         error_class=latest.error_class,
         message=latest.message,
         stack_trace=latest.stack_trace,
-        occurrences=len(group),
-        first_seen=min(entry.timestamp for entry in group),
-        last_seen=latest.timestamp,
+        occurrences=sum(entry.occurrences for entry in group),
+        first_seen=min(entry.first_seen for entry in group),
+        last_seen=latest.last_seen,
         request_ids=tuple(request_ids[:MAX_REQUEST_IDS]),
     )

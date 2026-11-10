@@ -40,6 +40,8 @@ class Workspace(Protocol):
 
     def file_hash(self, worktree: Path, path: str) -> str | None: ...
 
+    def read_file(self, worktree: Path, path: str) -> str | None: ...
+
     def commit(self, worktree: Path, branch: str, message: str) -> str: ...
 
     def push(self, worktree: Path, branch: str) -> None: ...
@@ -98,6 +100,10 @@ class DockerWorkspace:
 
     def file_hash(self, worktree: Path, path: str) -> str | None:
         return git.file_hash(worktree / path)
+
+    def read_file(self, worktree: Path, path: str) -> str | None:
+        target = worktree / path
+        return target.read_text(errors="replace") if target.is_file() else None
 
     def commit(self, worktree: Path, branch: str, message: str) -> str:
         return git.commit_to_branch(worktree, branch, message)
