@@ -22,7 +22,7 @@ from triage_agent.harness.workspace import DockerWorkspace
 from triage_agent.llm.triage import AgentSdkTriager
 from triage_agent.models import ErrorEvent, Outcome, Usage
 from triage_agent.runlog import append_run, run_record
-from triage_agent.sanitize import clean_event
+from triage_agent.sanitize import clean_event, scrub
 from triage_agent.sources.cloudwatch import CloudWatchErrorSource, CloudWatchQueryFailed, CloudWatchResultsTruncated
 from triage_agent.state import TriageState
 
@@ -50,11 +50,16 @@ async def execute(deps: Deps, raw_event: dict[str, Any]) -> TriageState:
 
 
 async def scan_events(deps: Deps, events: list[ErrorEvent]) -> None:
-    for event in events[:MAX_SCAN_EVENTS]:
+    triaged = 0
+    for event in events:
+        if triaged >= MAX_SCAN_EVENTS:
+            return
         state = await execute(deps, event.model_dump(mode="json"))
         print(f"{event.fingerprint}: {state.get('outcome')} at {state.get('final_node')}")
         if state.get("worktree") or state.get("outcome") is Outcome.AT_CAPACITY:
             return
+        if state.get("final_node") != "check_existing_work":
+            triaged += 1
 
 
 def _log(settings: Settings, fingerprint: str, state: TriageState, duration: float) -> None:
@@ -142,7 +147,7 @@ def _scan(args: argparse.Namespace) -> int:
 
     if args.list:
         for event in events:
-            location = event.app_frames[0].file if event.app_frames else "no app frame"
+            location = scrub(event.app_frames[0].file) if event.app_frames else "no app frame"
             print(f"{event.fingerprint}  {event.occurrences:>7}  {event.error_class}  {location}  last seen {event.last_seen:%Y-%m-%d %H:%M}")
         return 0
 

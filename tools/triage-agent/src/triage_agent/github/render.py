@@ -1,6 +1,6 @@
 from triage_agent.github.base import marker
 from triage_agent.models import ErrorEvent, Fix, Repro, TriageResult, VerifyResult
-from triage_agent.sanitize import fenced, public_message, single_line
+from triage_agent.sanitize import fenced, public_message, scrub, single_line
 
 LOG_GROUPS = ("/tmdb/app", "/tmdb/horizon")
 MAX_PUBLIC_FRAMES = 15
@@ -98,7 +98,7 @@ def _triage_section(triage: TriageResult) -> str:
 
 
 def _error_section(event: ErrorEvent) -> str:
-    frames = [f"  {frame.file}:{frame.line}" if frame.line else f"  {frame.file}" for frame in event.app_frames[:MAX_PUBLIC_FRAMES]]
+    frames = [f"  {scrub(frame.file)}:{frame.line}" if frame.line else f"  {scrub(frame.file)}" for frame in event.app_frames[:MAX_PUBLIC_FRAMES]]
     details = "\n".join(
         [f"class: {event.error_class}", f"message: {public_message(event.message)}", "app frames:", *(frames or ["  none"])]
     )

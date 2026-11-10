@@ -6,9 +6,11 @@ import pytest
 from fakes import APP_FILE, BOT, REPO, TEST_PATH, FakeFixer, raw_event, report
 from test_graph import Harness
 
+from triage_agent import cli
 from triage_agent.agents.sessions import FixAttempt
 from triage_agent.cli import MAX_SCAN_EVENTS, execute, scan_events
 from triage_agent.config import load_settings
+from triage_agent.github import render
 from triage_agent.github.base import AGENT_LABEL, NEEDS_HUMAN_LABEL, branch_name, marker
 from triage_agent.github.memory import InMemoryGitHub
 from triage_agent.harness.git import Change
@@ -62,6 +64,41 @@ def test_never_looks_at_more_than_the_scan_limit(tmp_path: Path):
     asyncio.run(scan_events(harness.deps(), [event(index) for index in range(MAX_SCAN_EVENTS + 3)]))
 
     assert len(harness.triager.calls) == MAX_SCAN_EVENTS
+
+
+def test_handled_errors_do_not_use_up_the_scan_limit(tmp_path: Path):
+    harness = Harness(tmp_path)
+    harness.triager.result = harness.triager.result.model_copy(update={"is_code_bug": False})
+    for index in range(MAX_SCAN_EVENTS):
+        seed_handled(harness, f"fp{index:02d}")
+
+    asyncio.run(scan_events(harness.deps(), [event(index) for index in range(MAX_SCAN_EVENTS + 1)]))
+
+    assert len(harness.triager.calls) == 1
+
+
+def test_issue_body_scrubs_production_values_in_frame_paths():
+    leaky = clean_event(raw_event(stack_trace=[{"file": "app/Exports/jane.doe@example.com.php", "line": 3}]))
+
+    body = render.issue_body(leaky, None)
+
+    assert "jane.doe@example.com" not in body
+    assert "app/Exports/<email>" in body
+
+
+def test_scan_list_scrubs_production_values_in_frame_paths(monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]):
+    leaky = clean_event(raw_event(stack_trace=[{"file": "app/Exports/jane.doe@example.com.php", "line": 3}]))
+
+    class Source:
+        def fetch(self, start: datetime, end: datetime) -> list[ErrorEvent]:
+            return [leaky]
+
+    monkeypatch.setattr(cli, "_source", Source)
+
+    assert cli.main(["scan", "--list"]) == 0
+    output = capsys.readouterr().out
+    assert "jane.doe@example.com" not in output
+    assert "app/Exports/<email>" in output
 
 
 def test_a_crash_records_only_the_exception_type(tmp_path: Path):
