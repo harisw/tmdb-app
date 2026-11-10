@@ -55,9 +55,9 @@ def public_message(message: str) -> str:
 
 
 def sensitive_values(message: str) -> tuple[str, ...]:
-    quoted = [match.group(1) or match.group(2) or "" for match in QUOTED.finditer(message)]
+    quoted = [value for match in QUOTED.finditer(message) if not IDENTIFIER.match(value := match.group(1) or match.group(2) or "")]
     high_risk = [match.group(0) for pattern, _ in HIGH_RISK_PATTERNS for match in pattern.finditer(message)]
-    values = {value for value in [*quoted, *high_risk] if len(value) >= MIN_SENSITIVE_LENGTH and not IDENTIFIER.match(value)}
+    values = {value for value in [*quoted, *high_risk] if len(value) >= MIN_SENSITIVE_LENGTH}
     return tuple(sorted(values, key=len, reverse=True))
 
 

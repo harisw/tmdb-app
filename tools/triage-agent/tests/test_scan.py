@@ -95,6 +95,27 @@ def test_sensitive_values_keep_identifiers_out_of_the_list():
     assert set(sensitive_values(MESSAGE)) == {"jane.doe@example.com", "The Secret Title"}
 
 
+def test_sensitive_values_keep_high_risk_matches_that_look_like_identifiers():
+    token = "a1b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6"
+    uuid = "abcdef12-3456-7890-abcd-ef1234567890"
+
+    values = sensitive_values(f"Token {token} for job {uuid} failed on users_email_unique")
+
+    assert set(values) == {token, uuid}
+
+
+def test_issue_never_repeats_a_value_from_the_production_error_in_suspected_files(tmp_path: Path):
+    harness = Harness(tmp_path)
+    published: list[str] = []
+    harness.github = InMemoryGitHub(REPO, BOT, echo=published.append)
+    harness.triager.result = harness.triager.result.model_copy(update={"is_code_bug": False, "suspected_files": [APP_FILE, "The Secret Title"]})
+
+    harness.run(message=MESSAGE)
+
+    assert APP_FILE in "\n".join(published)
+    assert "The Secret Title" not in "\n".join(published)
+
+
 def test_redact_replaces_every_sensitive_value():
     assert redact("Row for jane.doe@example.com failed", MESSAGE) == "Row for <redacted> failed"
 

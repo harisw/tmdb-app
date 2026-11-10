@@ -123,7 +123,13 @@ class _Nodes:
             result, usage = await self.triager.triage(event, self._source_excerpts(state))
         except TriageFailed as error:
             return TriageState(triage=None, final_node="triage", reason=str(error), usage=error.usage)
-        public = result.model_copy(update={"summary": redact(result.summary, event.message), "likely_area": redact(result.likely_area, event.message)})
+        public = result.model_copy(
+            update={
+                "summary": redact(result.summary, event.message),
+                "likely_area": redact(result.likely_area, event.message),
+                "suspected_files": [redact(path, event.message) for path in result.suspected_files],
+            }
+        )
         return TriageState(triage=public, final_node="triage", usage=usage)
 
     def upsert_issue(self, state: TriageState) -> TriageState:
