@@ -1,6 +1,7 @@
 const PAGE_HTML = __PAGE_HTML__;
 
 const ORIGIN_ERRORS = new Set([520, 521, 522, 523, 524, 525, 526, 530]);
+const GATEWAY_ERRORS = new Set([502, 503, 504]);
 const OFF_SCHEDULE_TIMEOUT_MS = 5000;
 const MINUTES_PER_DAY = 1440;
 const MINUTES_PER_WEEK = 7 * MINUTES_PER_DAY;
@@ -54,6 +55,16 @@ function maintenancePage(request, env, mode, nextOpenAt) {
   });
 }
 
+async function fetchWithHeaderTimeout(request, timeoutMs) {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    return await fetch(request, { signal: controller.signal });
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
 export default {
   async fetch(request, env) {
     const { isUp, nextOpenAt } = scheduleState(env.SCHEDULE, Date.now());
@@ -61,8 +72,9 @@ export default {
       isUp ? maintenancePage(request, env, 'unexpected', null) : maintenancePage(request, env, 'scheduled', nextOpenAt);
 
     try {
-      const response = await fetch(request, isUp ? {} : { signal: AbortSignal.timeout(OFF_SCHEDULE_TIMEOUT_MS) });
-      return ORIGIN_ERRORS.has(response.status) ? fallback() : response;
+      const response = isUp ? await fetch(request) : await fetchWithHeaderTimeout(request, OFF_SCHEDULE_TIMEOUT_MS);
+      const failed = ORIGIN_ERRORS.has(response.status) || (!isUp && GATEWAY_ERRORS.has(response.status));
+      return failed ? fallback() : response;
     } catch {
       return fallback();
     }
