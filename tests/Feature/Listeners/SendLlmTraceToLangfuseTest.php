@@ -29,7 +29,7 @@ class SendLlmTraceToLangfuseTest extends TestCase
         return CarbonImmutable::createFromTimestampMs(1_700_000_000_000 + $milliseconds);
     }
 
-    private function attempt(array $overrides = []): LlmAttempt
+    private function llmAttempt(array $overrides = []): LlmAttempt
     {
         return new LlmAttempt(...[
             'provider' => 'openai',
@@ -80,7 +80,7 @@ class SendLlmTraceToLangfuseTest extends TestCase
     {
         Http::fake(['cloud.langfuse.com/*' => Http::response()]);
 
-        (new SendLlmTraceToLangfuse)->handle($this->operation([$this->attempt()]));
+        (new SendLlmTraceToLangfuse)->handle($this->operation([$this->llmAttempt()]));
 
         Http::assertSent(fn (Request $request) => $request->url() === 'https://cloud.langfuse.com/api/public/otel/v1/traces'
             && $request->hasHeader('Authorization', 'Basic '.base64_encode('pk-lf-test:sk-lf-test'))
@@ -91,7 +91,7 @@ class SendLlmTraceToLangfuseTest extends TestCase
     {
         Http::fake(['cloud.langfuse.com/*' => Http::response()]);
 
-        (new SendLlmTraceToLangfuse)->handle($this->operation([$this->attempt()]));
+        (new SendLlmTraceToLangfuse)->handle($this->operation([$this->llmAttempt()]));
 
         [$root] = $this->sentSpans();
         $this->assertMatchesRegularExpression('/^[0-9a-f]{32}$/', $root['traceId']);
@@ -115,8 +115,8 @@ class SendLlmTraceToLangfuseTest extends TestCase
         Http::fake(['cloud.langfuse.com/*' => Http::response()]);
 
         (new SendLlmTraceToLangfuse)->handle($this->operation([
-            $this->attempt(['output' => null, 'usage' => [], 'error' => 'HTTP 503', 'finishedAt' => $this->at(20)]),
-            $this->attempt(['provider' => 'groq', 'model' => 'llama-test', 'startedAt' => $this->at(20)]),
+            $this->llmAttempt(['output' => null, 'usage' => [], 'error' => 'HTTP 503', 'finishedAt' => $this->at(20)]),
+            $this->llmAttempt(['provider' => 'groq', 'model' => 'llama-test', 'startedAt' => $this->at(20)]),
         ]));
 
         [$root, $failed, $succeeded] = $this->sentSpans();
@@ -154,12 +154,12 @@ class SendLlmTraceToLangfuseTest extends TestCase
         Http::fake(['cloud.langfuse.com/*' => Http::response()]);
 
         (new SendLlmTraceToLangfuse)->handle($this->operation([
-            $this->attempt([
+            $this->llmAttempt([
                 'output' => '{"title": "WALL',
                 'finishReason' => 'length',
                 'error' => 'Invalid JSON completion: Syntax error (finish_reason: length).',
             ]),
-            $this->attempt(['provider' => 'groq', 'finishReason' => 'stop']),
+            $this->llmAttempt(['provider' => 'groq', 'finishReason' => 'stop']),
         ]));
 
         [$root, $rejected, $succeeded] = $this->sentSpans();
@@ -183,7 +183,7 @@ class SendLlmTraceToLangfuseTest extends TestCase
         Http::fake(['cloud.langfuse.com/*' => Http::response()]);
 
         (new SendLlmTraceToLangfuse)->handle($this->operation([
-            $this->attempt(['output' => null, 'usage' => [], 'error' => 'HTTP 503']),
+            $this->llmAttempt(['output' => null, 'usage' => [], 'error' => 'HTTP 503']),
         ]));
 
         [$root] = $this->sentSpans();
@@ -196,10 +196,10 @@ class SendLlmTraceToLangfuseTest extends TestCase
     public function test_is_only_queued_when_langfuse_keys_are_configured(): void
     {
         $listener = new SendLlmTraceToLangfuse;
-        $this->assertTrue($listener->shouldQueue($this->operation([$this->attempt()])));
+        $this->assertTrue($listener->shouldQueue($this->operation([$this->llmAttempt()])));
 
         config(['services.langfuse.secret_key' => null]);
-        $this->assertFalse($listener->shouldQueue($this->operation([$this->attempt()])));
+        $this->assertFalse($listener->shouldQueue($this->operation([$this->llmAttempt()])));
     }
 
     public function test_sends_nothing_when_langfuse_is_not_configured(): void
@@ -207,7 +207,7 @@ class SendLlmTraceToLangfuseTest extends TestCase
         config(['services.langfuse.public_key' => null]);
         Http::fake();
 
-        event($this->operation([$this->attempt()]));
+        event($this->operation([$this->llmAttempt()]));
 
         Http::assertNothingSent();
     }
