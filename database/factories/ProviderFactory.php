@@ -14,7 +14,7 @@ class ProviderFactory extends Factory
 {
     public function definition(): array
     {
-        $name = fake()->company();
+        $name = fake()->unique()->company();
 
         return [
             'slug' => Str::slug($name),
