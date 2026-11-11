@@ -31,10 +31,10 @@ jobs:
             - name: Fail on abandoned Composer packages
               shell: bash
               run: |
-                  export FILTER='(.packages[$p] // []) | if length == 0 then error("\($p) has no metadata on Packagist") else .[0].abandoned // false end | if . == false then empty elif . == true then $p else "\($p) (use \(.))" end'
+                  export FILTER='input | (.packages[$p] // []) | if length == 0 then error("\($p) has no metadata on Packagist") else .[0].abandoned // false end | if . == false then empty elif . == true then $p else "\($p) (use \(.))" end'
                   locked=$(jq -r '(.packages + .["packages-dev"])[] | "\(.name) \(.version)"' composer.lock)
                   test -n "$locked"
-                  abandoned=$(xargs -P 8 -n 2 bash -c 'set -eo pipefail; case "$2" in dev-* | *-dev) file="$1~dev" ;; *) file="$1" ;; esac; curl -fsS --retry 3 --max-time 20 "https://repo.packagist.org/p2/$file.json" | jq -r --arg p "$1" "$FILTER"' _ <<< "$locked")
+                  abandoned=$(xargs -P 8 -n 2 bash -c 'set -eo pipefail; case "$2" in dev-* | *-dev) file="$1~dev" ;; *) file="$1" ;; esac; curl -fsS --retry 3 --max-time 20 "https://repo.packagist.org/p2/$file.json" | jq -nr --arg p "$1" "$FILTER"' _ <<< "$locked")
                   if [ -n "$abandoned" ]; then
                       echo "::error::Abandoned Composer packages: $(echo "$abandoned" | paste -sd, -)"
                       exit 1

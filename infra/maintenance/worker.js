@@ -1,8 +1,8 @@
 const PAGE_HTML = __PAGE_HTML__;
 
-const ORIGIN_ERRORS = new Set([520, 521, 522, 523, 524, 525, 526, 530]);
-const GATEWAY_ERRORS = new Set([502, 503, 504]);
-const OFF_SCHEDULE_TIMEOUT_MS = 5000;
+const EXPECTED_DOWN_TIMEOUT_MS = 5000;
+const BOOT_GRACE_MINUTES = 15;
+const ABANDONABLE_METHODS = new Set(['GET', 'HEAD']);
 const MINUTES_PER_DAY = 1440;
 const MINUTES_PER_WEEK = 7 * MINUTES_PER_DAY;
 
@@ -27,11 +27,15 @@ function scheduleState(schedule, now) {
   const minutesUntil = (event) => (event.at - minuteOfWeek + MINUTES_PER_WEEK) % MINUTES_PER_WEEK || MINUTES_PER_WEEK;
 
   const lastEvent = events.reduce((latest, event) => (minutesSince(event) < minutesSince(latest) ? event : latest));
-  const minutesToStart = Math.min(...events.filter((event) => event.type === 'start').map(minutesUntil));
+  const isUp = lastEvent.type === 'start';
+  const isBooting = isUp && minutesSince(lastEvent) < BOOT_GRACE_MINUTES;
+  const minutesToOpen = isBooting
+    ? -minutesSince(lastEvent)
+    : Math.min(...events.filter((event) => event.type === 'start').map(minutesUntil));
 
   return {
-    isUp: lastEvent.type === 'start',
-    nextOpenAt: new Date(now + minutesToStart * 60000 - msIntoMinute),
+    expectsUp: isUp && !isBooting,
+    openAt: new Date(now + minutesToOpen * 60000 - msIntoMinute),
   };
 }
 
@@ -45,7 +49,7 @@ function maintenancePage(request, env, mode, nextOpenAt) {
   const script = '<script>window.__MAINTENANCE__ = ' + JSON.stringify(config).replace(/</g, '\\u003c') + ';</script>';
   const retryAfter = nextOpenAt ? Math.max(60, Math.ceil((nextOpenAt - Date.now()) / 1000)) : 60;
 
-  return new Response(request.method === 'HEAD' ? null : PAGE_HTML.replace('</head>', script + '</head>'), {
+  return new Response(request.method === 'HEAD' ? null : PAGE_HTML.replace('</head>', () => script + '</head>'), {
     status: 503,
     headers: {
       'content-type': 'text/html; charset=utf-8',
@@ -67,14 +71,14 @@ async function fetchWithHeaderTimeout(request, timeoutMs) {
 
 export default {
   async fetch(request, env) {
-    const { isUp, nextOpenAt } = scheduleState(env.SCHEDULE, Date.now());
+    const { expectsUp, openAt } = scheduleState(env.SCHEDULE, Date.now());
     const fallback = () =>
-      isUp ? maintenancePage(request, env, 'unexpected', null) : maintenancePage(request, env, 'scheduled', nextOpenAt);
+      expectsUp ? maintenancePage(request, env, 'unexpected', null) : maintenancePage(request, env, 'scheduled', openAt);
+    const canAbandon = !expectsUp && ABANDONABLE_METHODS.has(request.method);
 
     try {
-      const response = isUp ? await fetch(request) : await fetchWithHeaderTimeout(request, OFF_SCHEDULE_TIMEOUT_MS);
-      const failed = ORIGIN_ERRORS.has(response.status) || (!isUp && GATEWAY_ERRORS.has(response.status));
-      return failed ? fallback() : response;
+      const response = canAbandon ? await fetchWithHeaderTimeout(request, EXPECTED_DOWN_TIMEOUT_MS) : await fetch(request);
+      return response.status >= 500 ? fallback() : response;
     } catch {
       return fallback();
     }
