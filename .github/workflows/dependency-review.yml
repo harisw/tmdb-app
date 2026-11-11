@@ -22,15 +22,19 @@ jobs:
 
     composer-abandoned:
         runs-on: ubuntu-latest
+        timeout-minutes: 5
         steps:
             - uses: actions/checkout@v4.2.2
               with:
                   persist-credentials: false
 
             - name: Fail on abandoned Composer packages
+              shell: bash
               run: |
-                  abandoned=$(jq -r '(.packages + .["packages-dev"])[].name' composer.lock \
-                      | xargs -P 8 -I{} sh -c 'curl -fsS --retry 3 "https://repo.packagist.org/p2/{}.json" | jq -r --arg p "{}" ".packages[\$p][0].abandoned // false | if . == false then empty elif . == true then \$p else \"\(\$p) (use \(.))\" end"')
+                  export FILTER='.packages[$p] // error("\($p) not found on Packagist") | .[0].abandoned // false | if . == false then empty elif . == true then $p else "\($p) (use \(.))" end'
+                  names=$(jq -r '(.packages + .["packages-dev"])[].name' composer.lock)
+                  test -n "$names"
+                  abandoned=$(xargs -P 8 -I{} bash -c 'set -eo pipefail; curl -fsS --retry 3 --max-time 20 "https://repo.packagist.org/p2/$1.json" | jq -r --arg p "$1" "$FILTER"' _ {} <<< "$names")
                   if [ -n "$abandoned" ]; then
                       echo "::error::Abandoned Composer packages: $(echo "$abandoned" | paste -sd, -)"
                       exit 1
