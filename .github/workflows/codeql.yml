@@ -6,7 +6,9 @@ on:
         paths-ignore: &ignored
             - '**/*.md'
             - 'docs/**'
-            - 'infra/**'
+            - 'infra/**/*.tf'
+            - 'infra/**/*.hcl'
+            - 'infra/**/*.tfvars.example'
             - '.coderabbit.yaml'
     pull_request:
         branches: [master, development]

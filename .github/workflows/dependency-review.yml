@@ -27,15 +27,11 @@ jobs:
               with:
                   persist-credentials: false
 
-            - uses: shivammathur/setup-php@v2
-              with:
-                  php-version: '8.4'
-                  coverage: none
-
             - name: Fail on abandoned Composer packages
               run: |
-                  abandoned=$({ composer audit --locked --abandoned=report --format=json || true; } | jq -c '.abandoned')
-                  if [ "$abandoned" != "[]" ] && [ "$abandoned" != "{}" ]; then
-                      echo "::error::Abandoned packages: $abandoned"
+                  abandoned=$(jq -r '(.packages + .["packages-dev"])[].name' composer.lock \
+                      | xargs -P 8 -I{} sh -c 'curl -fsS --retry 3 "https://repo.packagist.org/p2/{}.json" | jq -r --arg p "{}" ".packages[\$p][0].abandoned // false | if . == false then empty elif . == true then \$p else \"\(\$p) (use \(.))\" end"')
+                  if [ -n "$abandoned" ]; then
+                      echo "::error::Abandoned Composer packages: $(echo "$abandoned" | paste -sd, -)"
                       exit 1
                   fi
