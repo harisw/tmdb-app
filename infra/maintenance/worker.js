@@ -1,6 +1,7 @@
 const PAGE_HTML = __PAGE_HTML__;
 
 const ORIGIN_ERRORS = new Set([520, 521, 522, 523, 524, 525, 526, 530]);
+const OFF_SCHEDULE_TIMEOUT_MS = 5000;
 const MINUTES_PER_DAY = 1440;
 const MINUTES_PER_WEEK = 7 * MINUTES_PER_DAY;
 
@@ -56,16 +57,14 @@ function maintenancePage(request, env, mode, nextOpenAt) {
 export default {
   async fetch(request, env) {
     const { isUp, nextOpenAt } = scheduleState(env.SCHEDULE, Date.now());
-
-    if (!isUp) {
-      return maintenancePage(request, env, 'scheduled', nextOpenAt);
-    }
+    const fallback = () =>
+      isUp ? maintenancePage(request, env, 'unexpected', null) : maintenancePage(request, env, 'scheduled', nextOpenAt);
 
     try {
-      const response = await fetch(request);
-      return ORIGIN_ERRORS.has(response.status) ? maintenancePage(request, env, 'unexpected', null) : response;
+      const response = await fetch(request, isUp ? {} : { signal: AbortSignal.timeout(OFF_SCHEDULE_TIMEOUT_MS) });
+      return ORIGIN_ERRORS.has(response.status) ? fallback() : response;
     } catch {
-      return maintenancePage(request, env, 'unexpected', null);
+      return fallback();
     }
   },
 };
