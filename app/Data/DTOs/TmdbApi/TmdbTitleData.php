@@ -62,6 +62,8 @@ class TmdbTitleData extends Data
      */
     public static function prepareForPipeline(array $properties): array
     {
-        return [...$properties, 'release_date' => $properties['release_date'] ?? $properties['first_air_date'] ?? null];
+        $releaseDate = trim((string) ($properties['release_date'] ?? '')) ?: trim((string) ($properties['first_air_date'] ?? ''));
+
+        return [...$properties, 'release_date' => $releaseDate ?: null];
     }
 }
