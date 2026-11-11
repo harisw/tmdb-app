@@ -19,3 +19,23 @@ jobs:
               with:
                   fail-on-severity: high
                   fail-on-scopes: runtime, development, unknown
+
+    composer-abandoned:
+        runs-on: ubuntu-latest
+        steps:
+            - uses: actions/checkout@v4.2.2
+              with:
+                  persist-credentials: false
+
+            - uses: shivammathur/setup-php@v2
+              with:
+                  php-version: '8.4'
+                  coverage: none
+
+            - name: Fail on abandoned Composer packages
+              run: |
+                  abandoned=$({ composer audit --locked --abandoned=report --format=json || true; } | jq -c '.abandoned')
+                  if [ "$abandoned" != "[]" ] && [ "$abandoned" != "{}" ]; then
+                      echo "::error::Abandoned packages: $abandoned"
+                      exit 1
+                  fi
