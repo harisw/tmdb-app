@@ -6,16 +6,19 @@
 GitHub Actions
     │ (build images, trigger via SSM)
     ▼
-EC2 t2.micro (Docker: app + nginx + supervisor)
+EC2 t2.micro (host nginx + cron, Docker: app + horizon + redis)
     │
     ▼
 RDS PostgreSQL db.t3.micro (private, only EC2 can reach it)
 ```
 
-Two containers run on EC2 via docker compose:
+Three containers run on EC2 via docker compose:
 
-- **app** — Laravel PHP-FPM (port 9000, internal only)
-- **nginx** — Nginx reverse proxy (port 80/443), copies static assets from the app image at build time
+- **app** — Laravel PHP-FPM (bound to `127.0.0.1:9000`)
+- **horizon** — processes every queue on Redis
+- **redis** — queue backend for Horizon
+
+**nginx** runs on the host, not in Docker. It serves static files from `/opt/tmdb/public`, which `deploy.sh` copies out of the app image, and passes PHP requests to `127.0.0.1:9000`.
 
 ---
 
@@ -52,10 +55,7 @@ Two containers run on EC2 via docker compose:
 
 ### ECR Repositories
 
-Create two private repositories:
-
-- `tmdb-app`
-- `tmdb-nginx`
+Create one private repository: `tmdb-app`.
 
 ---
 
@@ -97,7 +97,7 @@ Access the EC2 via **SSM Session Manager** in the AWS console (no SSH needed).
 
 ```bash
 sudo apt update && sudo apt upgrade -y
-sudo apt install -y docker.io docker-compose-v2 supervisor awscli
+sudo apt install -y docker.io docker-compose-v2 nginx awscli
 sudo usermod -aG docker ubuntu
 newgrp docker
 ```
@@ -149,8 +149,8 @@ DB_PASSWORD=<your-rds-password>
 
 SESSION_DRIVER=database
 CACHE_STORE=database
-QUEUE_CONNECTION=database
-DB_QUEUE_CONNECTION=pgsql
+QUEUE_CONNECTION=redis
+REDIS_HOST=redis
 
 ALLOW_REGISTER=false
 MOVIE_DB_IMG_URL=<tmdb-image-base-url>
@@ -158,40 +158,21 @@ MOVIE_DB_IMG_URL=<tmdb-image-base-url>
 
 > `APP_KEY` must be generated once and never changed — rotating it invalidates all user sessions and encrypted data. Generate it locally with `php artisan key:generate --show` and paste the value here.
 
-> `DB_QUEUE_CONNECTION` must be set explicitly — `config/queue.php` has no default for this value and the queue worker will fail silently without it.
+> `REDIS_HOST=redis` is the compose service name. Horizon only works the `redis` connection, so `QUEUE_CONNECTION` must be `redis` or jobs are queued where nothing processes them.
 
-### Compose env file
-
-Docker compose needs `ECR_URI` to know where to pull images from. Keep it separate from the app `.env`:
+### Scheduler (cron)
 
 ```bash
-nano /opt/tmdb/.env.compose
+crontab -e
 ```
 
-```env
-ECR_URI=<account-id>.dkr.ecr.<region>.amazonaws.com
+```cron
+* * * * * docker exec tmdb-app-1 php artisan schedule:run >> /var/log/laravel-scheduler.log 2>&1
 ```
 
-### Supervisor (queue worker)
+> Keep exactly one `schedule:run` line. Two lines run every scheduled task twice a minute. Don't wrap it in `flock -n` either: `schedule:run` runs some commands inline for minutes (`titles:refresh-searchable`, `CountsSeeder`, `db:export`), and `flock -n` would skip those minutes entirely, missing tasks pinned to them. Overlap is already handled per task with `withoutOverlapping()`.
 
-```bash
-sudo nano /etc/supervisor/conf.d/tmdb-worker.conf
-```
-
-```ini
-[program:tmdb-worker]
-command=docker exec tmdb-app-1 php artisan queue:work --queue=default
-autostart=false
-autorestart=true
-stderr_logfile=/var/log/tmdb-worker.err.log
-stdout_logfile=/var/log/tmdb-worker.out.log
-```
-
-```bash
-sudo supervisorctl reread && sudo supervisorctl update
-```
-
-> `autostart=false` — supervisor starts on boot before Docker is ready, which causes the worker to fail. The deploy script handles starting it after containers are up.
+> `pulse:check` is started by the schedule itself (`routes/console.php`), so it needs no cron line of its own.
 
 > The container name is `tmdb-app-1` because docker compose appends a replica number suffix (`-1`) by default. The `name: tmdb` at the top of `docker-compose.prod.yml` ensures this name stays consistent regardless of what folder the repo is cloned into.
 
@@ -201,29 +182,50 @@ Create `/opt/tmdb/deploy.sh`:
 
 ```bash
 #!/bin/bash
-set -e
+set -eo pipefail
 
 export ECR_URI="<account-id>.dkr.ecr.<region>.amazonaws.com"
 REGION="<your-region>"
+COMPOSE="docker compose --env-file /opt/tmdb/.env -f /opt/tmdb/repo/docker-compose.prod.yml"
 
 echo "Pulling latest code..."
-cd /opt/tmdb/repo
-git pull origin master
+cd /opt/tmdb/repo && git pull origin master
 
 echo "Logging into ECR..."
 aws ecr get-login-password --region $REGION | docker login --username AWS --password-stdin $ECR_URI
 
-echo "Pulling latest images..."
-docker compose --env-file /opt/tmdb/.env.compose -f /opt/tmdb/repo/docker-compose.prod.yml pull
+echo "Pulling latest image..."
+$COMPOSE pull
+
+echo "Extracting public assets..."
+mkdir -p /opt/tmdb/public
+docker run --rm -v /opt/tmdb/public:/mnt/public $ECR_URI/tmdb-app:latest cp -r /var/www/public/. /mnt/public/
+
+echo "Terminating Horizon..."
+$COMPOSE exec -T horizon php artisan horizon:terminate || true
 
 echo "Restarting containers..."
-docker compose --env-file /opt/tmdb/.env.compose -f /opt/tmdb/repo/docker-compose.prod.yml up -d
+$COMPOSE up -d
 
 echo "Running migrations..."
-docker compose --env-file /opt/tmdb/.env.compose -f /opt/tmdb/repo/docker-compose.prod.yml exec app php artisan migrate --force
+$COMPOSE exec -T app php artisan migrate --force
 
-echo "Restarting queue worker..."
-sudo supervisorctl restart tmdb-worker
+if [[ "${1:-}" == "--seed" ]]; then
+    echo "Running seeders..."
+    $COMPOSE exec -T app php artisan db:seed --force
+fi
+
+echo "Caching config, routes, views, events..."
+$COMPOSE exec -T app php artisan optimize
+
+echo "Fixing storage permissions..."
+$COMPOSE exec -T app chown -R www-data:www-data /var/www/storage /var/www/bootstrap/cache
+
+echo "Reloading nginx..."
+sudo nginx -t && sudo systemctl reload nginx
+
+echo "Pruning old images..."
+docker image prune -af --filter "until=24h"
 
 echo "Done!"
 ```
@@ -231,6 +233,8 @@ echo "Done!"
 ```bash
 chmod +x /opt/tmdb/deploy.sh
 ```
+
+> SSM runs the script without a terminal, so it must never prompt: a `read` gets end-of-input and `set -e` aborts the deploy. Seeding is opt-in instead, by running `sudo /opt/tmdb/deploy.sh --seed` from an SSM session.
 
 ---
 
@@ -254,8 +258,8 @@ Go to **repo → Settings → Secrets and variables → Actions → Repository s
 On every push to `master`, GitHub Actions will:
 
 1. Build and push the `tmdb-app` Docker image to ECR
-2. Build and push the `tmdb-nginx` image to ECR (copies `public/build` static assets from the app image at build time)
-3. Trigger `/opt/tmdb/deploy.sh` on EC2 via SSM — no open SSH port needed
+2. Trigger `/opt/tmdb/deploy.sh` on EC2 via SSM — no open SSH port needed
+3. Wait for the script to finish, print its output, and fail the job unless it succeeded. A push while the EC2 is stopped for the night fails after the 60s delivery timeout instead of silently not deploying. The IAM user needs `ssm:SendCommand` and `ssm:GetCommandInvocation`.
 
 ---
 
@@ -288,10 +292,6 @@ Caused by a typo in the supervisor config — the `--` prefix was missing from t
 ### Queue worker failing with `queue connection has not been configured` (different cause)
 
 `config/queue.php` has `'connection' => env('DB_QUEUE_CONNECTION')` with no default value. Without `DB_QUEUE_CONNECTION=pgsql` in `.env`, Laravel can't resolve the queue database connection.
-
-### Supervisor starts worker before Docker is ready
-
-`autostart=true` causes supervisor to start the worker on EC2 boot, before Docker and the containers are up. Set `autostart=false` and let `deploy.sh` handle starting the worker after containers are confirmed running.
 
 ### Container named unexpectedly (e.g. `repo-app-1` instead of `tmdb-app-1`)
 

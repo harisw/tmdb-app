@@ -1,0 +1,45 @@
+name: CodeQL
+
+on:
+    push:
+        branches: [master]
+        paths-ignore: &ignored
+            - '**/*.md'
+            - 'docs/**'
+            - 'infra/**/*.tf'
+            - 'infra/**/*.hcl'
+            - 'infra/**/*.tfvars.example'
+            - '.coderabbit.yaml'
+    pull_request:
+        branches: [master, development]
+        paths-ignore: *ignored
+    schedule:
+        - cron: '0 3 * * 1'
+
+permissions:
+    contents: read
+
+jobs:
+    analyze:
+        if: github.actor != 'dependabot[bot]'
+        runs-on: ubuntu-latest
+        permissions:
+            contents: read
+            security-events: write
+        strategy:
+            fail-fast: false
+            matrix:
+                language: [actions, javascript-typescript, python]
+        steps:
+            - uses: actions/checkout@v4.2.2
+              with:
+                  persist-credentials: false
+
+            - uses: github/codeql-action/init@v4
+              with:
+                  languages: ${{ matrix.language }}
+                  build-mode: none
+
+            - uses: github/codeql-action/analyze@v4
+              with:
+                  category: /language:${{ matrix.language }}
