@@ -216,7 +216,7 @@ return [
         'production' => [
             'supervisor-1' => [
                 'connection' => 'redis',
-                'queue' => ['high', 'default', 'low'],  // Priority order
+                'queue' => 'default',
                 'balance' => 'auto',       // auto, simple, or false
                 'minProcesses' => 1,
                 'maxProcesses' => 2,
@@ -241,6 +241,7 @@ return [
                 'balance' => 'simple',
                 'processes' => 1, // 1 process = ~100 embeddings/min (within rate limits)
                 'tries' => 3,
+                'timeout' => 300,
             ],
         ],
 
