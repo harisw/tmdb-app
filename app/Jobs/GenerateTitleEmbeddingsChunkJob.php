@@ -29,7 +29,7 @@ class GenerateTitleEmbeddingsChunkJob implements ShouldQueue
         TitleDocumentBuilder $documentBuilder
     ): void {
         $titles = Title::withoutGlobalScopes()
-            ->with(['genres', 'people', 'collection', 'keywords' => fn ($query) => $query->where('use_in_similarity', true)])
+            ->with(['genres', 'collection', 'keywords' => fn ($query) => $query->where('use_in_similarity', true)])
             ->whereIn('id', $this->titleIds)
             ->get()
             ->values(); // guarantee a 0-indexed order that matches the embeddings

@@ -39,7 +39,7 @@ variable "schedule" {
   })
   default = {
     utc_offset_minutes = 540
-    start              = { days = [1, 2, 3, 4, 5], time = "17:00" }
-    stop               = { days = [1, 2, 3, 4, 5], time = "03:00" }
+    start              = { days = [1, 2, 3, 4, 5], time = "10:00" }
+    stop               = { days = [1, 2, 3, 4, 5], time = "01:00" }
   }
 }

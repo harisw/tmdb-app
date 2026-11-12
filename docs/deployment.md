@@ -189,7 +189,7 @@ REGION="<your-region>"
 COMPOSE="docker compose --env-file /opt/tmdb/.env -f /opt/tmdb/repo/docker-compose.prod.yml"
 
 echo "Pulling latest code..."
-cd /opt/tmdb/repo && git pull origin master
+sudo -u ubuntu git -C /opt/tmdb/repo pull origin master
 
 echo "Logging into ECR..."
 aws ecr get-login-password --region $REGION | docker login --username AWS --password-stdin $ECR_URI
@@ -201,11 +201,15 @@ echo "Extracting public assets..."
 mkdir -p /opt/tmdb/public
 docker run --rm -v /opt/tmdb/public:/mnt/public $ECR_URI/tmdb-app:latest cp -r /var/www/public/. /mnt/public/
 
-echo "Terminating Horizon..."
-$COMPOSE exec -T horizon php artisan horizon:terminate || true
-
 echo "Restarting containers..."
 $COMPOSE up -d
+
+echo "Waiting for the database..."
+for attempt in {1..30}; do
+    $COMPOSE exec -T app php artisan migrate:status >/dev/null 2>&1 && break
+    [[ $attempt == 30 ]] && { echo "Database unreachable after 5 minutes"; exit 1; }
+    sleep 10
+done
 
 echo "Running migrations..."
 $COMPOSE exec -T app php artisan migrate --force
@@ -235,6 +239,10 @@ chmod +x /opt/tmdb/deploy.sh
 ```
 
 > SSM runs the script without a terminal, so it must never prompt: a `read` gets end-of-input and `set -e` aborts the deploy. Seeding is opt-in instead, by running `sudo /opt/tmdb/deploy.sh --seed` from an SSM session.
+
+> SSM also runs it as root, and git refuses to work in a repo another user owns ("detected dubious ownership"), so the pull runs as `ubuntu`, the repo's owner.
+
+> RDS takes several minutes to accept connections after it starts, longer than the EC2. The wait loop lets a deploy right after a start (scheduled or manual) wait instead of timing out on `migrate`.
 
 ---
 
