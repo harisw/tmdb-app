@@ -9,6 +9,7 @@ use App\Models\Keyword;
 use App\Models\ProductionCompany;
 use App\Models\Title;
 use DB;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Support\Collection;
 use Spatie\LaravelData\DataCollection;
 
@@ -62,9 +63,9 @@ class TitleService
                     ['slug' => $row->slug],
                     $row->except('genres', 'production_companies', 'keywords', 'belongs_to_collection', 'is_adult')->toArray()
                 );
-                $title->genres()->syncWithoutDetaching($genres);
-                $title->companies()->syncWithoutDetaching($companies);
-                $title->keywords()->syncWithoutDetaching($keywords);
+                $this->attachMissing($title->genres(), $genres);
+                $this->attachMissing($title->companies(), $companies);
+                $this->attachMissing($title->keywords(), $keywords);
 
                 $this->titleDict->put($title->slug, $title->id);
                 $this->insertedRowCount++;
@@ -99,6 +100,22 @@ class TitleService
         }
 
         return array_values(array_unique($ids));
+    }
+
+    private function attachMissing(BelongsToMany $relation, array $ids): void
+    {
+        $attached = $relation->newPivotQuery()->pluck($relation->getRelatedPivotKeyName())->all();
+        $ids = array_values(array_diff($ids, $attached));
+        if ($ids === []) {
+            return;
+        }
+
+        $parentKey = $relation->getParent()->getAttribute($relation->getParentKeyName());
+
+        $relation->newPivotStatement()->insertOrIgnore(array_map(fn (int $id): array => [
+            $relation->getForeignPivotKeyName() => $parentKey,
+            $relation->getRelatedPivotKeyName() => $id,
+        ], $ids));
     }
 
     private function loadCaches(): void
