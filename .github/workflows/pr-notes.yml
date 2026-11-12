@@ -15,7 +15,7 @@ jobs:
             (github.event.pull_request.body == null || github.event.pull_request.body == '')
         runs-on: ubuntu-latest
         steps:
-            - uses: actions/checkout@v4.2.2
+            - uses: actions/checkout@v7.0.1
               with:
                   fetch-depth: 0
 
