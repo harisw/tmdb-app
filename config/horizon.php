@@ -219,7 +219,7 @@ return [
                 'queue' => ['high', 'default', 'low'],  // Priority order
                 'balance' => 'auto',       // auto, simple, or false
                 'minProcesses' => 1,
-                'maxProcesses' => 5,
+                'maxProcesses' => 2,
                 'balanceMaxShift' => 1,
                 'balanceCooldown' => 3,
                 'tries' => 3,
@@ -231,7 +231,7 @@ return [
                 'queue' => ['enrichment'],
                 'balance' => 'simple',
                 'minProcesses' => 1,
-                'maxProcesses' => 5,
+                'maxProcesses' => 2,
                 'tries' => 1,
                 'timeout' => 60,
             ],
@@ -239,7 +239,7 @@ return [
                 'connection' => 'redis',
                 'queue' => ['embeddings'],
                 'balance' => 'simple',
-                'processes' => 2, // 2 concurrent = ~200 embeddings/min (within rate limits)
+                'processes' => 1, // 1 process = ~100 embeddings/min (within rate limits)
                 'tries' => 3,
             ],
         ],
