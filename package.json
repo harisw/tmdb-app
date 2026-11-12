@@ -49,7 +49,7 @@
     "lucide-vue-next": "^0.539.0",
     "pinia": "^3.0.4",
     "reka-ui": "^2.11.0",
-    "tailwind-variants": "^3.3.1",
+    "tailwind-variants": "^4.0.1",
     "vue": "^3.5.44"
   }
 }
