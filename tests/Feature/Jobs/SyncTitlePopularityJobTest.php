@@ -129,6 +129,18 @@ class SyncTitlePopularityJobTest extends TestCase
         Log::shouldNotHaveReceived('info');
     }
 
+    public function test_keeps_the_stored_popularity_when_the_export_has_none(): void
+    {
+        $blank = Title::factory()->create(['tmdb_id' => 1, 'popularity' => 10]);
+        $moved = Title::factory()->create(['tmdb_id' => 2, 'popularity' => 10]);
+        Http::fake(['files.tmdb.org/*' => Http::response(gzencode("{\"id\":1,\"popularity\":null}\n{\"id\":2,\"popularity\":20.0}\n"))]);
+
+        $this->runJob();
+
+        $this->assertSame(10.0, $blank->fresh()->popularity);
+        $this->assertSame(20.0, $moved->fresh()->popularity);
+    }
+
     public function test_fails_on_a_truncated_export(): void
     {
         Title::factory()->create(['tmdb_id' => 10, 'popularity' => 5]);

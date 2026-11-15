@@ -71,7 +71,7 @@ class SyncTitlePopularityJob implements ShouldQueue
                 }
 
                 ['id' => $tmdbId, 'popularity' => $popularity] = json_decode($line, true, flags: JSON_THROW_ON_ERROR);
-                $delta = isset($stored[$tmdbId]) ? abs($stored[$tmdbId] - $popularity) : 0;
+                $delta = isset($stored[$tmdbId]) && is_numeric($popularity) ? abs($stored[$tmdbId] - $popularity) : 0;
 
                 if ($delta > self::MIN_CHANGE) {
                     $changed[$tmdbId] = (float) $popularity;

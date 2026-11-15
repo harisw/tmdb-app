@@ -4,6 +4,7 @@ namespace App\Console\Commands;
 
 use App\Domain\Enums\TitleType;
 use App\Jobs\GenerateSearchEmbeddingsChunkJob;
+use App\Jobs\Middleware\MeasureDatabaseCost;
 use App\Jobs\SyncTitlePopularityJob;
 use App\Services\Database\BenchmarkComparison;
 use App\Services\Search\SearchDocumentBuilder;
@@ -17,6 +18,10 @@ use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Http;
 use RuntimeException;
 
+/**
+ * @phpstan-import-type CostReport from MeasureDatabaseCost
+ * @phpstan-import-type Metrics from BenchmarkComparison
+ */
 #[Signature('db:benchmark
     {--baseline=database/benchmarks/baseline.json : Baseline to compare against}
     {--output= : Write the results as JSON to this path}
@@ -36,7 +41,7 @@ class DatabaseBenchmark extends Command
     private const MEASURED_TABLES = ['titles', 'title_search_embeddings'];
 
     /**
-     * @var list<array<string, mixed>>
+     * @var list<CostReport>
      */
     private array $reports = [];
 
@@ -85,6 +90,22 @@ class DatabaseBenchmark extends Command
 
         DB::statement("TRUNCATE {$tables}, languages RESTART IDENTITY CASCADE");
         $indexes = $this->dropSecondaryIndexes();
+
+        try {
+            $this->insertRows();
+        } finally {
+            foreach ($indexes as $definition) {
+                DB::statement($definition);
+            }
+        }
+
+        foreach (self::MEASURED_TABLES as $table) {
+            DB::statement("ALTER TABLE {$table} SET (autovacuum_enabled = false)");
+        }
+    }
+
+    private function insertRows(): void
+    {
         DB::select('SELECT setseed(?)', [self::SEED]);
         DB::insert("INSERT INTO languages (code, name) VALUES ('en', 'English')");
 
@@ -106,14 +127,6 @@ class DatabaseBenchmark extends Command
             SELECT g, ?, (SELECT array_agg(random() - 0.5)::vector(512) FROM generate_series(1, 512) WHERE g > 0)::halfvec(512), now(), now()
             FROM generate_series(CAST(? AS int), CAST(? AS int)) AS g
         SQL, [SearchDocumentBuilder::VERSION, self::SEARCH_CHUNK + 1, self::SEARCH_CHUNK + self::SEARCH_EMBEDDINGS]);
-
-        foreach ($indexes as $definition) {
-            DB::statement($definition);
-        }
-
-        foreach (self::MEASURED_TABLES as $table) {
-            DB::statement("ALTER TABLE {$table} SET (autovacuum_enabled = false)");
-        }
     }
 
     /**
@@ -176,8 +189,8 @@ class DatabaseBenchmark extends Command
     }
 
     /**
-     * @param  array<string, mixed>  $report
-     * @return array<string, int|float|null>
+     * @param  CostReport  $report
+     * @return Metrics
      */
     private function summarize(array $report): array
     {
@@ -194,7 +207,7 @@ class DatabaseBenchmark extends Command
     }
 
     /**
-     * @param  array<string, array<string, int|float|null>>  $results
+     * @param  array<string, Metrics>  $results
      */
     private function writeOutputs(array $results): void
     {

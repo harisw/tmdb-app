@@ -2,6 +2,9 @@
 
 namespace App\Services\Database;
 
+/**
+ * @phpstan-type Metrics array{queries: int, rows_written: int, hot_updates: int, wal_bytes: int, wal_bytes_per_row: float|null, duration_ms: float, db_time_ms: float, db_time_ms_per_row: float|null}
+ */
 class BenchmarkComparison
 {
     public const MARKER = '<!-- db-benchmark -->';
@@ -14,8 +17,8 @@ class BenchmarkComparison
     ];
 
     /**
-     * @param  array<string, array<string, int|float|null>>|null  $baseline
-     * @param  array<string, array<string, int|float|null>>  $results
+     * @param  array<string, Metrics>|null  $baseline
+     * @param  array<string, Metrics>  $results
      */
     public function __construct(
         private readonly ?array $baseline,

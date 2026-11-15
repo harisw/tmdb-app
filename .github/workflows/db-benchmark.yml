@@ -80,6 +80,8 @@ jobs:
                   php artisan migrate --force --no-interaction
 
             - name: Run benchmark
+              env:
+                  LOG_LEVEL: info
               run: |
                   php artisan db:benchmark --output=benchmark.json --markdown=benchmark.md
                   cat benchmark.md >> "$GITHUB_STEP_SUMMARY"

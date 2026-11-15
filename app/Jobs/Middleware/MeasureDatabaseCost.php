@@ -8,6 +8,9 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Throwable;
 
+/**
+ * @phpstan-type CostReport array{job_class: class-string, outcome: 'succeeded'|'failed', duration_ms: float, db_time_ms: float, queries: int, wal_bytes: int, rows_written: int, wal_bytes_per_row: float|null, db_time_ms_per_row: float|null, tables: array<string, array<string, int>>}
+ */
 class MeasureDatabaseCost
 {
     private const COUNTERS = [
@@ -86,7 +89,7 @@ class MeasureDatabaseCost
     /**
      * @param  array{wal_position: int, tables: array<string, array<string, int>>}  $before
      * @param  array{wal_position: int, tables: array<string, array<string, int>>}  $after
-     * @return array<string, mixed>
+     * @return CostReport
      */
     private function report(object $job, string $outcome, float $durationMs, int $queries, float $dbTimeMs, array $before, array $after): array
     {
