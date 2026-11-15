@@ -4,6 +4,7 @@ namespace App\Jobs\Middleware;
 
 use App\Services\Database\QueryCounter;
 use Closure;
+use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Throwable;
@@ -29,7 +30,15 @@ class MeasureDatabaseCost
     public function handle(object $job, Closure $next): mixed
     {
         $counter = app(QueryCounter::class);
-        $before = $this->snapshot();
+
+        try {
+            $before = $this->snapshot();
+        } catch (Throwable $e) {
+            report($e);
+
+            return $next($job);
+        }
+
         $queriesBefore = $counter->queries();
         $millisecondsBefore = $counter->milliseconds();
         $startedAt = hrtime(true);
@@ -81,7 +90,8 @@ class MeasureDatabaseCost
         return [
             'wal_position' => (int) DB::scalar("SELECT pg_wal_lsn_diff(pg_current_wal_insert_lsn(), '0/0')"),
             'tables' => collect($rows)
-                ->mapWithKeys(fn (object $row) => [$row->relname => array_map(intval(...), array_diff_key((array) $row, ['relname' => true]))])
+                ->keyBy('relname')
+                ->map(fn (object $row) => array_map(intval(...), Arr::except((array) $row, 'relname')))
                 ->all(),
         ];
     }

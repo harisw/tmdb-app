@@ -11,6 +11,7 @@ use Illuminate\Database\QueryException;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Exceptions;
 use Illuminate\Support\Facades\Log;
 use Mockery;
 use RuntimeException;
@@ -123,5 +124,18 @@ class MeasureDatabaseCostTest extends TestCase
             new SyncTitlePopularityJob(TitleType::MOVIE),
             fn () => DB::select('SELECT * FROM missing_table'),
         );
+    }
+
+    public function test_runs_the_job_unmeasured_when_the_first_snapshot_fails(): void
+    {
+        Exceptions::fake();
+        DB::shouldReceive('select')->andThrow(new RuntimeException('Statistics unavailable'));
+        Log::spy();
+
+        $result = (new MeasureDatabaseCost(['titles']))->handle(new SyncTitlePopularityJob(TitleType::MOVIE), fn () => 'done');
+
+        $this->assertSame('done', $result);
+        Exceptions::assertReported(fn (RuntimeException $e) => $e->getMessage() === 'Statistics unavailable');
+        Log::shouldNotHaveReceived('info');
     }
 }

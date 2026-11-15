@@ -132,25 +132,31 @@ class SyncTitlePopularityJobTest extends TestCase
     public function test_keeps_the_stored_popularity_when_the_export_has_none(): void
     {
         $blank = Title::factory()->create(['tmdb_id' => 1, 'popularity' => 10]);
-        $moved = Title::factory()->create(['tmdb_id' => 2, 'popularity' => 10]);
-        Http::fake(['files.tmdb.org/*' => Http::response(gzencode("{\"id\":1,\"popularity\":null}\n{\"id\":2,\"popularity\":20.0}\n"))]);
+        $absent = Title::factory()->create(['tmdb_id' => 2, 'popularity' => 10]);
+        $moved = Title::factory()->create(['tmdb_id' => 3, 'popularity' => 10]);
+        Http::fake(['files.tmdb.org/*' => Http::response(gzencode("{\"id\":1,\"popularity\":null}\n{\"id\":2}\n{\"id\":3,\"popularity\":20.0}\n"))]);
 
         $this->runJob();
 
         $this->assertSame(10.0, $blank->fresh()->popularity);
+        $this->assertSame(10.0, $absent->fresh()->popularity);
         $this->assertSame(20.0, $moved->fresh()->popularity);
     }
 
-    public function test_fails_on_a_truncated_export(): void
+    public function test_fails_without_writing_on_a_truncated_export(): void
     {
-        Title::factory()->create(['tmdb_id' => 10, 'popularity' => 5]);
+        $title = Title::factory()->create(['tmdb_id' => 10, 'popularity' => 5]);
         $lines = collect(range(1, 2000))->map(fn (int $id) => json_encode(['id' => $id, 'popularity' => $id / 7]))->implode("\n");
         $gzip = gzencode($lines);
         Http::fake(['files.tmdb.org/*' => Http::response(substr($gzip, 0, intdiv(strlen($gzip), 2)))]);
 
         $this->expectException(JsonException::class);
 
-        $this->runJob();
+        try {
+            $this->runJob(batchSize: 1);
+        } finally {
+            $this->assertSame(5.0, $title->fresh()->popularity);
+        }
     }
 
     public function test_leaves_updated_at_untouched(): void

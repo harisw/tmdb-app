@@ -41,17 +41,20 @@ class SyncTitlePopularityJob implements ShouldQueue
 
     public function handle(TmdbApiService $tmdb): void
     {
-        $path = tempnam(sys_get_temp_dir(), 'tmdb-export-');
+        $path = tempnam(sys_get_temp_dir(), 'tmdb-export-') ?: throw new RuntimeException('Cannot create a temporary file for the TMDB export');
 
         try {
             $tmdb->downloadDailyExport($this->titleType, $path);
-            $this->syncFrom($path);
+            $this->writeLargest($this->changesLargestFirst($path));
         } finally {
             File::delete($path);
         }
     }
 
-    private function syncFrom(string $path): void
+    /**
+     * @return array<int, float>
+     */
+    private function changesLargestFirst(string $path): array
     {
         $stored = Title::withoutGlobalScopes()
             ->where('type', $this->titleType->value)
@@ -61,7 +64,7 @@ class SyncTitlePopularityJob implements ShouldQueue
             ->all();
 
         $export = gzopen($path, 'rb') ?: throw new RuntimeException("Cannot open TMDB export {$path}");
-        $changed = [];
+        $popularities = [];
         $deltas = [];
 
         try {
@@ -70,11 +73,18 @@ class SyncTitlePopularityJob implements ShouldQueue
                     continue;
                 }
 
-                ['id' => $tmdbId, 'popularity' => $popularity] = json_decode($line, true, flags: JSON_THROW_ON_ERROR);
-                $delta = isset($stored[$tmdbId]) && is_numeric($popularity) ? abs($stored[$tmdbId] - $popularity) : 0;
+                $record = json_decode($line, true, flags: JSON_THROW_ON_ERROR);
+                $tmdbId = $record['id'] ?? null;
+                $popularity = $record['popularity'] ?? null;
+
+                if (! isset($stored[$tmdbId]) || ! is_numeric($popularity)) {
+                    continue;
+                }
+
+                $delta = abs($stored[$tmdbId] - $popularity);
 
                 if ($delta > self::MIN_CHANGE) {
-                    $changed[$tmdbId] = (float) $popularity;
+                    $popularities[$tmdbId] = (float) $popularity;
                     $deltas[$tmdbId] = $delta;
                 }
             }
@@ -82,11 +92,21 @@ class SyncTitlePopularityJob implements ShouldQueue
             gzclose($export);
         }
 
-        arsort($deltas);
-        $largest = array_intersect_key($changed, array_slice($deltas, 0, $this->maxRows, true));
+        return collect($deltas)
+            ->sortDesc()
+            ->map(fn (float $delta, int $tmdbId) => $popularities[$tmdbId])
+            ->all();
+    }
 
-        if (count($largest) < count($changed)) {
-            Log::info('Title popularity sync capped', ['type' => $this->titleType->value, 'changed' => count($changed), 'written' => count($largest)]);
+    /**
+     * @param  array<int, float>  $changes
+     */
+    private function writeLargest(array $changes): void
+    {
+        $largest = array_slice($changes, 0, $this->maxRows, true);
+
+        if (count($largest) < count($changes)) {
+            Log::info('Title popularity sync capped', ['type' => $this->titleType->value, 'changed' => count($changes), 'written' => count($largest)]);
         }
 
         foreach (array_chunk($largest, $this->batchSize, true) as $batch) {

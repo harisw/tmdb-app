@@ -8,6 +8,7 @@ use App\Jobs\Middleware\MeasureDatabaseCost;
 use App\Jobs\SyncTitlePopularityJob;
 use App\Services\Database\BenchmarkComparison;
 use App\Services\Search\SearchDocumentBuilder;
+use Closure;
 use Illuminate\Console\Attributes\Description;
 use Illuminate\Console\Attributes\Signature;
 use Illuminate\Console\Command;
@@ -64,24 +65,35 @@ class DatabaseBenchmark extends Command
 
         $this->components->task('Seeding fixture', fn () => $this->seedFixture());
 
-        $results = [];
-        foreach (['popularity_sync' => $this->popularitySync(...), 'search_embeddings_chunk' => $this->searchEmbeddingsChunk(...)] as $scenario => $run) {
-            $this->components->task($scenario, function () use ($scenario, $run, &$results) {
-                $this->settle();
-                $this->reports = [];
-                $run();
-                $results[$scenario] = $this->summarize(end($this->reports) ?: throw new RuntimeException("{$scenario} logged no database cost"));
-            });
-        }
+        $results = [
+            'popularity_sync' => $this->measure('popularity_sync', $this->popularitySync(...)),
+            'search_embeddings_chunk' => $this->measure('search_embeddings_chunk', $this->searchEmbeddingsChunk(...)),
+        ];
 
         $this->table(['Scenario', 'Queries', 'Rows written', 'HOT updates', 'WAL bytes/row', 'DB ms'], collect($results)
-            ->map(fn (array $r, string $scenario) => [$scenario, $r['queries'], $r['rows_written'], $r['hot_updates'], $r['wal_bytes_per_row'], $r['db_time_ms']])
+            ->map(fn (array $metrics, string $scenario) => [$scenario, $metrics['queries'], $metrics['rows_written'], $metrics['hot_updates'], $metrics['wal_bytes_per_row'], $metrics['db_time_ms']])
             ->values()
             ->all());
 
         $this->writeOutputs($results);
 
         return self::SUCCESS;
+    }
+
+    /**
+     * @return Metrics
+     */
+    private function measure(string $scenario, Closure $run): array
+    {
+        $this->components->task($scenario, function () use ($run) {
+            $this->settle();
+            $this->reports = [];
+            $run();
+        });
+
+        $report = end($this->reports) ?: throw new RuntimeException("{$scenario} logged no database cost. Check that LOG_LEVEL is info or lower.");
+
+        return $this->summarize($report);
     }
 
     private function seedFixture(): void
