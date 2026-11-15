@@ -2,6 +2,7 @@
 
 namespace Tests\Feature\Console;
 
+use App\Domain\Enums\TitleType;
 use App\Jobs\EnrichSearchEmbeddingsBatchJob;
 use App\Jobs\EnrichTitleCreditsBatchJob;
 use App\Jobs\EnrichTitleEmbeddingsBatchJob;
@@ -12,6 +13,7 @@ use App\Jobs\FetchPopularTitlesJob;
 use App\Jobs\FetchTrendingTitlesJob;
 use App\Jobs\FetchUpcomingTitlesJob;
 use App\Jobs\MaterializeTitleSimilaritiesBatchJob;
+use App\Jobs\SyncTitlePopularityJob;
 use App\Jobs\TitlesBatchInsertJob;
 use Illuminate\Support\Facades\Context;
 use Illuminate\Support\Facades\Log;
@@ -53,6 +55,19 @@ class RunJobTest extends TestCase
         $this->assertSame('run:job', Context::get('trigger'));
     }
 
+    public function test_dispatches_a_popularity_sync_for_the_chosen_type_and_cap(): void
+    {
+        Queue::fake();
+
+        $this->artisan('run:job')
+            ->expectsChoice('Which job class do you want to run?', SyncTitlePopularityJob::class, $this->jobChoices())
+            ->expectsChoice('Which type of title?', 'tv', ['movie', 'tv'])
+            ->expectsQuestion('Maximum titles to update?', '500')
+            ->assertSuccessful();
+
+        Queue::assertPushed(SyncTitlePopularityJob::class, fn (SyncTitlePopularityJob $job) => $job == new SyncTitlePopularityJob(TitleType::TV, maxRows: 500));
+    }
+
     /**
      * @return array<int, string>
      */
@@ -64,6 +79,7 @@ class RunJobTest extends TestCase
             EnrichTitleCreditsBatchJob::class, EnrichTitleEmbeddingsBatchJob::class,
             MaterializeTitleSimilaritiesBatchJob::class, EnrichTitleProvidersLinkBatchJob::class,
             EnrichTopTitlesProvidersBatchJob::class, EnrichSearchEmbeddingsBatchJob::class,
+            SyncTitlePopularityJob::class,
         ];
     }
 }
