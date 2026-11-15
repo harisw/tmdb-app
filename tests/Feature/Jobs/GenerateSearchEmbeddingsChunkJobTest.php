@@ -3,6 +3,7 @@
 namespace Tests\Feature\Jobs;
 
 use App\Jobs\GenerateSearchEmbeddingsChunkJob;
+use App\Jobs\Middleware\MeasureDatabaseCost;
 use App\Models\Title;
 use App\Models\TitleSearchEmbedding;
 use App\Services\Search\SearchDocumentBuilder;
@@ -65,5 +66,14 @@ class GenerateSearchEmbeddingsChunkJobTest extends TestCase
     public function test_runs_on_the_embeddings_queue(): void
     {
         $this->assertSame('embeddings', (new GenerateSearchEmbeddingsChunkJob([1]))->queue);
+    }
+
+    public function test_measures_its_database_cost_on_search_embeddings(): void
+    {
+        $middleware = (new GenerateSearchEmbeddingsChunkJob([1]))->middleware();
+
+        $this->assertCount(1, $middleware);
+        $this->assertInstanceOf(MeasureDatabaseCost::class, $middleware[0]);
+        $this->assertSame(['title_search_embeddings'], $middleware[0]->tables);
     }
 }
