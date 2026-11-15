@@ -14,6 +14,7 @@ use App\Jobs\FetchTitlesJob;
 use App\Jobs\FetchTrendingTitlesJob;
 use App\Jobs\FetchUpcomingTitlesJob;
 use App\Jobs\MaterializeTitleSimilaritiesBatchJob;
+use App\Jobs\SyncTitlePopularityJob;
 use App\Jobs\TitlesBatchInsertJob;
 use App\Utils\Enum\TimeWindow;
 use Illuminate\Console\Command;
@@ -48,7 +49,7 @@ class RunJob extends Command
                 EnrichTitleProvidersBatchJob::class, TitlesBatchInsertJob::class,
                 EnrichTitleCreditsBatchJob::class, EnrichTitleEmbeddingsBatchJob::class,
                 MaterializeTitleSimilaritiesBatchJob::class, EnrichTitleProvidersLinkBatchJob::class, EnrichTopTitlesProvidersBatchJob::class,
-                EnrichSearchEmbeddingsBatchJob::class],
+                EnrichSearchEmbeddingsBatchJob::class, SyncTitlePopularityJob::class],
         );
         switch ($jobClass) {
             case FetchTrendingTitlesJob::class:
@@ -81,6 +82,9 @@ class RunJob extends Command
                 break;
             case EnrichSearchEmbeddingsBatchJob::class:
                 $this->runEnrichSearchEmbeddings();
+                break;
+            case SyncTitlePopularityJob::class:
+                $this->runSyncTitlePopularity();
                 break;
             default:
                 $this->error('Unknown job class');
@@ -156,6 +160,15 @@ class RunJob extends Command
     {
         $limit = (int) $this->ask('Limit titles?', '1000');
         EnrichSearchEmbeddingsBatchJob::dispatch($limit);
+    }
+
+    private function runSyncTitlePopularity(): void
+    {
+        $titleType = TitleType::from($this->choice('Which type of title?',
+            TitleType::values()
+        ));
+        $maxRows = (int) $this->ask('Maximum titles to update?', '30000');
+        SyncTitlePopularityJob::dispatch($titleType, maxRows: $maxRows);
     }
 
     private function runMaterializeSimilarities(): void
