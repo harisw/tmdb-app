@@ -1,0 +1,111 @@
+name: Database benchmark
+
+on:
+    pull_request:
+        branches: [master, development]
+        paths:
+            - 'database/migrations/**'
+            - 'database/benchmarks/**'
+            - 'app/Jobs/**'
+            - 'app/Models/**'
+            - 'app/Services/Database/**'
+            - 'app/Console/Commands/DatabaseBenchmark.php'
+            - 'composer.lock'
+            - '.github/workflows/db-benchmark.yml'
+    workflow_dispatch:
+
+permissions:
+    contents: read
+    pull-requests: write
+
+concurrency:
+    group: db-benchmark-${{ github.ref }}
+    cancel-in-progress: true
+
+jobs:
+    benchmark:
+        runs-on: ubuntu-latest
+
+        services:
+            postgres:
+                image: pgvector/pgvector:pg17
+                env:
+                    POSTGRES_DB: tmdb_benchmark
+                    POSTGRES_USER: user
+                    POSTGRES_PASSWORD: password
+                ports:
+                    - 5432:5432
+                options: >-
+                    --health-cmd pg_isready
+                    --health-interval 10s
+                    --health-timeout 5s
+                    --health-retries 5
+
+        env:
+            DB_CONNECTION: pgsql
+            DB_HOST: 127.0.0.1
+            DB_PORT: 5432
+            DB_DATABASE: tmdb_benchmark
+            DB_USERNAME: user
+            DB_PASSWORD: password
+
+        steps:
+            - uses: actions/checkout@v7.0.1
+
+            - name: Setup PHP
+              uses: shivammathur/setup-php@v2
+              with:
+                  php-version: '8.4'
+                  extensions: pdo, pdo_pgsql, mbstring, zip, pcntl
+                  coverage: none
+
+            - name: Get Composer cache directory
+              id: composer-cache
+              run: echo "dir=$(composer config cache-files-dir)" >> "$GITHUB_OUTPUT"
+
+            - name: Cache Composer packages
+              uses: actions/cache@v6.1.0
+              with:
+                  path: ${{ steps.composer-cache.outputs.dir }}
+                  key: composer-${{ runner.os }}-${{ hashFiles('composer.lock') }}
+                  restore-keys: composer-${{ runner.os }}-
+
+            - name: Install dependencies
+              run: composer install --optimize-autoloader --no-interaction
+
+            - name: Prepare app
+              run: |
+                  cp .env.example .env
+                  php artisan key:generate
+                  php artisan migrate --force --no-interaction
+
+            - name: Run benchmark
+              env:
+                  LOG_LEVEL: info
+              run: |
+                  php artisan db:benchmark --output=benchmark.json --markdown=benchmark.md
+                  cat benchmark.md >> "$GITHUB_STEP_SUMMARY"
+
+            - name: Upload results
+              uses: actions/upload-artifact@v7.0.2
+              with:
+                  name: db-benchmark
+                  path: |
+                      benchmark.json
+                      benchmark.md
+
+            - name: Post or update the PR comment
+              if: github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository
+              continue-on-error: true
+              env:
+                  GH_TOKEN: ${{ github.token }}
+                  PR_NUMBER: ${{ github.event.pull_request.number }}
+                  REPO: ${{ github.repository }}
+              run: |
+                  comment_id=$(gh api "repos/$REPO/issues/$PR_NUMBER/comments" --paginate \
+                      --jq '.[] | select(.body | startswith("<!-- db-benchmark -->")) | .id' | head -n 1)
+                  if [ -n "$comment_id" ]; then
+                      gh api -X PATCH "repos/$REPO/issues/comments/$comment_id" -F body=@benchmark.md > /dev/null
+                  else
+                      gh pr comment "$PR_NUMBER" --repo "$REPO" --body-file benchmark.md
+                  fi

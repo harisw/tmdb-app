@@ -9,6 +9,8 @@ use Illuminate\Support\Facades\Http;
 
 class TmdbApiService
 {
+    private const EXPORTS_URL = 'https://files.tmdb.org/p/exports';
+
     private PendingRequest $client;
 
     public function __construct(
@@ -69,6 +71,19 @@ class TmdbApiService
         };
 
         return $this->get($path);
+    }
+
+    public function downloadDailyExport(TitleType $type, string $path): void
+    {
+        $file = match ($type) {
+            TitleType::MOVIE => 'movie_ids',
+            TitleType::TV => 'tv_series_ids',
+        };
+
+        Http::timeout(300)
+            ->sink($path)
+            ->get(self::EXPORTS_URL."/{$file}_".now('UTC')->format('m_d_Y').'.json.gz')
+            ->throw();
     }
 
     /**

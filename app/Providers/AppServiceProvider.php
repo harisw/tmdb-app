@@ -6,6 +6,7 @@ use App\Repositories\Contracts\PersonRepository;
 use App\Repositories\Contracts\TitlePersonRepository;
 use App\Repositories\EloquentPersonRepository;
 use App\Repositories\EloquentTitlePersonRepository;
+use App\Services\Database\QueryCounter;
 use App\Services\ProviderServices\ProviderCatalog;
 use App\Services\ProviderServices\StreamingAvailabilityService;
 use App\Services\ProviderServices\WatchmodeService;
@@ -16,8 +17,10 @@ use Gate;
 use GuzzleHttp\Utils;
 use Http;
 use Illuminate\Cache\RateLimiting\Limit;
+use Illuminate\Database\Events\QueryExecuted;
 use Illuminate\Queue\Events\JobProcessing;
 use Illuminate\Support\Facades\Context;
+use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Queue;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\ServiceProvider;
@@ -44,6 +47,8 @@ class AppServiceProvider extends ServiceProvider
         $this->app->bind(TitleService::class, function () {
             return new TitleService;
         });
+
+        $this->app->singleton(QueryCounter::class);
 
         $this->app->scoped(ProviderCatalog::class, fn () => new ProviderCatalog);
 
@@ -94,5 +99,7 @@ class AppServiceProvider extends ServiceProvider
             'queue' => $event->job->getQueue(),
             'attempt' => $event->job->attempts(),
         ]));
+
+        Event::listen(QueryExecuted::class, fn (QueryExecuted $query) => $this->app->make(QueryCounter::class)->record($query->time));
     }
 }

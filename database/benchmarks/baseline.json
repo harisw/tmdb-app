@@ -1,0 +1,25 @@
+{
+    "postgres": "17.11 (Debian 17.11-1.pgdg12+2)",
+    "scenarios": {
+        "popularity_sync": {
+            "queries": 2,
+            "rows_written": 500,
+            "hot_updates": 0,
+            "wal_bytes": 9033576,
+            "wal_bytes_per_row": 18067.2,
+            "duration_ms": 1558.0,
+            "db_time_ms": 1479.4,
+            "db_time_ms_per_row": 2.959
+        },
+        "search_embeddings_chunk": {
+            "queries": 5,
+            "rows_written": 100,
+            "hot_updates": 0,
+            "wal_bytes": 6778456,
+            "wal_bytes_per_row": 67784.6,
+            "duration_ms": 425.7,
+            "db_time_ms": 342.4,
+            "db_time_ms_per_row": 3.424
+        }
+    }
+}

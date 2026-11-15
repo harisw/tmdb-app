@@ -10,6 +10,7 @@ use App\Jobs\FetchTrendingTitlesJob;
 use App\Jobs\FetchUpcomingTitlesJob;
 use App\Jobs\ImportTmdbProvidersJob;
 use App\Jobs\MaterializeTitleSimilaritiesBatchJob;
+use App\Jobs\SyncTitlePopularityJob;
 use App\Utils\Enum\FeatureFlag;
 use App\Utils\Enum\TimeWindow;
 use Laravel\Pennant\Feature;
@@ -39,11 +40,11 @@ Schedule::job(new FetchTrendingTitlesJob(TimeWindow::WEEK, TitleType::TV))
     ->saturdays()
     ->at('19:30');
 
-Schedule::job(new FetchPopularTitlesJob(TitleType::MOVIE))
-    ->dailyAt('19:00');
+Schedule::job((new FetchPopularTitlesJob(TitleType::MOVIE))->chain([new SyncTitlePopularityJob(TitleType::MOVIE)]))
+    ->dailyAt('17:30');
 
-Schedule::job(new FetchPopularTitlesJob(TitleType::TV))
-    ->dailyAt('21:00');
+Schedule::job((new FetchPopularTitlesJob(TitleType::TV))->chain([new SyncTitlePopularityJob(TitleType::TV)]))
+    ->dailyAt('18:30');
 
 Schedule::job(new FetchUpcomingTitlesJob(TitleType::MOVIE))
     ->dailyAt('22:00');

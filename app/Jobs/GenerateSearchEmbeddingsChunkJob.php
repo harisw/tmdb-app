@@ -2,6 +2,7 @@
 
 namespace App\Jobs;
 
+use App\Jobs\Middleware\MeasureDatabaseCost;
 use App\Models\Title;
 use App\Models\TitleSearchEmbedding;
 use App\Services\KnowledgeGraph\OpenAIEmbeddingService;
@@ -21,6 +22,14 @@ class GenerateSearchEmbeddingsChunkJob implements ShouldQueue
     public function __construct(public readonly array $titleIds)
     {
         $this->onQueue('embeddings');
+    }
+
+    /**
+     * @return list<object>
+     */
+    public function middleware(): array
+    {
+        return [new MeasureDatabaseCost(['title_search_embeddings'])];
     }
 
     public function handle(

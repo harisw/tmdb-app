@@ -2,13 +2,17 @@
 
 namespace Tests\Feature\Console;
 
+use App\Domain\Enums\TitleType;
+use App\Jobs\FetchPopularTitlesJob;
 use App\Jobs\FetchTrendingTitlesJob;
 use App\Jobs\ImportTmdbProvidersJob;
 use App\Jobs\MaterializeTitleSimilaritiesBatchJob;
+use App\Jobs\SyncTitlePopularityJob;
 use Carbon\CarbonImmutable;
 use Cron\CronExpression;
 use Illuminate\Console\Scheduling\Event;
 use Illuminate\Console\Scheduling\Schedule;
+use Illuminate\Support\Facades\Queue;
 use Tests\TestCase;
 
 class ScheduleTest extends TestCase
@@ -89,5 +93,30 @@ class ScheduleTest extends TestCase
             ->all();
 
         $this->assertSame([1], $runsPerMonth);
+    }
+
+    public function test_popular_fetches_run_daily_after_the_tmdb_export_and_chain_a_popularity_sync(): void
+    {
+        Queue::fake();
+
+        $events = collect(app(Schedule::class)->events())
+            ->filter(fn (Event $event) => $event->description === FetchPopularTitlesJob::class);
+
+        foreach ($events as $event) {
+            $runs = $this->runsWithin($event);
+
+            $this->assertCount(7, $runs);
+            $this->assertGreaterThanOrEqual(17 * 60 + 30, $runs[0]->hour * 60 + $runs[0]->minute);
+            $event->run(app());
+        }
+
+        $this->assertCount(2, $events);
+        foreach (TitleType::cases() as $type) {
+            Queue::assertPushedWithChain(
+                FetchPopularTitlesJob::class,
+                [new SyncTitlePopularityJob($type)],
+                fn (FetchPopularTitlesJob $job) => (new \ReflectionProperty($job, 'titleType'))->getValue($job) === $type,
+            );
+        }
     }
 }
