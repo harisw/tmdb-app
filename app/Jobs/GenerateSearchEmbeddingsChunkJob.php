@@ -16,6 +16,8 @@ class GenerateSearchEmbeddingsChunkJob implements ShouldQueue
 
     public int $tries = 1;
 
+    public int $timeout = 300;
+
     /**
      * @param  array<int, int>  $titleIds
      */

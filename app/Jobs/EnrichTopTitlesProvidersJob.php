@@ -13,6 +13,10 @@ class EnrichTopTitlesProvidersJob implements ShouldQueue
 {
     use Batchable, Queueable;
 
+    public int $tries = 3;
+
+    public int $timeout = 300;
+
     /**
      * Streaming Availability service ids per country ISO2, ranked from most to least used.
      *

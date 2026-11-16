@@ -21,6 +21,7 @@ class EnrichTopTitlesProvidersBatchJob implements ShouldQueue
 
         Bus::batch($jobs)
             ->name('Enrich Top Titles Providers Batch')
+            ->onQueue('enrichment')
             // ->allowFailures()
             ->dispatch();
     }

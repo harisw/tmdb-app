@@ -60,7 +60,7 @@ return [
     ],
     'llm' => [
         'providers' => explode(',', env('LLM_PROVIDERS', 'openai,groq')),
-        'timeout' => (int) env('LLM_TIMEOUT', 10),
+        'timeout' => (int) env('LLM_TIMEOUT', 5),
         'cooldown' => (int) env('LLM_COOLDOWN', 60),
     ],
     'langfuse' => [

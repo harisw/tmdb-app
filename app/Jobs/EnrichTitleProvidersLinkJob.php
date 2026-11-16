@@ -14,6 +14,10 @@ class EnrichTitleProvidersLinkJob implements ShouldQueue
 {
     use Batchable, Queueable;
 
+    public int $tries = 3;
+
+    public int $timeout = 60;
+
     public function __construct(private readonly Title $title)
     {
         $this->onQueue('enrichment');

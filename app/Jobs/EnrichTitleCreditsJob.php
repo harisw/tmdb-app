@@ -23,6 +23,8 @@ class EnrichTitleCreditsJob implements ShouldQueue
 
     public int $tries = 1;
 
+    public int $timeout = 60;
+
     //    public array $backoff = [10, 60, 300];
 
     public function __construct(private readonly int $titleId)

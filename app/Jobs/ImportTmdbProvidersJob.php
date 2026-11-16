@@ -14,6 +14,8 @@ class ImportTmdbProvidersJob implements ShouldQueue
 {
     use Queueable;
 
+    public int $timeout = 120;
+
     public function __construct()
     {
         $this->onQueue('enrichment');
