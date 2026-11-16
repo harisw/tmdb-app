@@ -52,6 +52,8 @@ class TmdbPersonData extends Data
 
     /**
      * Map the DTO to a `people` table row for bulk upserts.
+     *
+     * @return array<string, int|float|string|bool|null>
      */
     public function toUpsertArray(): array
     {

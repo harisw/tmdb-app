@@ -45,6 +45,10 @@ class Keyword extends Model
 
     protected $appends = ['url'];
 
+    /**
+     * @param  Builder<Keyword>  $query
+     * @return Builder<Keyword>
+     */
     public function scopeMatching(Builder $query, string $term): Builder
     {
         $escaped = addcslashes($term, '%_\\');
@@ -63,6 +67,9 @@ class Keyword extends Model
         return $this->belongsToMany(Title::class);
     }
 
+    /**
+     * @return Attribute<string, never>
+     */
     protected function url(): Attribute
     {
         return Attribute::make(

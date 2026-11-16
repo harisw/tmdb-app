@@ -65,11 +65,17 @@ class UserTitleState extends Pivot
             ->where('title_id', $this->getAttribute('title_id'));
     }
 
+    /**
+     * @return BelongsTo<User, $this>
+     */
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
     }
 
+    /**
+     * @return BelongsTo<Title, $this>
+     */
     public function title(): BelongsTo
     {
         return $this->belongsTo(Title::class);

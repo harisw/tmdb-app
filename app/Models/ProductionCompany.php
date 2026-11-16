@@ -39,6 +39,9 @@ class ProductionCompany extends Model
 
     protected $guarded = [];
 
+    /**
+     * @return BelongsToMany<Title, $this>
+     */
     public function titles(): BelongsToMany
     {
         return $this->belongsToMany(Title::class);

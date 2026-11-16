@@ -60,16 +60,26 @@ class TitlePerson extends Pivot
         'episode_count' => 'integer',
     ];
 
+    /**
+     * @return BelongsTo<Title, $this>
+     */
     public function title(): BelongsTo
     {
         return $this->belongsTo(Title::class);
     }
 
+    /**
+     * @return BelongsTo<Person, $this>
+     */
     public function person(): BelongsTo
     {
         return $this->belongsTo(Person::class);
     }
 
+    /**
+     * @param  Builder<TitlePerson>  $query
+     * @return Builder<TitlePerson>
+     */
     public function scopeOrdered(Builder $query): Builder
     {
         return $query->orderBy('order');

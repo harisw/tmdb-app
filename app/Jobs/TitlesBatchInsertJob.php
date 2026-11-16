@@ -18,6 +18,7 @@ class TitlesBatchInsertJob implements ShouldQueue
 
     public int $tries = 1;
 
+    /** @var list<list<string|null>> */
     private array $batch = [];
 
     private int $totalProcessed = 0;
@@ -62,7 +63,13 @@ class TitlesBatchInsertJob implements ShouldQueue
         Artisan::call('titles:refresh-searchable');
     }
 
-    private function processRow($row, &$header): void
+    /**
+     * @param  list<string|null>  $row
+     * @param  list<string|null>|null  $header
+     *
+     * @param-out list<string|null>  $header
+     */
+    private function processRow(array $row, ?array &$header): void
     {
         if (! $header) {
             $header = $row;

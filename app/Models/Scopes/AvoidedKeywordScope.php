@@ -2,13 +2,20 @@
 
 namespace App\Models\Scopes;
 
+use App\Models\Title;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Scope;
 use Illuminate\Database\Query\Builder as QueryBuilder;
 
+/**
+ * @implements Scope<Title>
+ */
 class AvoidedKeywordScope implements Scope
 {
+    /**
+     * @param  Builder<covariant Title>  $builder
+     */
     public function apply(Builder $builder, Model $model): void
     {
         $keywordIds = auth()->user()?->avoidedKeywordIds() ?? [];

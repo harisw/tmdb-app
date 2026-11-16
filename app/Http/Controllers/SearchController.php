@@ -86,6 +86,7 @@ class SearchController extends Controller
 
     /**
      * @param  Collection<int, int>|null  $titleIds
+     * @return Builder<Title>
      */
     private function applyFilters(?Collection $titleIds, ?string $lang, ?string $gen, ?string $tag): Builder
     {

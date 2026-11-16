@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Domain\Enums\ProviderLanguageType;
+use Database\Factories\TitleProviderLanguageFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -33,6 +34,7 @@ use Illuminate\Support\Carbon;
  */
 class TitleProviderLanguage extends Model
 {
+    /** @use HasFactory<TitleProviderLanguageFactory> */
     use HasFactory;
 
     protected $guarded = [];
@@ -41,11 +43,17 @@ class TitleProviderLanguage extends Model
         'type' => ProviderLanguageType::class,
     ];
 
+    /**
+     * @return BelongsTo<TitleProvider, $this>
+     */
     public function titleProvider(): BelongsTo
     {
         return $this->belongsTo(TitleProvider::class);
     }
 
+    /**
+     * @return BelongsTo<Language, $this>
+     */
     public function language(): BelongsTo
     {
         return $this->belongsTo(Language::class);

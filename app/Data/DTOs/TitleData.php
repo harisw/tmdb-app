@@ -70,6 +70,9 @@ class TitleData extends Data
         ]);
     }
 
+    /**
+     * @return list<array{name: string}>
+     */
     private function splitToNameArray(string $csv): array
     {
         return collect(explode(',', $csv))

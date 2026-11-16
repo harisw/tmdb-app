@@ -17,6 +17,9 @@ class EnrichTitleJob implements ShouldQueue
 {
     use Batchable, Queueable;
 
+    /**
+     * @return array<int, object>
+     */
     public function middleware(): array
     {
         return [new RateLimited('tmdb')];

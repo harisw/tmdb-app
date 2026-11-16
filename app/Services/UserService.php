@@ -66,6 +66,9 @@ class UserService
         return User::where('email', $email)->first();
     }
 
+    /**
+     * @return array{username: string, extra_attributes: array{avatar: array{seed: string, style: string}}}
+     */
     private function buildBaseAttributes(string $username): array
     {
         return [

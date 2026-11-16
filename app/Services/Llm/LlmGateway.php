@@ -48,7 +48,10 @@ class LlmGateway
      */
     private function availableProviders(): Collection
     {
-        return collect(config('services.llm.providers'))
+        /** @var list<string> $providers */
+        $providers = config('services.llm.providers');
+
+        return collect($providers)
             ->map(fn (string $provider) => trim($provider))
             ->each(fn (string $provider) => throw_unless(
                 config("services.{$provider}.base_url"),

@@ -27,6 +27,9 @@ class WatchmodeService
             ->timeout(30);
     }
 
+    /**
+     * @return Collection<int, TitleProviderData>
+     */
     public function getProviders(Title $title): Collection
     {
         if ($title->tmdb_id === null && $title->imdb_id === null) {
@@ -42,6 +45,9 @@ class WatchmodeService
             ->values();
     }
 
+    /**
+     * @param  array<string, mixed>  $item
+     */
     private function toDTO(array $item, Title $title): ?TitleProviderData
     {
         $providerId = $this->catalog->providerId(ProviderSource::WATCHMODE, $item['name']);
@@ -74,6 +80,9 @@ class WatchmodeService
         return "{$title->type->value}-{$title->tmdb_id}";
     }
 
+    /**
+     * @return list<array<string, mixed>>|null
+     */
     private function get(string $url): ?array
     {
         return $this->client->get($url)->json();

@@ -30,6 +30,9 @@ class EnrichTitleCreditsJob implements ShouldQueue
         $this->onQueue('enrichment');
     }
 
+    /**
+     * @return array<int, object>
+     */
     public function middleware(): array
     {
         return [new RateLimited('tmdb')];

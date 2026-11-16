@@ -56,6 +56,9 @@ class Genre extends Model
         return 'slug';
     }
 
+    /**
+     * @return Attribute<string, never>
+     */
     protected function url(): Attribute
     {
         return Attribute::make(

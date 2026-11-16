@@ -6,6 +6,9 @@ use Illuminate\Support\Collection;
 
 trait EnumValues
 {
+    /**
+     * @return list<int|string>
+     */
     public static function values(): array
     {
         return array_map(
@@ -14,8 +17,14 @@ trait EnumValues
         );
     }
 
+    /**
+     * @return Collection<int, self>
+     */
     public static function collection(): Collection
     {
-        return collect(self::cases());
+        /** @var Collection<int, self> $cases */
+        $cases = collect(self::cases());
+
+        return $cases;
     }
 }

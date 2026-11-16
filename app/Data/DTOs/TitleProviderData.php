@@ -20,6 +20,9 @@ class TitleProviderData extends Data
         public readonly ?string $quality
     ) {}
 
+    /**
+     * @return array<string, int|string|null>
+     */
     public function toUpsertArray(): array
     {
         return [

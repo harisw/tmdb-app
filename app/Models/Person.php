@@ -73,11 +73,17 @@ class Person extends Model
         return 'slug';
     }
 
+    /**
+     * @return Builder<Person>
+     */
     public function scopeWithExtraAttributes(): Builder
     {
         return $this->extra_attributes->modelScope();
     }
 
+    /**
+     * @return BelongsToMany<Title, $this, TitlePerson>
+     */
     public function titles(): BelongsToMany
     {
         return $this->belongsToMany(Title::class, 'title_person')
@@ -86,6 +92,9 @@ class Person extends Model
             ->withTimestamps();
     }
 
+    /**
+     * @return HasMany<TitlePerson, $this>
+     */
     public function credits(): HasMany
     {
         return $this->hasMany(TitlePerson::class);

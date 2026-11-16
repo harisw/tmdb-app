@@ -50,6 +50,9 @@ class ConstellationService
             ->get(self::NODE_COLUMNS);
     }
 
+    /**
+     * @return array{seed: int, seedIndex: int, seedCount: int, nodes: list<array<string, mixed>>, links: list<array<string, mixed>>}|null
+     */
     private function compute(int $seedIndex): ?array
     {
         $minScore = config('features.knowledge_graph.min_score');
@@ -122,6 +125,7 @@ class ConstellationService
 
     /**
      * @param  Collection<string, array<string, mixed>>  $links
+     * @param  array<mixed>  $reasons
      */
     private function link(Collection $links, int $sourceId, int $targetId, float $score, array $reasons): void
     {

@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Domain\Enums\StreamType;
+use Database\Factories\TitleProviderFactory;
 use DB;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
@@ -61,6 +62,7 @@ use Spatie\SchemalessAttributes\Casts\SchemalessAttributes;
  */
 class TitleProvider extends Model
 {
+    /** @use HasFactory<TitleProviderFactory> */
     use HasFactory;
 
     protected $guarded = [];
@@ -72,41 +74,68 @@ class TitleProvider extends Model
         'subtitle_languages' => 'array',
     ];
 
+    /**
+     * @return BelongsTo<CountryProvider, $this>
+     */
     public function countryProvider(): BelongsTo
     {
         return $this->belongsTo(CountryProvider::class, 'country_provider_id');
     }
 
+    /**
+     * @return BelongsTo<Country, $this>
+     */
     public function country(): BelongsTo
     {
         return $this->belongsTo(Country::class);
     }
 
+    /**
+     * @return BelongsTo<Provider, $this>
+     */
     public function provider(): BelongsTo
     {
         return $this->belongsTo(Provider::class);
     }
 
+    /**
+     * @return BelongsTo<Title, $this>
+     */
     public function title(): BelongsTo
     {
         return $this->belongsTo(Title::class);
     }
 
+    /**
+     * @return HasMany<TitleProviderLanguage, $this>
+     */
     public function providerLanguages(): HasMany
     {
         return $this->hasMany(TitleProviderLanguage::class);
     }
 
+    /**
+     * @param  Builder<TitleProvider>  $query
+     * @return Builder<TitleProvider>
+     */
     public function scopeForCountry(Builder $query, int $countryId): Builder
     {
         return $query->where('country_id', $countryId);
     }
 
+    /**
+     * @param  Builder<TitleProvider>  $query
+     * @return Builder<TitleProvider>
+     */
     public function scopeOfType(Builder $query, StreamType $type): Builder
     {
         return $query->where('type', $type);
     }
 
+    /**
+     * @param  Builder<TitleProvider>  $query
+     * @return Builder<TitleProvider>
+     */
     public function scopeUniqueByProvider(Builder $query): Builder
     {
         return $query

@@ -6,19 +6,21 @@ use App\Data\DTOs\GoogleUserData;
 use App\Http\Controllers\Controller;
 use App\Services\UserService;
 use Auth;
+use Illuminate\Http\RedirectResponse;
 use Laravel\Socialite\Socialite;
 use Laravel\Socialite\Two\User;
+use Symfony\Component\HttpFoundation\RedirectResponse as SymfonyRedirectResponse;
 
 class GoogleAuthController extends Controller
 {
     public function __construct(private UserService $userService) {}
 
-    public function redirect()
+    public function redirect(): SymfonyRedirectResponse
     {
         return Socialite::driver('google')->redirect();
     }
 
-    public function callback()
+    public function callback(): RedirectResponse
     {
         /** @var User $googleUser */
         $googleUser = Socialite::driver('google')->user();

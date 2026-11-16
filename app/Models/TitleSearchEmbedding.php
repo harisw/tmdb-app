@@ -28,6 +28,9 @@ class TitleSearchEmbedding extends Model
 
     protected $hidden = ['embedding'];
 
+    /**
+     * @return BelongsTo<Title, $this>
+     */
     public function title(): BelongsTo
     {
         return $this->belongsTo(Title::class);

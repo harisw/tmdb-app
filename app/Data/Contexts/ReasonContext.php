@@ -6,6 +6,7 @@ use App\Data\DTOs\SimilarityReasonData;
 use App\Models\Title;
 use Closure;
 use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Database\Eloquent\Model;
 
 class ReasonContext
 {
@@ -24,7 +25,9 @@ class ReasonContext
     }
 
     /**
-     * @param  Closure(Title): Collection  $related
+     * @template TModel of Model
+     *
+     * @param  Closure(Title): Collection<int, TModel>  $related
      * @return array<int, string>
      */
     public function sharedNames(Closure $related): array

@@ -18,6 +18,10 @@ namespace App\Services\TmdbCredits;
  */
 class TmdbCreditNormalizer
 {
+    /**
+     * @param  array<string, mixed>  $payload
+     * @return list<array<string, mixed>>
+     */
     public static function fromCredits(array $payload): array
     {
         $rows = collect();
@@ -49,12 +53,18 @@ class TmdbCreditNormalizer
         return $rows->all();
     }
 
+    /**
+     * @param  array<string, mixed>  $payload
+     * @return list<array<string, mixed>>
+     */
     public static function fromAggregateCredits(array $payload): array
     {
         $rows = collect();
 
         foreach ($payload['cast'] ?? [] as $person) {
-            $roles = collect($person['roles'] ?? []);
+            /** @var list<array<string, mixed>> $personRoles */
+            $personRoles = $person['roles'] ?? [];
+            $roles = collect($personRoles);
 
             $rows->push(self::row(
                 $person,
@@ -90,6 +100,9 @@ class TmdbCreditNormalizer
      * as-is: TmdbPersonData's input contract is raw TMDB (`id`, `adult`,
      * integer `gender`), so re-keying it here would only break hydration.
      * The nested array is auto-hydrated into TmdbPersonData by Spatie Data.
+     *
+     * @param  array<string, mixed>  $person
+     * @return array<string, mixed>
      */
     private static function row(
         array $person,

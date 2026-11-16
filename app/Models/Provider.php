@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Database\Factories\ProviderFactory;
 use GeneaLabs\LaravelModelCaching\CachedModel;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Collection;
@@ -47,6 +48,7 @@ use Illuminate\Support\Carbon;
  */
 class Provider extends CachedModel
 {
+    /** @use HasFactory<ProviderFactory> */
     use HasFactory;
 
     protected $fillable = [
@@ -70,6 +72,9 @@ class Provider extends CachedModel
         return 'slug';
     }
 
+    /**
+     * @return Attribute<string, never>
+     */
     protected function url(): Attribute
     {
         return Attribute::make(
@@ -77,22 +82,34 @@ class Provider extends CachedModel
         );
     }
 
+    /**
+     * @return BelongsToMany<Title, $this>
+     */
     public function titles(): BelongsToMany
     {
         return $this->belongsToMany(Title::class, 'title_providers');
     }
 
+    /**
+     * @return HasMany<CountryProvider, $this>
+     */
     public function countryProviders(): HasMany
     {
         return $this->hasMany(CountryProvider::class);
     }
 
+    /**
+     * @return BelongsToMany<Country, $this>
+     */
     public function countries(): BelongsToMany
     {
         return $this->belongsToMany(Country::class, 'country_providers')
             ->withPivot('priority');
     }
 
+    /**
+     * @return HasMany<ProviderAlias, $this>
+     */
     public function aliases(): HasMany
     {
         return $this->hasMany(ProviderAlias::class);
