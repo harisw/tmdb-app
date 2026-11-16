@@ -35,6 +35,7 @@ class EnrichTitleKeywordBatchJob implements ShouldQueue
 
         Bus::batch($jobs)
             ->name('Enrich Title Keywords Batch')
+            ->onQueue('enrichment')
             ->allowFailures()
             ->dispatch();
     }

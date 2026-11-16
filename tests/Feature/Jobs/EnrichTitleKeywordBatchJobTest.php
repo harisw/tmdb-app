@@ -41,6 +41,17 @@ class EnrichTitleKeywordBatchJobTest extends TestCase
         Bus::assertBatched(fn (PendingBatch $batch) => $this->batchedTitleIds($batch) === [$due->id]);
     }
 
+    public function test_runs_the_batch_on_the_enrichment_queue(): void
+    {
+        Bus::fake();
+
+        Title::factory()->create(['tmdb_id' => 1, 'enriched_at' => now()->subMonths(4)]);
+
+        (new EnrichTitleKeywordBatchJob(10))->handle();
+
+        Bus::assertBatched(fn (PendingBatch $batch) => $batch->queue() === 'enrichment');
+    }
+
     public function test_prefers_popular_titles_within_its_limit(): void
     {
         Bus::fake();

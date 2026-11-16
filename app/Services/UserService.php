@@ -44,7 +44,7 @@ class UserService
             'google_token' => $data->google_token,
         ]);
 
-        if (! $user->hasVerifiedEmail()) {
+        if (! $user->hasVerifiedEmail() && Str::lower($user->email) === Str::lower($data->email)) {
             $user->forceFill([
                 'password' => Hash::make(Str::random(64)),
                 'email_verified_at' => now(),

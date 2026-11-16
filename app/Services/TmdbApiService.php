@@ -119,6 +119,12 @@ class TmdbApiService
      */
     private function get(string $path, array $query = []): ?array
     {
-        return $this->client->get($path, $query)->json();
+        $response = $this->client->get($path, $query);
+
+        if ($response->notFound()) {
+            return null;
+        }
+
+        return $response->throw()->json();
     }
 }

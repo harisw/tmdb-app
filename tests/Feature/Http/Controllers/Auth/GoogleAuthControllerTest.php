@@ -117,4 +117,19 @@ class GoogleAuthControllerTest extends TestCase
         $this->assertTrue($returning->fresh()->hasVerifiedEmail());
         $this->assertAuthenticatedAs($returning);
     }
+
+    public function test_a_different_google_email_does_not_verify_the_stored_one(): void
+    {
+        $returning = User::factory()->unverified()->create([
+            'email' => 'old@example.com',
+            'google_id' => 'google-123',
+        ]);
+        $this->fakeGoogle('new@example.com');
+
+        $this->get('/auth/google/callback');
+
+        $returning->refresh();
+        $this->assertFalse($returning->hasVerifiedEmail());
+        $this->assertTrue(Hash::check('password', $returning->password));
+    }
 }

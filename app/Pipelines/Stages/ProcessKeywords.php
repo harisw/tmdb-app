@@ -40,8 +40,8 @@ class ProcessKeywords
         return collect($keywords)
             ->pluck('name')
             ->map(fn (mixed $name) => trim((string) $name))
-            ->filter()
-            ->unique()
+            ->filter(fn (string $name) => $name !== '')
+            ->uniqueStrict()
             ->values()
             ->map(fn (string $name) => ['name' => $name]);
     }
