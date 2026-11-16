@@ -43,4 +43,22 @@ class EnrichTitleJobTest extends TestCase
 
         $this->assertDatabaseCount('title_providers', 0);
     }
+
+    public function test_syncs_the_keywords_tmdb_returns(): void
+    {
+        $title = Title::factory()->create(['tmdb_id' => 789]);
+
+        $tmdb = $this->mock(TmdbApiService::class);
+        $tmdb->shouldReceive('getKeywords')->andReturn(['keywords' => [
+            ['id' => 4379, 'name' => 'time travel'],
+            ['id' => 9999, 'name' => ' 1985 '],
+            ['id' => 4379, 'name' => 'time travel'],
+        ]]);
+        $tmdb->shouldReceive('getWatchProviders')->andReturn(['results' => []]);
+
+        (new EnrichTitleJob($title))->handle();
+
+        $this->assertEqualsCanonicalizing(['time-travel', '1985'], $title->keywords()->pluck('slug')->all());
+        $this->assertFalse($title->keywords()->where('slug', '1985')->value('use_in_similarity'));
+    }
 }
