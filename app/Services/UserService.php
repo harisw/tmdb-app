@@ -8,6 +8,7 @@ use App\Models\Country;
 use App\Models\User;
 use App\Utils\Helpers\GenerateUsername;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Str;
 
 class UserService
 {
@@ -26,7 +27,7 @@ class UserService
 
     public function createFromGoogle(GoogleUserData $data): User
     {
-        return User::create([
+        return User::forceCreate([
             ...$this->buildBaseAttributes($this->getUniqueUsername()),
             'name' => $data->name,
             'email' => $data->email,
@@ -38,10 +39,19 @@ class UserService
 
     public function linkGoogleAccount(User $user, GoogleUserData $data): User
     {
-        $user->update([
+        $user->forceFill([
             'google_id' => $data->google_id,
             'google_token' => $data->google_token,
         ]);
+
+        if (! $user->hasVerifiedEmail() && Str::lower($user->email) === Str::lower($data->email)) {
+            $user->forceFill([
+                'password' => Hash::make(Str::random(64)),
+                'email_verified_at' => now(),
+            ]);
+        }
+
+        $user->save();
 
         return $user;
     }
@@ -56,6 +66,9 @@ class UserService
         return User::where('email', $email)->first();
     }
 
+    /**
+     * @return array{username: string, extra_attributes: array{avatar: array{seed: string, style: string}}}
+     */
     private function buildBaseAttributes(string $username): array
     {
         return [

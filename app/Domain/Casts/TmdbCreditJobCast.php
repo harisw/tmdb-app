@@ -4,6 +4,7 @@ namespace App\Domain\Casts;
 
 use App\Domain\Enums\CreditJob;
 use Spatie\LaravelData\Casts\Cast;
+use Spatie\LaravelData\Contracts\BaseData;
 use Spatie\LaravelData\Support\Creation\CreationContext;
 use Spatie\LaravelData\Support\DataProperty;
 
@@ -69,6 +70,10 @@ class TmdbCreditJobCast implements Cast
         'Series Director' => 1,
     ];
 
+    /**
+     * @param  array<string, mixed>  $properties
+     * @param  CreationContext<BaseData<mixed, mixed, array-key>>  $context
+     */
     public function cast(DataProperty $property, mixed $value, array $properties, CreationContext $context): mixed
     {
         if ($value instanceof CreditJob) {
@@ -103,6 +108,9 @@ class TmdbCreditJobCast implements Cast
         return self::JOB_MAP[$tmdbJob] ?? null;
     }
 
+    /**
+     * @return array<string, CreditJob>
+     */
     public static function map(): array
     {
         return self::JOB_MAP;

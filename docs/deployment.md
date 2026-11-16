@@ -152,7 +152,6 @@ CACHE_STORE=database
 QUEUE_CONNECTION=redis
 REDIS_HOST=redis
 
-ALLOW_REGISTER=false
 MOVIE_DB_IMG_URL=<tmdb-image-base-url>
 ```
 

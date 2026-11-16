@@ -15,8 +15,7 @@ with a loose intent ("something like this", "what's good on my streaming
 services", "what's trending") rather than a specific title, and they want to
 resolve that intent quickly and then act on it (save it, mark it, rate it).
 Accounts are supported (email + Google OAuth) and unlock a personal taste layer;
-guests can still browse, search, and explore the graph. Registration is currently
-gated (`ALLOW_REGISTER=false`).
+guests can still browse, search, and explore the graph.
 
 ## Product Purpose
 

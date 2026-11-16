@@ -31,12 +31,26 @@ class ProcessKeywords
         return $next($ctx);
     }
 
+    /**
+     * @param  list<array<string, mixed>>  $keywords
+     * @return Collection<int, array{name: string}>
+     */
     private function prepareKeywords(array $keywords): Collection
     {
-        return collect($keywords)->only('name')->unique()->map(fn ($k) => trim($k))->filter();
+        return collect($keywords)
+            ->pluck('name')
+            ->map(fn (mixed $name) => trim((string) $name))
+            ->filter(fn (string $name) => $name !== '')
+            ->uniqueStrict()
+            ->values()
+            ->map(fn (string $name) => ['name' => $name]);
     }
 
-    private function getKeywordData($data): array
+    /**
+     * @param  array<string, mixed>|null  $data
+     * @return list<array<string, mixed>>
+     */
+    private function getKeywordData(?array $data): array
     {
         return $data['keywords'] ?? $data['results'] ?? [];
     }

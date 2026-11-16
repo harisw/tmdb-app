@@ -15,9 +15,16 @@ class TmdbTitleData extends Data
     #[Computed]
     public readonly string $slug;
 
+    /** @var DataCollection<int, TmdbProductionCompanyData> */
     #[DataCollectionOf(TmdbProductionCompanyData::class)]
     public readonly DataCollection $production_companies;
 
+    /**
+     * @param  DataCollection<int, TmdbGenreData>  $genres
+     * @param  DataCollection<int, TmdbProductionCompanyData>  $production_companies
+     * @param  DataCollection<int, TmdbKeywordData>|null  $keywords
+     * @param  array<string, mixed>|null  $extra_attributes
+     */
     public function __construct(
         #[MapInputName('id')]
         public readonly int $tmdb_id,

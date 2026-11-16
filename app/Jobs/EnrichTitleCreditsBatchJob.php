@@ -11,6 +11,8 @@ class EnrichTitleCreditsBatchJob implements ShouldQueue
 {
     use Queueable;
 
+    public int $timeout = 60;
+
     private const RETRY_MONTHS_THRESHOLD = 6;
 
     public function __construct(private readonly int $limit = 100)

@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Database\Factories\CountryFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -33,6 +34,7 @@ use Illuminate\Support\Carbon;
  */
 class Country extends Model
 {
+    /** @use HasFactory<CountryFactory> */
     use HasFactory;
 
     protected $fillable = [
@@ -49,6 +51,9 @@ class Country extends Model
         'language_id' => 'integer',
     ];
 
+    /**
+     * @return BelongsTo<Language, $this>
+     */
     public function language(): BelongsTo
     {
         return $this->belongsTo(Language::class);

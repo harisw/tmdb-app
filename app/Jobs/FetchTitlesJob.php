@@ -25,6 +25,7 @@ abstract class FetchTitlesJob implements ShouldQueue
 
     public int $timeout = 1800;
 
+    /** @var Collection<int, int>|null */
     private ?Collection $titleIdDict = null;
 
     /**
@@ -46,6 +47,8 @@ abstract class FetchTitlesJob implements ShouldQueue
 
     /**
      * Fetch one page of the feed this job is responsible for.
+     *
+     * @return array<string, mixed>|null
      */
     abstract protected function fetchPage(TmdbApiService $tmdbService, int $page): ?array;
 
@@ -73,6 +76,7 @@ abstract class FetchTitlesJob implements ShouldQueue
     }
 
     /**
+     * @param  list<array<string, mixed>>|null  $results
      * @param  int  $remaining  How many more titles we're still allowed to insert.
      * @return int Number of new titles inserted from this page.
      */
@@ -103,6 +107,9 @@ abstract class FetchTitlesJob implements ShouldQueue
         return $inserted;
     }
 
+    /**
+     * @param  array<string, mixed>  $titleDetail
+     */
     private function createNewTitle(array $titleDetail, TitleService $titleService): ?Title
     {
         $languageId = Language::findByCode($titleDetail['original_language'])->id;

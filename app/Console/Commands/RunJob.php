@@ -6,6 +6,7 @@ use App\Domain\Enums\TitleType;
 use App\Jobs\EnrichSearchEmbeddingsBatchJob;
 use App\Jobs\EnrichTitleCreditsBatchJob;
 use App\Jobs\EnrichTitleEmbeddingsBatchJob;
+use App\Jobs\EnrichTitleKeywordBatchJob;
 use App\Jobs\EnrichTitleProvidersBatchJob;
 use App\Jobs\EnrichTitleProvidersLinkBatchJob;
 use App\Jobs\EnrichTopTitlesProvidersBatchJob;
@@ -49,7 +50,7 @@ class RunJob extends Command
                 EnrichTitleProvidersBatchJob::class, TitlesBatchInsertJob::class,
                 EnrichTitleCreditsBatchJob::class, EnrichTitleEmbeddingsBatchJob::class,
                 MaterializeTitleSimilaritiesBatchJob::class, EnrichTitleProvidersLinkBatchJob::class, EnrichTopTitlesProvidersBatchJob::class,
-                EnrichSearchEmbeddingsBatchJob::class, SyncTitlePopularityJob::class],
+                EnrichSearchEmbeddingsBatchJob::class, SyncTitlePopularityJob::class, EnrichTitleKeywordBatchJob::class],
         );
         switch ($jobClass) {
             case FetchTrendingTitlesJob::class:
@@ -85,6 +86,9 @@ class RunJob extends Command
                 break;
             case SyncTitlePopularityJob::class:
                 $this->runSyncTitlePopularity();
+                break;
+            case EnrichTitleKeywordBatchJob::class:
+                $this->runEnrichTitleKeywords();
                 break;
             default:
                 $this->error('Unknown job class');
@@ -130,6 +134,12 @@ class RunJob extends Command
     {
         $limit = (int) $this->ask('Limit titles?');
         EnrichTitleProvidersBatchJob::dispatch($limit);
+    }
+
+    private function runEnrichTitleKeywords(): void
+    {
+        $limit = (int) $this->ask('Limit titles?', '500');
+        EnrichTitleKeywordBatchJob::dispatch($limit);
     }
 
     private function runEnrichTitleProvidersLink(): void

@@ -191,11 +191,16 @@ class DatabaseBenchmark extends Command
     {
         mt_srand(42);
         config(['services.openai.key' => 'benchmark']);
-        Http::fake(['api.openai.com/*' => fn ($request) => Http::response([
-            'data' => collect($request['input'])
-                ->map(fn (string $input, int $i) => ['index' => $i, 'embedding' => array_map(fn () => mt_rand() / mt_getrandmax() - 0.5, range(1, $request['dimensions']))])
-                ->all(),
-        ])]);
+        Http::fake(['api.openai.com/*' => function ($request) {
+            /** @var list<string> $inputs */
+            $inputs = $request['input'];
+
+            return Http::response([
+                'data' => collect($inputs)
+                    ->map(fn (string $input, int $i) => ['index' => $i, 'embedding' => array_map(fn () => mt_rand() / mt_getrandmax() - 0.5, range(1, $request['dimensions']))])
+                    ->all(),
+            ]);
+        }]);
 
         GenerateSearchEmbeddingsChunkJob::dispatchSync(range(1, self::SEARCH_CHUNK));
     }

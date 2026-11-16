@@ -33,6 +33,7 @@ readonly class TmdbCreditService
      * untagged JSON — so the caller would otherwise have to re-derive which
      * shape it got back. Keep this match in step with that one.
      *
+     * @param  array<string, mixed>  $payload
      * @return int rows written to title_person
      */
     public function import(Title $title, array $payload, int $castLimit = 10): int
@@ -43,6 +44,9 @@ readonly class TmdbCreditService
         };
     }
 
+    /**
+     * @param  array<string, mixed>  $payload
+     */
     public function importFromCredits(Title $title, array $payload, int $castLimit = 10): int
     {
         return $this->persist(
@@ -53,6 +57,9 @@ readonly class TmdbCreditService
         );
     }
 
+    /**
+     * @param  array<string, mixed>  $payload
+     */
     public function importFromAggregateCredits(
         Title $title,
         array $payload,
@@ -68,6 +75,9 @@ readonly class TmdbCreditService
         );
     }
 
+    /**
+     * @param  list<array<string, mixed>>  $rows
+     */
     private function persist(
         int $titleId,
         array $rows,

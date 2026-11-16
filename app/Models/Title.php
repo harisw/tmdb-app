@@ -149,11 +149,14 @@ class Title extends Model
         'extra_attributes' => SchemalessAttributes::class,
     ];
 
-    public function getRuntimeAttribute($value): ?string
+    public function getRuntimeAttribute(int|string|null $value): ?string
     {
         return $this->type === TitleType::MOVIE ? DateTimeHelper::minutesToHours($value) : null;
     }
 
+    /**
+     * @return Attribute<string, never>
+     */
     public function posterPath(): Attribute
     {
         return Attribute::make(
@@ -162,6 +165,9 @@ class Title extends Model
         );
     }
 
+    /**
+     * @return Attribute<string, never>
+     */
     public function backdropPath(): Attribute
     {
         return Attribute::make(
@@ -170,6 +176,9 @@ class Title extends Model
         );
     }
 
+    /**
+     * @return Builder<Title>
+     */
     public function scopeWithExtraAttributes(): Builder
     {
         return $this->extra_attributes->modelScope();
@@ -179,12 +188,19 @@ class Title extends Model
      * A listing of titles: detail relations eager-loaded, newest first.
      * Works on the model (`Title::listing()`) and on relations
      * (`$genre->titles()->listing()`).
+     *
+     * @param  Builder<Title>  $query
+     * @return Builder<Title>
      */
     public function scopeListing(Builder $query): Builder
     {
         return $query->with(self::detailRelations())->latest();
     }
 
+    /**
+     * @param  Builder<Title>  $query
+     * @return Builder<Title>
+     */
     public function scopeSorted(Builder $query, TitleSort $sort): Builder
     {
         $ordered = match ($sort) {
@@ -196,36 +212,57 @@ class Title extends Model
         return $ordered->orderBy('titles.id');
     }
 
+    /**
+     * @return BelongsTo<Language, $this>
+     */
     public function language(): BelongsTo
     {
         return $this->belongsTo(Language::class);
     }
 
+    /**
+     * @return BelongsToMany<Genre, $this>
+     */
     public function genres(): BelongsToMany
     {
         return $this->belongsToMany(Genre::class);
     }
 
+    /**
+     * @return BelongsToMany<ProductionCompany, $this>
+     */
     public function companies(): BelongsToMany
     {
         return $this->belongsToMany(ProductionCompany::class, 'title_production_company');
     }
 
+    /**
+     * @return BelongsToMany<Keyword, $this>
+     */
     public function keywords(): BelongsToMany
     {
         return $this->belongsToMany(Keyword::class);
     }
 
+    /**
+     * @return BelongsTo<TitleCollection, $this>
+     */
     public function collection(): BelongsTo
     {
         return $this->belongsTo(TitleCollection::class);
     }
 
+    /**
+     * @return BelongsToMany<Provider, $this>
+     */
     public function providers(): BelongsToMany
     {
         return $this->belongsToMany(Provider::class, 'title_providers', 'title_id', 'provider_id');
     }
 
+    /**
+     * @return HasMany<TitleProvider, $this>
+     */
     public function titleProviders(): HasMany
     {
         return $this->hasMany(TitleProvider::class);
@@ -258,6 +295,9 @@ class Title extends Model
             ->orderByPivot('score', 'desc');
     }
 
+    /**
+     * @return BelongsToMany<Person, $this, TitlePerson>
+     */
     public function people(): BelongsToMany
     {
         return $this->belongsToMany(Person::class, 'title_person')
@@ -266,6 +306,9 @@ class Title extends Model
             ->withTimestamps();
     }
 
+    /**
+     * @return BelongsToMany<Person, $this, TitlePerson>
+     */
     public function topCasts(): BelongsToMany
     {
         return $this->people()
@@ -274,6 +317,9 @@ class Title extends Model
             ->orderByPivot('order');
     }
 
+    /**
+     * @return BelongsToMany<Person, $this, TitlePerson>
+     */
     public function keyCrews(): BelongsToMany
     {
         return $this->people()
@@ -281,21 +327,33 @@ class Title extends Model
             ->orderByPivot('order');
     }
 
+    /**
+     * @return HasMany<TitlePerson, $this>
+     */
     public function credits(): HasMany
     {
         return $this->hasMany(TitlePerson::class);
     }
 
+    /**
+     * @return HasOne<UserTitleState, $this>
+     */
     public function userState(): HasOne
     {
         return $this->hasOne(UserTitleState::class);
     }
 
+    /**
+     * @return HasOne<TitleSearchEmbedding, $this>
+     */
     public function searchEmbedding(): HasOne
     {
         return $this->hasOne(TitleSearchEmbedding::class);
     }
 
+    /**
+     * @return HasMany<TitlePerson, $this>
+     */
     public function cast(): HasMany
     {
         return $this->credits()->where('job', CreditJob::CAST)->orderBy('order');
@@ -304,6 +362,8 @@ class Title extends Model
     /**
      * Crew is defined by exclusion — CreditJob has no CREW case, it has the
      * specific jobs we model (director, writer, composer...).
+     *
+     * @return HasMany<TitlePerson, $this>
      */
     public function crew(): HasMany
     {
@@ -333,6 +393,9 @@ class Title extends Model
         return $relations;
     }
 
+    /**
+     * @return array<int|string, mixed>
+     */
     public static function cardRelations(): array
     {
         $relations = array_filter(self::detailRelations(), fn ($relation) => ! in_array($relation, ['genres', 'keywords'], true));

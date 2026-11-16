@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Database\Factories\CountryProviderFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -35,6 +36,7 @@ use Spatie\SchemalessAttributes\SchemalessAttributes;
  */
 class CountryProvider extends Model
 {
+    /** @use HasFactory<CountryProviderFactory> */
     use HasFactory;
 
     protected $fillable = [
@@ -51,11 +53,17 @@ class CountryProvider extends Model
         'extra_attributes' => SchemalessAttributes::class,
     ];
 
+    /**
+     * @return BelongsTo<Country, $this>
+     */
     public function country(): BelongsTo
     {
         return $this->belongsTo(Country::class);
     }
 
+    /**
+     * @return BelongsTo<Provider, $this>
+     */
     public function provider(): BelongsTo
     {
         return $this->belongsTo(Provider::class);

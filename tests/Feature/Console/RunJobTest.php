@@ -6,6 +6,7 @@ use App\Domain\Enums\TitleType;
 use App\Jobs\EnrichSearchEmbeddingsBatchJob;
 use App\Jobs\EnrichTitleCreditsBatchJob;
 use App\Jobs\EnrichTitleEmbeddingsBatchJob;
+use App\Jobs\EnrichTitleKeywordBatchJob;
 use App\Jobs\EnrichTitleProvidersBatchJob;
 use App\Jobs\EnrichTitleProvidersLinkBatchJob;
 use App\Jobs\EnrichTopTitlesProvidersBatchJob;
@@ -68,6 +69,18 @@ class RunJobTest extends TestCase
         Queue::assertPushed(SyncTitlePopularityJob::class, fn (SyncTitlePopularityJob $job) => $job == new SyncTitlePopularityJob(TitleType::TV, maxRows: 500));
     }
 
+    public function test_dispatches_a_keyword_backfill_with_the_chosen_limit(): void
+    {
+        Queue::fake();
+
+        $this->artisan('run:job')
+            ->expectsChoice('Which job class do you want to run?', EnrichTitleKeywordBatchJob::class, $this->jobChoices())
+            ->expectsQuestion('Limit titles?', '200')
+            ->assertSuccessful();
+
+        Queue::assertPushed(EnrichTitleKeywordBatchJob::class, fn (EnrichTitleKeywordBatchJob $job) => $job == new EnrichTitleKeywordBatchJob(200));
+    }
+
     /**
      * @return array<int, string>
      */
@@ -79,7 +92,7 @@ class RunJobTest extends TestCase
             EnrichTitleCreditsBatchJob::class, EnrichTitleEmbeddingsBatchJob::class,
             MaterializeTitleSimilaritiesBatchJob::class, EnrichTitleProvidersLinkBatchJob::class,
             EnrichTopTitlesProvidersBatchJob::class, EnrichSearchEmbeddingsBatchJob::class,
-            SyncTitlePopularityJob::class,
+            SyncTitlePopularityJob::class, EnrichTitleKeywordBatchJob::class,
         ];
     }
 }

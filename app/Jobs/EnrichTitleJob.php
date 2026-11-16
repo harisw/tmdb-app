@@ -17,6 +17,15 @@ class EnrichTitleJob implements ShouldQueue
 {
     use Batchable, Queueable;
 
+    public int $tries = 3;
+
+    public int $backoff = 30;
+
+    public int $timeout = 90;
+
+    /**
+     * @return array<int, object>
+     */
     public function middleware(): array
     {
         return [new RateLimited('tmdb')];

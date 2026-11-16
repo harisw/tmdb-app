@@ -20,6 +20,10 @@ class MaterializeTitleSimilaritiesJob implements ShouldBeUnique, ShouldQueue
 
     public int $uniqueFor = 3600;
 
+    public int $tries = 3;
+
+    public int $timeout = 300;
+
     public function __construct(public readonly int $titleId)
     {
         $this->onQueue('embeddings');

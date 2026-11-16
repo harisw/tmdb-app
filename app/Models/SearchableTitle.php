@@ -26,6 +26,9 @@ class SearchableTitle extends Model
 
     public $incrementing = false;
 
+    /**
+     * @return BelongsTo<Title, $this>
+     */
     public function title(): BelongsTo
     {
         return $this->belongsTo(Title::class, 'title_id', 'id');

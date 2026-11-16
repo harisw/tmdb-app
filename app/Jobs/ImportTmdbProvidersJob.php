@@ -14,6 +14,8 @@ class ImportTmdbProvidersJob implements ShouldQueue
 {
     use Queueable;
 
+    public int $timeout = 120;
+
     public function __construct()
     {
         $this->onQueue('enrichment');
@@ -23,7 +25,7 @@ class ImportTmdbProvidersJob implements ShouldQueue
     {
         $aliases = require database_path('seeders/data/provider_aliases.php');
         $providers = collect(TitleType::cases())
-            ->flatMap(fn (TitleType $type) => $tmdb->getWatchProviderList($type)['results']
+            ->flatMap(fn (TitleType $type): array => $tmdb->getWatchProviderList($type)['results']
                 ?? throw new RuntimeException("TMDB returned no {$type->value} watch providers"))
             ->map(fn (array $record) => ProviderData::from($record));
 

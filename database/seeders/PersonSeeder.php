@@ -14,6 +14,7 @@ class PersonSeeder extends Seeder
      */
     public function run(): void
     {
+        /** @var list<array<string, mixed>> $data */
         $data = json_decode(file_get_contents(__DIR__.'/data/people.json'), true);
 
         $records = TmdbPersonData::collect(

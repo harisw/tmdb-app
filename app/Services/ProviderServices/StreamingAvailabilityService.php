@@ -31,6 +31,9 @@ class StreamingAvailabilityService
             ->timeout(30);
     }
 
+    /**
+     * @return Collection<int, TitleProviderData>
+     */
     public function getTopShows(Country $country, string $serviceId): Collection
     {
         if (! $this->catalog->providerId(ProviderSource::STREAMING_AVAILABILITY, $serviceId)) {
@@ -52,6 +55,10 @@ class StreamingAvailabilityService
         });
     }
 
+    /**
+     * @param  array<string, list<array<string, mixed>>>  $streamingOptions
+     * @return Collection<int, TitleProviderData>
+     */
     private function toDTOs(array $streamingOptions, Title $title, Country $country): Collection
     {
         return collect($streamingOptions[strtolower($country->iso2)] ?? [])
@@ -61,6 +68,9 @@ class StreamingAvailabilityService
             ->values();
     }
 
+    /**
+     * @param  array<string, mixed>  $option
+     */
     private function toDTO(array $option, Title $title, Country $country): ?TitleProviderData
     {
         $providerId = $this->catalog->providerId(ProviderSource::STREAMING_AVAILABILITY, $option['service']['id']);
@@ -82,6 +92,9 @@ class StreamingAvailabilityService
         ]);
     }
 
+    /**
+     * @param  array<string, mixed>  $showWithProviders
+     */
     private function getTitle(array $showWithProviders): ?Title
     {
         $imdbId = Arr::get($showWithProviders, 'imdbId');
@@ -92,6 +105,9 @@ class StreamingAvailabilityService
             ->first();
     }
 
+    /**
+     * @return list<array<string, mixed>>|null
+     */
     private function get(string $url): ?array
     {
         return $this->client->get($url)->throw()->json();

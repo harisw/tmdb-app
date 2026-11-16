@@ -16,6 +16,9 @@ enum CreditJob: string
     case WRITER = 'writer';
     case ART_DIRECTOR = 'art_director';
 
+    /**
+     * @return list<self>
+     */
     public static function getCrewJobs(): array
     {
         return [CreditJob::DIRECTOR,

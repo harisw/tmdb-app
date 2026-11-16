@@ -49,6 +49,16 @@ class EnrichTopTitlesProvidersJobTest extends TestCase
             && $batch->jobs->first() instanceof EnrichTopTitlesProvidersJob);
     }
 
+    public function test_batch_runs_on_the_enrichment_queue(): void
+    {
+        Bus::fake();
+        Country::factory()->create(['iso2' => 'KR']);
+
+        (new EnrichTopTitlesProvidersBatchJob)->handle();
+
+        Bus::assertBatched(fn (PendingBatch $batch) => $batch->queue() === 'enrichment');
+    }
+
     public function test_upserts_top_titles_for_the_country_ranked_providers_without_duplicates(): void
     {
         $country = Country::factory()->create(['iso2' => 'KR']);

@@ -12,10 +12,15 @@ use App\Services\ProviderServices\ProviderCatalog;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Log;
 
+/**
+ * @phpstan-type ProviderEntry array{country_id: int, provider_id: int, stream_type: string, link: string|null, raw: array<string, mixed>}
+ */
 class WatchProviderSyncService
 {
+    /** @var Collection<string, int> */
     private Collection $countryMap;
 
+    /** @var Collection<string, CountryProvider> */
     private Collection $countryProvidersMap;
 
     public function __construct(private readonly ProviderCatalog $catalog)
@@ -24,6 +29,9 @@ class WatchProviderSyncService
         $this->loadCountryProviders();
     }
 
+    /**
+     * @param  array<string, array<string, mixed>>  $results
+     */
     public function sync(Title $title, array $results): void
     {
         $entries = $this->normalizeEntries($results, StreamType::values());
@@ -40,6 +48,9 @@ class WatchProviderSyncService
             ->keyBy(fn ($cp) => "{$cp->country_id}-{$cp->provider_id}");
     }
 
+    /**
+     * @param  list<ProviderEntry>  $entries
+     */
     private function linkMissingCountryProviders(array $entries): void
     {
         $missingCountryProviders = $this->findMissingCountryProviders($entries);
@@ -51,6 +62,11 @@ class WatchProviderSyncService
         $this->loadCountryProviders();
     }
 
+    /**
+     * @param  array<string, array<string, mixed>>  $results
+     * @param  list<int|string>  $validStreamTypes
+     * @return list<ProviderEntry>
+     */
     private function normalizeEntries(array $results, array $validStreamTypes): array
     {
         $entries = [];
@@ -65,6 +81,7 @@ class WatchProviderSyncService
             $link = $countryData['link'] ?? null;
             unset($countryData['link']);
 
+            /** @var list<array<string, mixed>> $providers */
             foreach ($countryData as $streamType => $providers) {
                 if (! in_array($streamType, $validStreamTypes, true)) {
                     Log::warning(self::class.": skipping unknown stream type [{$streamType}]");
@@ -87,6 +104,10 @@ class WatchProviderSyncService
         return $entries;
     }
 
+    /**
+     * @param  list<ProviderEntry>  $entries
+     * @return array<string, array{country_id: int, provider_id: int, priority: mixed}>
+     */
     private function findMissingCountryProviders(array $entries): array
     {
         $missing = [];
@@ -107,6 +128,10 @@ class WatchProviderSyncService
         return $missing;
     }
 
+    /**
+     * @param  list<ProviderEntry>  $entries
+     * @return array<string, array<string, mixed>>
+     */
     private function buildTitleProviderRows(Title $title, array $entries): array
     {
         $rows = [];
@@ -137,6 +162,9 @@ class WatchProviderSyncService
         return $rows;
     }
 
+    /**
+     * @param  list<array<string, mixed>>  $rows
+     */
     private function persistTitleProviders(int $titleId, array $rows): void
     {
         if (empty($rows)) {

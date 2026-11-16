@@ -50,11 +50,17 @@ class TitleInteractionEvent extends Model
         'event_type' => TitleEventType::class,
     ];
 
+    /**
+     * @return BelongsTo<User, $this>
+     */
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
     }
 
+    /**
+     * @return BelongsTo<Title, $this>
+     */
     public function title(): BelongsTo
     {
         return $this->belongsTo(Title::class);

@@ -53,6 +53,7 @@ class ProviderCatalogImporter
 
     /**
      * @param  Collection<int, ProviderData>  $providers
+     * @param  array<int, int>  $tmdbVariants
      * @return Collection<string, Collection<int, ProviderData>>
      */
     private function groups(Collection $providers, array $tmdbVariants): Collection

@@ -17,6 +17,9 @@ class FetchTrendingTitlesJob extends FetchTitlesJob
         parent::__construct($titleType, $limit, $maxPages);
     }
 
+    /**
+     * @return array<string, mixed>|null
+     */
     protected function fetchPage(TmdbApiService $tmdbService, int $page): ?array
     {
         return $tmdbService->getTrendings($this->titleType, $this->timeWindow, $page);

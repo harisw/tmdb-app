@@ -40,6 +40,9 @@ class ProviderAlias extends Model
         'source' => ProviderSource::class,
     ];
 
+    /**
+     * @return BelongsTo<Provider, $this>
+     */
     public function provider(): BelongsTo
     {
         return $this->belongsTo(Provider::class);

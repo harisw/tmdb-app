@@ -11,11 +11,18 @@ class OpenAIEmbeddingService
 
     private const MAX_BATCH = 100;
 
+    /**
+     * @return list<float>
+     */
     public function embedOne(string $text, ?int $dimensions = null): array
     {
         return $this->embedBatch([$text], $dimensions)[0];
     }
 
+    /**
+     * @param  list<string>  $texts
+     * @return list<list<float>>
+     */
     public function embedBatch(array $texts, ?int $dimensions = null): array
     {
         $response = Http::keepAlive()
@@ -37,13 +44,19 @@ class OpenAIEmbeddingService
         }
 
         // Sort by index to guarantee order matches input
-        $data = collect($response->json('data'))
+        /** @var list<array{index: int, embedding: list<float>}> $items */
+        $items = $response->json('data');
+        $data = collect($items)
             ->sortBy('index')
             ->values();
 
         return $data->map(fn ($item) => $item['embedding'])->all();
     }
 
+    /**
+     * @param  list<string>  $texts
+     * @return list<list<float>>
+     */
     public function embedBatchChunked(array $texts, int $chunkSize = self::MAX_BATCH): array
     {
         $results = [];

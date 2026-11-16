@@ -111,11 +111,17 @@ class User extends Authenticatable implements MustVerifyEmail
         ];
     }
 
+    /**
+     * @return BelongsTo<Country, $this>
+     */
     public function country(): BelongsTo
     {
         return $this->belongsTo(Country::class);
     }
 
+    /**
+     * @return Attribute<string, never>
+     */
     protected function avatarUrl(): Attribute
     {
         $avatar = $this->extra_attributes['avatar'];
@@ -137,6 +143,9 @@ class User extends Authenticatable implements MustVerifyEmail
             ->withoutGlobalScope(AvoidedKeywordScope::class);
     }
 
+    /**
+     * @return BelongsToMany<Keyword, $this>
+     */
     public function avoidedKeywords(): BelongsToMany
     {
         return $this->belongsToMany(Keyword::class, 'user_avoided_keywords')->withTimestamps();
@@ -150,16 +159,25 @@ class User extends Authenticatable implements MustVerifyEmail
         return once(fn () => $this->avoidedKeywords()->pluck('keywords.id')->all());
     }
 
+    /**
+     * @return BelongsToMany<Title, $this, UserTitleState>
+     */
     public function likedTitles(): BelongsToMany
     {
         return $this->titles()->wherePivot('liked', true);
     }
 
+    /**
+     * @return BelongsToMany<Title, $this, UserTitleState>
+     */
     public function watchedTitles(): BelongsToMany
     {
         return $this->titles()->wherePivot('watched', true);
     }
 
+    /**
+     * @return BelongsToMany<Title, $this, UserTitleState>
+     */
     public function toWatchTitles(): BelongsToMany
     {
         return $this->titles()->wherePivot('to_watch', true);

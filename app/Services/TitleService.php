@@ -3,6 +3,9 @@
 namespace App\Services;
 
 use App\Data\DTOs\TitleData;
+use App\Data\DTOs\TmdbApi\TmdbGenreData;
+use App\Data\DTOs\TmdbApi\TmdbKeywordData;
+use App\Data\DTOs\TmdbApi\TmdbProductionCompanyData;
 use App\Data\DTOs\TmdbApi\TmdbTitleData;
 use App\Models\Genre;
 use App\Models\Keyword;
@@ -16,8 +19,10 @@ class TitleService
 {
     private int $insertedRowCount = 0;
 
+    /** @var Collection<string, int> */
     private Collection $titleDict;
 
+    /** @var array<class-string<Genre|ProductionCompany|Keyword>, Collection<string, int>> */
     private array $relationCache = [];
 
     public function __construct()
@@ -25,11 +30,19 @@ class TitleService
         $this->loadCaches();
     }
 
-    public static function insertBulk($data, $headers): int
+    /**
+     * @param  list<list<string|null>>  $data
+     * @param  list<string|null>  $headers
+     */
+    public static function insertBulk(array $data, array $headers): int
     {
         return (new self)->insert($data, $headers);
     }
 
+    /**
+     * @param  list<list<string|null>>  $data
+     * @param  list<string|null>  $headers
+     */
     public function insert(array $data, array $headers): int
     {
         $before = $this->insertedRowCount;
@@ -84,8 +97,14 @@ class TitleService
      * Resolve the given related items to their ids, creating any that don't
      * exist yet. The cache holds slug => id (not full models) to keep memory
      * bounded across large imports. Returns a de-duplicated list of ids.
+     *
+     * @template TItem of TmdbGenreData|TmdbProductionCompanyData|TmdbKeywordData
+     *
+     * @param  DataCollection<int, TItem>  $items
+     * @param  class-string<Genre|ProductionCompany|Keyword>  $class
+     * @return list<int>
      */
-    private function prepareRelationIds(DataCollection $items, $class): array
+    private function prepareRelationIds(DataCollection $items, string $class): array
     {
         $ids = [];
         foreach ($items as $item) {

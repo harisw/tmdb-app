@@ -42,6 +42,9 @@ class TitleDocumentBuilder
         return implode("\n", $parts);
     }
 
+    /**
+     * @param  list<string>  $parts
+     */
     private function buildCastDoc(Title $title, array &$parts): void
     {
         $cast = $title->people()
@@ -55,6 +58,9 @@ class TitleDocumentBuilder
         }
     }
 
+    /**
+     * @param  list<string>  $parts
+     */
     private function buildCrewDoc(Title $title, CreditJob $job, array &$parts): void
     {
         $people = $title->people()

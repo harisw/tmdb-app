@@ -10,8 +10,8 @@ use App\Services\ProviderServices\ProviderCatalogImporter;
 use App\Services\TmdbApiService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\Client\Request;
+use Illuminate\Http\Client\RequestException;
 use Illuminate\Support\Facades\Http;
-use RuntimeException;
 use Tests\TestCase;
 
 class ImportTmdbProvidersJobTest extends TestCase
@@ -57,7 +57,7 @@ class ImportTmdbProvidersJobTest extends TestCase
             '*/3/watch/providers/tv' => Http::response(null, 500),
         ]);
 
-        $this->expectException(RuntimeException::class);
+        $this->expectException(RequestException::class);
 
         try {
             $this->runJob();

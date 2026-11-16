@@ -22,6 +22,9 @@ class AvatarService
         'triangles',
     ];
 
+    /**
+     * @return list<string>
+     */
     public static function getStyles(): array
     {
         $basePath = InstalledVersions::getInstallPath('dicebear/styles');

@@ -14,6 +14,8 @@ class GenerateTitleEmbeddingsChunkJob implements ShouldQueue
 
     public int $tries = 1;
 
+    public int $timeout = 300;
+
     public int $backoff = 30;
 
     /**

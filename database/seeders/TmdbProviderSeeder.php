@@ -15,7 +15,7 @@ class TmdbProviderSeeder extends Seeder
     {
         $aliases = require __DIR__.'/data/provider_aliases.php';
         $providers = collect(['movie-providers.json', 'tv-providers.json', 'providers.json'])
-            ->flatMap(fn (string $file) => json_decode(file_get_contents(__DIR__."/data/{$file}"), true)['results'])
+            ->flatMap(fn (string $file): array => json_decode(file_get_contents(__DIR__."/data/{$file}"), true)['results'])
             ->map(fn (array $record) => ProviderData::from($record));
 
         $importer->import($providers, $aliases['tmdb_variants'], $aliases['external']);

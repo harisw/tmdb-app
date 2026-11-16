@@ -20,6 +20,7 @@ class ProviderCatalog
     /** @var Collection<string, int> */
     private Collection $providerIdsByAlias;
 
+    /** @var Collection<string, int> */
     private Collection $countryIdsByIso2;
 
     /** @var array<int, Collection<int, int>> */

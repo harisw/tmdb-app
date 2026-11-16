@@ -20,6 +20,9 @@ class TitleProviderData extends Data
         public readonly ?string $quality
     ) {}
 
+    /**
+     * @return array{title_id: int, country_provider_id: int, country_id: int, provider_id: int, type: string, link: string, extra_attributes: string}
+     */
     public function toUpsertArray(): array
     {
         return [
@@ -29,7 +32,7 @@ class TitleProviderData extends Data
             'provider_id' => $this->provider_id,
             'type' => $this->type->value,
             'link' => $this->link,
-            'extra_attributes' => json_encode(['quality' => $this->quality]),
+            'extra_attributes' => json_encode(['quality' => $this->quality], JSON_THROW_ON_ERROR),
         ];
     }
 }

@@ -6,22 +6,29 @@ use App\Data\DTOs\GoogleUserData;
 use App\Http\Controllers\Controller;
 use App\Services\UserService;
 use Auth;
+use Illuminate\Http\RedirectResponse;
 use Laravel\Socialite\Socialite;
 use Laravel\Socialite\Two\User;
+use Symfony\Component\HttpFoundation\RedirectResponse as SymfonyRedirectResponse;
 
 class GoogleAuthController extends Controller
 {
     public function __construct(private UserService $userService) {}
 
-    public function redirect()
+    public function redirect(): SymfonyRedirectResponse
     {
         return Socialite::driver('google')->redirect();
     }
 
-    public function callback()
+    public function callback(): RedirectResponse
     {
         /** @var User $googleUser */
         $googleUser = Socialite::driver('google')->user();
+
+        if (($googleUser->getRaw()['email_verified'] ?? false) !== true) {
+            return redirect()->route('login')
+                ->withErrors(['email' => 'Your Google account email is not verified.']);
+        }
 
         $data = new GoogleUserData(
             name: $googleUser->getName(),
@@ -30,14 +37,12 @@ class GoogleAuthController extends Controller
             google_token: $googleUser->token,
         );
 
-        $user = $this->userService->findByGoogleId($data->google_id);
+        $user = $this->userService->findByGoogleId($data->google_id)
+            ?? $this->userService->findByEmail($data->email);
 
-        if (! $user) {
-            $user = $this->userService->findByEmail($data->email);
-            $user = $user
-                ? $this->userService->linkGoogleAccount($user, $data)
-                : $this->userService->createFromGoogle($data);
-        }
+        $user = $user
+            ? $this->userService->linkGoogleAccount($user, $data)
+            : $this->userService->createFromGoogle($data);
 
         Auth::login($user, true);
 

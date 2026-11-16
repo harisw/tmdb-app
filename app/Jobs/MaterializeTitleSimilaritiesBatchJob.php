@@ -14,6 +14,10 @@ class MaterializeTitleSimilaritiesBatchJob implements ShouldQueue
 {
     use Queueable;
 
+    public int $tries = 3;
+
+    public int $timeout = 300;
+
     private const STALE_AFTER_DAYS = 7;
 
     public function __construct(
