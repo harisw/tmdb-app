@@ -11,7 +11,9 @@ use Database\Factories\TitleSearchEmbeddingFactory;
 use Illuminate\Database\Events\QueryExecuted;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\Client\Request;
+use Illuminate\Queue\Events\JobFailed;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Http;
 use Tests\TestCase;
 
@@ -71,6 +73,25 @@ class GenerateSearchEmbeddingsChunkJobTest extends TestCase
 
         $this->assertGreaterThan(0, $timeoutSecondsDuringUpsert);
         $this->assertLessThan((new GenerateSearchEmbeddingsChunkJob([1]))->timeout, $timeoutSecondsDuringUpsert);
+    }
+
+    public function test_fails_without_upserting_when_the_job_has_no_time_left(): void
+    {
+        Http::fake(['api.openai.com/*' => function (Request $request) {
+            $this->travel((new GenerateSearchEmbeddingsChunkJob([1]))->timeout)->seconds();
+
+            return Http::response(['data' => [['index' => 0, 'embedding' => TitleSearchEmbeddingFactory::unitVector(0)]]]);
+        }]);
+        $failures = [];
+        Event::listen(JobFailed::class, function (JobFailed $event) use (&$failures): void {
+            $failures[] = $event->exception;
+        });
+        $title = Title::factory()->create();
+
+        GenerateSearchEmbeddingsChunkJob::dispatchSync([$title->id]);
+
+        $this->assertCount(1, $failures);
+        $this->assertSame(0, TitleSearchEmbedding::count());
     }
 
     public function test_does_nothing_for_unknown_titles(): void
