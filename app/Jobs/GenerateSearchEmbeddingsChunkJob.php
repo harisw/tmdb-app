@@ -9,10 +9,13 @@ use App\Services\KnowledgeGraph\OpenAIEmbeddingService;
 use App\Services\Search\SearchDocumentBuilder;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
+use Illuminate\Support\Facades\DB;
 
 class GenerateSearchEmbeddingsChunkJob implements ShouldQueue
 {
     use Queueable;
+
+    private const STATEMENT_TIMEOUT_SECONDS = 240;
 
     public int $tries = 1;
 
@@ -53,14 +56,18 @@ class GenerateSearchEmbeddingsChunkJob implements ShouldQueue
             TitleSearchEmbedding::DIMENSIONS,
         );
 
-        TitleSearchEmbedding::upsert(
-            $titles->map(fn (Title $title, int $i) => [
-                'title_id' => $title->id,
-                'embedding' => TitleSearchEmbedding::toVectorLiteral($vectors[$i]),
-                'document_version' => SearchDocumentBuilder::VERSION,
-            ])->all(),
-            ['title_id'],
-            ['embedding', 'document_version'],
-        );
+        DB::transaction(function () use ($titles, $vectors): void {
+            DB::statement('SET LOCAL statement_timeout = '.(self::STATEMENT_TIMEOUT_SECONDS * 1000));
+
+            TitleSearchEmbedding::upsert(
+                $titles->map(fn (Title $title, int $i) => [
+                    'title_id' => $title->id,
+                    'embedding' => TitleSearchEmbedding::toVectorLiteral($vectors[$i]),
+                    'document_version' => SearchDocumentBuilder::VERSION,
+                ])->all(),
+                ['title_id'],
+                ['embedding', 'document_version'],
+            );
+        });
     }
 }

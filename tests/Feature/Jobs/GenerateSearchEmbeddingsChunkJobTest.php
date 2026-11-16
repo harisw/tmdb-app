@@ -8,8 +8,10 @@ use App\Models\Title;
 use App\Models\TitleSearchEmbedding;
 use App\Services\Search\SearchDocumentBuilder;
 use Database\Factories\TitleSearchEmbeddingFactory;
+use Illuminate\Database\Events\QueryExecuted;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\Client\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
 use Tests\TestCase;
 
@@ -51,6 +53,24 @@ class GenerateSearchEmbeddingsChunkJobTest extends TestCase
 
         $this->assertSame(SearchDocumentBuilder::VERSION, $title->searchEmbedding()->value('document_version'));
         $this->assertSame(1, TitleSearchEmbedding::count());
+    }
+
+    public function test_upserts_under_a_statement_timeout_shorter_than_the_job_timeout(): void
+    {
+        $this->fakeOpenAi();
+        $title = Title::factory()->create();
+        $timeoutSecondsDuringUpsert = null;
+
+        DB::listen(function (QueryExecuted $query) use (&$timeoutSecondsDuringUpsert): void {
+            if (str_starts_with($query->sql, 'insert into "title_search_embeddings"')) {
+                $timeoutSecondsDuringUpsert = (int) DB::scalar("select extract(epoch from current_setting('statement_timeout')::interval)");
+            }
+        });
+
+        GenerateSearchEmbeddingsChunkJob::dispatchSync([$title->id]);
+
+        $this->assertGreaterThan(0, $timeoutSecondsDuringUpsert);
+        $this->assertLessThan((new GenerateSearchEmbeddingsChunkJob([1]))->timeout, $timeoutSecondsDuringUpsert);
     }
 
     public function test_does_nothing_for_unknown_titles(): void

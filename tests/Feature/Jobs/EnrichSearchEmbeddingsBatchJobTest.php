@@ -30,15 +30,15 @@ class EnrichSearchEmbeddingsBatchJobTest extends TestCase
             fn (GenerateSearchEmbeddingsChunkJob $job) => $job->titleIds === [$stale->id, $missing->id]);
     }
 
-    public function test_splits_titles_into_chunks_of_one_hundred(): void
+    public function test_splits_titles_into_chunks_of_fifty(): void
     {
         Queue::fake();
-        Title::factory(150)->create();
+        Title::factory(80)->create();
 
-        (new EnrichSearchEmbeddingsBatchJob(120))->handle();
+        (new EnrichSearchEmbeddingsBatchJob(70))->handle();
 
         Queue::assertPushed(GenerateSearchEmbeddingsChunkJob::class, 2);
-        Queue::assertPushed(GenerateSearchEmbeddingsChunkJob::class, fn ($job) => count($job->titleIds) === 100);
+        Queue::assertPushed(GenerateSearchEmbeddingsChunkJob::class, fn ($job) => count($job->titleIds) === 50);
         Queue::assertPushed(GenerateSearchEmbeddingsChunkJob::class, fn ($job) => count($job->titleIds) === 20);
     }
 
