@@ -96,9 +96,147 @@ jobs:
             - name: Build frontend
               run: npm run build
 
+    semgrep:
+        runs-on: ubuntu-latest
+        permissions:
+            contents: read
+            security-events: write
+        steps:
+            - uses: actions/checkout@v7.0.1
+
+            - uses: astral-sh/setup-uv@v10.3.3
+
+            - name: Semgrep scan
+              run: >-
+                  uvx semgrep@1.183.0 scan
+                  --metrics=off
+                  --config p/php
+                  --config p/javascript
+                  --config p/secrets
+                  --config p/github-actions
+                  --config p/dockerfile
+                  --exclude vendor
+                  --exclude node_modules
+                  --sarif-output=semgrep.sarif
+                  --json-output=semgrep.json
+
+            - name: Upload results to code scanning
+              if: always()
+              continue-on-error: true
+              uses: github/codeql-action/upload-sarif@v4
+              with:
+                  sarif_file: semgrep.sarif
+                  category: semgrep
+
+            - name: Fail on error-severity findings
+              run: |
+                  jq -r '.results[]
+                      | select(.extra.severity == "ERROR")
+                      | select(.check_id != "dockerfile.security.missing-user.missing-user")
+                      | "::error file=\(.path),line=\(.start.line)::\(.check_id)"' semgrep.json | tee errors.txt
+                  test ! -s errors.txt
+
+    zap:
+        runs-on: ubuntu-latest
+
+        services:
+            postgres:
+                image: pgvector/pgvector:pg17
+                env:
+                    POSTGRES_DB: tmdb_zap
+                    POSTGRES_USER: user
+                    POSTGRES_PASSWORD: password
+                ports:
+                    - 5432:5432
+                options: >-
+                    --health-cmd pg_isready
+                    --health-interval 10s
+                    --health-timeout 5s
+                    --health-retries 5
+
+        env:
+            APP_ENV: ci
+            APP_DEBUG: false
+            APP_URL: http://127.0.0.1:8000
+            MAIL_MAILER: log
+            DB_CONNECTION: pgsql
+            DB_HOST: 127.0.0.1
+            DB_PORT: 5432
+            DB_DATABASE: tmdb_zap
+            DB_USERNAME: user
+            DB_PASSWORD: password
+
+        steps:
+            - uses: actions/checkout@v7.0.1
+
+            - name: Setup PHP
+              uses: shivammathur/setup-php@v2
+              with:
+                  php-version: '8.4'
+                  extensions: pdo, pdo_pgsql, mbstring, zip, pcntl
+                  ini-values: expose_php=Off
+                  coverage: none
+
+            - name: Get Composer cache directory
+              id: composer-cache
+              run: echo "dir=$(composer config cache-files-dir)" >> "$GITHUB_OUTPUT"
+
+            - name: Cache Composer packages
+              uses: actions/cache@v6.1.0
+              with:
+                  path: ${{ steps.composer-cache.outputs.dir }}
+                  key: composer-${{ runner.os }}-${{ hashFiles('composer.lock') }}
+                  restore-keys: composer-${{ runner.os }}-
+
+            - name: Install PHP dependencies
+              run: composer install --no-dev --optimize-autoloader --no-interaction
+
+            - name: Setup Node
+              uses: actions/setup-node@v7
+              with:
+                  node-version: '26'
+                  cache: 'npm'
+
+            - name: Build frontend
+              run: |
+                  npm ci
+                  npm run build
+
+            - name: Prepare app
+              run: |
+                  cp .env.example .env
+                  php artisan key:generate
+                  php artisan migrate --force --no-interaction
+                  php artisan db:seed --force --class=CountrySeeder
+                  php artisan db:seed --force --class=LanguageSeeder
+                  php artisan db:seed --force --class=GenreSeeder
+                  php artisan db:seed --force --class=TmdbProviderSeeder
+
+            - name: Start app
+              env:
+                  PHP_CLI_SERVER_WORKERS: 4
+              run: |
+                  php artisan serve --host=127.0.0.1 --port=8000 > serve.log 2>&1 &
+                  curl --retry 20 --retry-delay 1 --retry-all-errors -fsS http://127.0.0.1:8000/up > /dev/null
+
+            - name: ZAP baseline scan
+              uses: zaproxy/action-baseline@v0.15.0
+              with:
+                  target: http://127.0.0.1:8000
+                  rules_file_name: .zap/rules.tsv
+                  cmd_options: -j -I
+                  allow_issue_writing: false
+                  fail_action: true
+
+            - name: Show app log
+              if: failure()
+              run: |
+                  cat serve.log
+                  tail -n 200 storage/logs/laravel.log || true
+
     deploy:
         runs-on: ubuntu-latest
-        needs: [test, frontend]
+        needs: [test, frontend, semgrep, zap]
         if: github.ref == 'refs/heads/master'
         steps:
             - uses: actions/checkout@v7.0.1
