@@ -12,9 +12,9 @@ class EnrichSearchEmbeddingsBatchJob implements ShouldQueue
 {
     use Queueable;
 
-    private const CHUNK_SIZE = 100;
+    private const CHUNK_SIZE = 50;
 
-    public function __construct(private readonly int $limit = 500) {}
+    public function __construct(private readonly int $limit = 100) {}
 
     public function handle(): void
     {

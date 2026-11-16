@@ -77,4 +77,4 @@ Schedule::job(new EnrichTitleProvidersBatchJob)
     ->wednesdays()
     ->at('18:30');
 
-Schedule::job(new EnrichSearchEmbeddingsBatchJob(500))->hourly()->withoutOverlapping();
+Schedule::job(new EnrichSearchEmbeddingsBatchJob(200))->everyThreeHours()->withoutOverlapping();
