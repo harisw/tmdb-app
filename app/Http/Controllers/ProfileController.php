@@ -42,15 +42,17 @@ class ProfileController extends Controller
 
     public function update(Request $req): RedirectResponse
     {
+        $user = $req->user();
+
         $usernameRules = [
             'required',
             'string',
             'min:3',
             'max:30',
-            Rule::unique('users')->ignore($req->user()->id),
+            Rule::unique('users')->ignore($user), // nosemgrep: php.laravel.security.laravel-unsafe-validator.laravel-unsafe-validator
         ];
 
-        if (! $req->user()->is_admin && ($reserved = config('app.admin_username'))) {
+        if (! $user->is_admin && ($reserved = config('app.admin_username'))) {
             $usernameRules[] = Rule::notIn([$reserved]);
         }
 
@@ -59,8 +61,6 @@ class ProfileController extends Controller
             'country' => ['required', 'string', 'exists:countries,iso2'],
             'avatar_style' => ['required', 'string'],
         ]);
-
-        $user = $req->user();
 
         $user->username = $validated['username'];
         $user->country_id = Country::where('iso2', $validated['country'])->value('id');

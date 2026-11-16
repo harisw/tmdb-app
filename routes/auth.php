@@ -9,7 +9,7 @@ use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\UserController;
 
 Route::get('/register', [RegisterController::class, 'create'])->name('register');
-Route::post('/register', [RegisterController::class, 'store']);
+Route::post('/register', [RegisterController::class, 'store'])->middleware('throttle:6,1');
 Route::get('/login', [LoginController::class, 'create'])->name('login');
 Route::post('/login', [LoginController::class, 'store']);
 
@@ -29,7 +29,7 @@ Route::get('/auth/google/callback', [GoogleAuthController::class, 'callback']);
 // Logout (already exists but add if missing)
 Route::post('/logout', [LoginController::class, 'destroy'])->name('logout');
 
-Route::middleware('auth')->group(function () {
+Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/settings', [ProfileController::class, 'edit'])->name('settings');
     Route::post('/settings/avoided-tags/{keyword}', [AvoidedKeywordController::class, 'store'])
         ->name('avoided-tags.store');

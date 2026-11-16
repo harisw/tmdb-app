@@ -23,11 +23,13 @@ class SearchController extends Controller
 
     private const SEARCH_ALL_LIMIT = 100;
 
+    private const QUERY_MAX_LENGTH = 200;
+
     public function __construct(private readonly HybridSearchService $searchService) {}
 
     public function search(Request $request): JsonResponse
     {
-        $q = $request->validate(['q' => ['required', 'string']])['q'];
+        $q = $request->validate(['q' => ['required', 'string', 'max:'.self::QUERY_MAX_LENGTH]])['q'];
         $ranks = $this->searchService->hybridIds($q, self::SEARCH_LIMIT + 1)->flip();
         $results = Title::whereIn('id', $ranks->keys())
             ->with(Title::detailRelations())
@@ -45,17 +47,22 @@ class SearchController extends Controller
 
     public function searchAll(Request $request): Response
     {
-        $hasParams = $request->hasAny(['q', 'lang', 'gen', 'tag']);
+        $params = $request->validate([
+            'q' => ['nullable', 'string', 'max:'.self::QUERY_MAX_LENGTH],
+            'lang' => ['nullable', 'string', 'max:255'],
+            'gen' => ['nullable', 'string', 'max:255'],
+            'tag' => ['nullable', 'string', 'max:255'],
+        ]);
 
         $results = collect([]);
-        if ($hasParams) {
-            $q = $request->query('q');
+        if ($request->hasAny(['q', 'lang', 'gen', 'tag'])) {
+            $q = $params['q'] ?? null;
 
             $titleIds = $q ? $this->rankedTitleIds($q) : null;
 
             $results = TitleResource::collection(
-                $this->applyFilters($titleIds, $request->query('lang'), $request->query('gen'),
-                    $request->query('tag'))->paginate(self::PAGINATE_SIZE)
+                $this->applyFilters($titleIds, $params['lang'] ?? null, $params['gen'] ?? null,
+                    $params['tag'] ?? null)->paginate(self::PAGINATE_SIZE)
             );
         }
 

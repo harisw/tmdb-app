@@ -114,7 +114,6 @@ LLM_PROVIDERS=openai,groq    # LLM failover order
 LANGFUSE_PUBLIC_KEY=         # LLM tracing; nothing is sent without both keys
 LANGFUSE_SECRET_KEY=
 SEED_CSV_S3_KEY=             # bulk title seeding source
-ALLOW_REGISTER=false         # toggle user registration
 GOOGLE_CLIENT_ID=            # Socialite login
 ADMIN_USERNAME=              # seeded admin account
 ```

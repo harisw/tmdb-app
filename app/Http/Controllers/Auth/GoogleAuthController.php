@@ -23,6 +23,11 @@ class GoogleAuthController extends Controller
         /** @var User $googleUser */
         $googleUser = Socialite::driver('google')->user();
 
+        if (($googleUser->getRaw()['email_verified'] ?? false) !== true) {
+            return redirect()->route('login')
+                ->withErrors(['email' => 'Your Google account email is not verified.']);
+        }
+
         $data = new GoogleUserData(
             name: $googleUser->getName(),
             email: $googleUser->getEmail(),
@@ -30,14 +35,12 @@ class GoogleAuthController extends Controller
             google_token: $googleUser->token,
         );
 
-        $user = $this->userService->findByGoogleId($data->google_id);
+        $user = $this->userService->findByGoogleId($data->google_id)
+            ?? $this->userService->findByEmail($data->email);
 
-        if (! $user) {
-            $user = $this->userService->findByEmail($data->email);
-            $user = $user
-                ? $this->userService->linkGoogleAccount($user, $data)
-                : $this->userService->createFromGoogle($data);
-        }
+        $user = $user
+            ? $this->userService->linkGoogleAccount($user, $data)
+            : $this->userService->createFromGoogle($data);
 
         Auth::login($user, true);
 
