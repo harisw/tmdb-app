@@ -126,4 +126,20 @@ class ProfileControllerTest extends TestCase
             ])
             ->assertSessionHasErrors('username');
     }
+
+    public function test_update_accepts_the_users_own_current_username(): void
+    {
+        $user = User::factory()->create(['username' => 'keeper']);
+        $country = Country::factory()->create();
+
+        $this->actingAs($user)
+            ->patch(route('profile.update'), [
+                'username' => 'keeper',
+                'country' => $country->iso2,
+                'avatar_style' => 'bottts',
+            ])
+            ->assertSessionHasNoErrors();
+
+        $this->assertSame($country->id, $user->refresh()->country_id);
+    }
 }

@@ -49,7 +49,7 @@ class ProfileController extends Controller
             'string',
             'min:3',
             'max:30',
-            Rule::unique('users')->ignore($user), // nosemgrep: php.laravel.security.laravel-unsafe-validator.laravel-unsafe-validator
+            Rule::unique('users')->ignoreModel($user),
         ];
 
         if (! $user->is_admin && ($reserved = config('app.admin_username'))) {

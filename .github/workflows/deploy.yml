@@ -31,10 +31,10 @@ jobs:
                     --health-retries 5
 
         steps:
-            - uses: actions/checkout@v7.0.1
+            - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
             - name: Setup PHP
-              uses: shivammathur/setup-php@v2
+              uses: shivammathur/setup-php@eb7c497e18156a6bbabfef1d3a82760b9eda3962 # 2.40.0
               with:
                   php-version: '8.4'
                   extensions: pdo, pdo_pgsql, mbstring, zip, pcntl
@@ -45,7 +45,7 @@ jobs:
               run: echo "dir=$(composer config cache-files-dir)" >> "$GITHUB_OUTPUT"
 
             - name: Cache Composer packages
-              uses: actions/cache@v6.1.0
+              uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
               with:
                   path: ${{ steps.composer-cache.outputs.dir }}
                   key: composer-${{ runner.os }}-${{ hashFiles('composer.lock') }}
@@ -76,10 +76,10 @@ jobs:
     frontend:
         runs-on: ubuntu-latest
         steps:
-            - uses: actions/checkout@v7.0.1
+            - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
             - name: Setup Node
-              uses: actions/setup-node@v7
+              uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
               with:
                   node-version: '26'
                   cache: 'npm'
@@ -102,9 +102,9 @@ jobs:
             contents: read
             security-events: write
         steps:
-            - uses: actions/checkout@v7.0.1
+            - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
-            - uses: astral-sh/setup-uv@v10.3.3
+            - uses: astral-sh/setup-uv@68559e99cc807c1eb7e9238fd43a15bba460eec2 # v10.3.3
 
             - name: Semgrep scan
               run: >-
@@ -123,7 +123,7 @@ jobs:
             - name: Upload results to code scanning
               if: always()
               continue-on-error: true
-              uses: github/codeql-action/upload-sarif@v4
+              uses: github/codeql-action/upload-sarif@33d7b85da1a04171e211befe2c739303b9a4c066 # v4.39.3
               with:
                   sarif_file: semgrep.sarif
                   category: semgrep
@@ -167,10 +167,10 @@ jobs:
             DB_PASSWORD: password
 
         steps:
-            - uses: actions/checkout@v7.0.1
+            - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
             - name: Setup PHP
-              uses: shivammathur/setup-php@v2
+              uses: shivammathur/setup-php@eb7c497e18156a6bbabfef1d3a82760b9eda3962 # 2.40.0
               with:
                   php-version: '8.4'
                   extensions: pdo, pdo_pgsql, mbstring, zip, pcntl
@@ -182,7 +182,7 @@ jobs:
               run: echo "dir=$(composer config cache-files-dir)" >> "$GITHUB_OUTPUT"
 
             - name: Cache Composer packages
-              uses: actions/cache@v6.1.0
+              uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
               with:
                   path: ${{ steps.composer-cache.outputs.dir }}
                   key: composer-${{ runner.os }}-${{ hashFiles('composer.lock') }}
@@ -192,7 +192,7 @@ jobs:
               run: composer install --no-dev --optimize-autoloader --no-interaction
 
             - name: Setup Node
-              uses: actions/setup-node@v7
+              uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
               with:
                   node-version: '26'
                   cache: 'npm'
@@ -207,9 +207,9 @@ jobs:
                   cp .env.example .env
                   php artisan key:generate
                   php artisan migrate --force --no-interaction
-                  php artisan db:seed --force --class=CountrySeeder
                   php artisan db:seed --force --class=LanguageSeeder
                   php artisan db:seed --force --class=GenreSeeder
+                  php artisan db:seed --force --class=CountrySeeder
                   php artisan db:seed --force --class=TmdbProviderSeeder
 
             - name: Start app
@@ -220,7 +220,7 @@ jobs:
                   curl --retry 20 --retry-delay 1 --retry-all-errors -fsS http://127.0.0.1:8000/up > /dev/null
 
             - name: ZAP baseline scan
-              uses: zaproxy/action-baseline@v0.15.0
+              uses: zaproxy/action-baseline@de8ad967d3548d44ef623df22cf95c3b0baf8b25 # v0.15.0
               with:
                   target: http://127.0.0.1:8000
                   rules_file_name: .zap/rules.tsv
@@ -231,7 +231,7 @@ jobs:
             - name: Show app log
               if: failure()
               run: |
-                  cat serve.log
+                  cat serve.log || true
                   tail -n 200 storage/logs/laravel.log || true
 
     deploy:
@@ -239,10 +239,10 @@ jobs:
         needs: [test, frontend, semgrep, zap]
         if: github.ref == 'refs/heads/master'
         steps:
-            - uses: actions/checkout@v7.0.1
+            - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
             - name: Configure AWS credentials
-              uses: aws-actions/configure-aws-credentials@v6.3.0
+              uses: aws-actions/configure-aws-credentials@e1253824e5c10ff9df46874f81ed3ec929e19cfd # v6.3.0
               with:
                   aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
                   aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
@@ -250,13 +250,13 @@ jobs:
 
             - name: Login to ECR
               id: login-ecr
-              uses: aws-actions/amazon-ecr-login@v2.1.7
+              uses: aws-actions/amazon-ecr-login@03f1aad4c6c7ffd436567f42f9384779290529bd # v2.1.7
 
             - name: Set up Docker Buildx
-              uses: docker/setup-buildx-action@v4.4.1
+              uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4.4.1
 
             - name: Build and push app image
-              uses: docker/build-push-action@v7.4.0
+              uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7.4.0
               with:
                   context: .
                   push: true
