@@ -23,8 +23,7 @@ storage/framework/cache/data
 infra
 tests
 docker
-!docker/php/zz-app.ini
-!docker/php/zz-fpm.conf
+!docker/php/
 pipeline
 tools
 docs

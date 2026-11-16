@@ -14,6 +14,7 @@ see [troubleshooting-aws.md](troubleshooting-aws.md).
 PHP settings are set via a **conf.d ini fragment baked into the image** — `docker/php/zz-app.ini`, copied into `/usr/local/etc/php/conf.d/` in the Dockerfile.
 
 - **Scope:** applies to *every* PHP process — PHP-FPM (web requests) **and** CLI/Horizon (queue workers).
+- **Exception:** `docker/php/zz-fpm.conf` caps web requests at `php_admin_value[memory_limit] = 256M`, so the 512M in `zz-app.ini` only applies to CLI/Horizon. Keep it above the Horizon supervisor `memory` values in `config/horizon.php`.
 - **Why `zz-` prefix:** conf.d fragments load alphabetically; `zz-` loads last so its values win over stock fragments (e.g. `docker-php-ext-*.ini`).
 - The official `php` image auto-loads every `*.ini` in `conf.d/` at startup for all SAPIs — no `php.ini` edit or FPM pool config needed.
 
