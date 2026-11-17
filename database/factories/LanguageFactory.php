@@ -19,7 +19,7 @@ class LanguageFactory extends Factory
     {
         return [
             'name' => fake()->unique()->word(),
-            'code' => fake()->unique()->lexify('??'),
+            'code' => fake()->unique()->lexify('???'),
             'count' => 0,
         ];
     }
