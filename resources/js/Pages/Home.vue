@@ -71,7 +71,7 @@
                 </template>
             </section>
 
-            <TitleGrid title="Recently added" heading-tag="h2">
+            <TitleGrid title="Popular now" heading-tag="h2">
                 <TitleCard v-for="item in items" :key="item.id" :on-click="openModal" :item="item" />
             </TitleGrid>
 

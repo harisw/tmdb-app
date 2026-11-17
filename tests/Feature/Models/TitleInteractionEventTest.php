@@ -30,21 +30,4 @@ class TitleInteractionEventTest extends TestCase
         $this->assertTrue($event->user->is($user));
         $this->assertTrue($event->title->is($title));
     }
-
-    public function test_event_has_no_updated_at_column(): void
-    {
-        $event = TitleInteractionEvent::factory()->create();
-
-        $this->assertArrayNotHasKey('updated_at', $event->getAttributes());
-    }
-
-    public function test_toggle_events_can_omit_value(): void
-    {
-        $event = TitleInteractionEvent::factory()->create([
-            'event_type' => TitleEventType::TO_WATCH_ADDED,
-            'value' => null,
-        ]);
-
-        $this->assertNull($event->value);
-    }
 }

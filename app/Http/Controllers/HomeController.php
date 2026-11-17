@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Domain\Enums\TitleSort;
 use App\Http\Resources\TitleResource;
 use App\Models\Title;
 use App\Services\KnowledgeGraph\ConstellationService;
@@ -18,7 +19,7 @@ class HomeController extends Controller
         ])['seed'] ?? 0;
 
         return Inertia::render('Home', [
-            'titles' => TitleResource::collection(Title::listing()
+            'titles' => TitleResource::collection(Title::with(Title::detailRelations())->sorted(TitleSort::POPULAR)
                 ->paginate(self::PAGINATE_SIZE)),
             'constellation' => Inertia::defer(fn () => $constellations->build((int) $seedIndex)),
         ]);
