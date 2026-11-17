@@ -44,7 +44,7 @@ flowchart TD
     - the full PHPUnit suite passes;
     - `pint --test` passes on changed PHP files, and Larastan passes;
     - only allowed paths changed, and the diff is at most 300 lines;
-    - no values from the production error message were copied into the code.
+    - no sensitive-looking values from the error message were copied into the changed files: emails, tokens, UUIDs, IPs and quoted strings of 4+ characters. Quoted values shaped like identifiers (such as the array key `results`) are allowed, because a fix often has to name them.
 
     On failure the fix session gets the failing checks as feedback and tries once more. After two failures the issue is labelled `triage:verify-failed`.
 
@@ -56,15 +56,15 @@ A scan triages at most 10 new error groups and stops after the first one that re
 
 The repo is public, so issues, PRs and workflow logs are public too.
 
-| Risk                             | What prevents it                                                                                                                                                                          |
-| -------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Leaking production data          | Messages are scrubbed (emails, tokens, UUIDs, IPs, URL query strings and SQL row values) before they reach an issue, and the verify step rejects fixes containing values from the error   |
-| Agent running arbitrary commands | Sessions only get `Read`, `Grep`, `Glob`, `Write`, `Edit` and a harness tool that runs the reproduction test. There is no shell                                                           |
-| Agent reading secrets            | A pre-tool hook blocks paths outside the worktree, `.git`, `.env*` and `auth.json`. Tokens are removed from the environment before any session starts                                     |
-| Agent editing the wrong files    | The reproduce session may create one new test file. The fix session may only edit `app/` and `routes/`. Migrations, config, CI, Docker, `composer.*` and `phpunit.xml` are always blocked |
-| Tests touching real systems      | Tests run in a container with all capabilities dropped and CPU, memory and process limits, against a throwaway Postgres on an internal Docker network with no internet access             |
-| Runaway PRs or cost              | At most 2 open agent PRs, 2 fix attempts per error, 1 fix attempt per scan, plus turn and time limits on each session                                                                     |
-| Broad AWS access                 | CI assumes an OIDC role that only trusts `master` of this repo and can only run Logs Insights queries on the two app log groups                                                           |
+| Risk                             | What prevents it                                                                                                                                                                                                                                                    |
+| -------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Leaking production data          | Messages are scrubbed (emails, tokens, UUIDs, IPs, URL query strings and SQL row values) before they reach an issue, and the verify step rejects fixes containing sensitive-looking values from the error (identifier-shaped values such as array keys are allowed) |
+| Agent running arbitrary commands | Sessions only get `Read`, `Grep`, `Glob`, `Write`, `Edit` and a harness tool that runs the reproduction test. There is no shell                                                                                                                                     |
+| Agent reading secrets            | A pre-tool hook blocks paths outside the worktree, `.git`, `.env*` and `auth.json`. Tokens are removed from the environment before any session starts                                                                                                               |
+| Agent editing the wrong files    | The reproduce session may create one new test file. The fix session may only edit `app/` and `routes/`. Migrations, config, CI, Docker, `composer.*` and `phpunit.xml` are always blocked                                                                           |
+| Tests touching real systems      | Tests run in a container with all capabilities dropped and CPU, memory and process limits, against a throwaway Postgres on an internal Docker network with no internet access                                                                                       |
+| Runaway PRs or cost              | At most 2 open agent PRs, 2 fix attempts per error, 1 fix attempt per scan, plus turn and time limits on each session                                                                                                                                               |
+| Broad AWS access                 | CI assumes an OIDC role that only trusts `master` of this repo and can only run Logs Insights queries on the two app log groups                                                                                                                                     |
 
 ## Requirements
 
@@ -111,7 +111,7 @@ Every command is a **dry run** unless you pass `--live`. A dry run still calls C
 uv run triage-agent run --fixture fixtures/process-watch-providers.json
 ```
 
-It prints the outcome and the worktree path, so you can inspect the reproduction test and fix with `git -C <worktree> diff`.
+It prints the outcome and the worktree path. After `pr_opened` the fix is already committed, so inspect it with `git -C <worktree> show HEAD`. For other outcomes the changes are uncommitted, and the new test is untracked, so use `git -C <worktree> status` and `git -C <worktree> diff`.
 
 To test the "already handled" paths, seed the fake GitHub with existing issues and PRs:
 
