@@ -166,7 +166,8 @@ class SearchControllerTest extends TestCase
     {
         $language = Language::factory()->create(['code' => 'fr']);
         Title::factory(2)->create(['language_id' => $language->id]);
-        Title::factory()->create(); // different language
+        $english = Language::factory()->create(['code' => 'en']);
+        Title::factory()->create(['language_id' => $english->id]);
 
         $this->get('/search-all?lang=fr')
             ->assertOk()
