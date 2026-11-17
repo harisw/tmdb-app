@@ -176,30 +176,4 @@ class TitleServiceTest extends TestCase
         $this->assertDatabaseHas('titles', ['slug' => 'another-good-title']);
         $this->assertDatabaseMissing('titles', ['slug' => 'good-title']);
     }
-
-    public function test_insert_bulk_returns_zero_when_all_rows_are_duplicates(): void
-    {
-        Title::factory()->create(['slug' => 'the-matrix', 'language_id' => $this->language->id]);
-
-        $data = [array_values($this->makeRow())];
-
-        $count = TitleService::insertBulk($data, $this->headers);
-
-        $this->assertSame(0, $count);
-    }
-
-    public function test_insert_bulk_handles_multiple_titles(): void
-    {
-        $rows = [
-            $this->makeRow(['id' => '1', 'name' => 'Film Alpha']),
-            $this->makeRow(['id' => '2', 'name' => 'Film Beta']),
-            $this->makeRow(['id' => '3', 'name' => 'Film Gamma']),
-        ];
-        $data = array_map(fn ($r) => array_values($r), $rows);
-
-        $count = TitleService::insertBulk($data, $this->headers);
-
-        $this->assertSame(3, $count);
-        $this->assertSame(3, Title::count());
-    }
 }

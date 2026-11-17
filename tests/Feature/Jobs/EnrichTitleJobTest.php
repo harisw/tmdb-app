@@ -47,6 +47,23 @@ class EnrichTitleJobTest extends TestCase
         $this->assertDatabaseCount('title_providers', 0);
     }
 
+    public function test_completes_when_watch_providers_response_has_no_results_key(): void
+    {
+        $title = Title::factory()->create(['tmdb_id' => 789, 'enriched_at' => null]);
+        Country::factory()->create(['iso2' => 'US']);
+
+        $tmdb = $this->mock(TmdbApiService::class);
+        $tmdb->shouldReceive('getKeywords')
+            ->andReturn(['keywords' => []]);
+        $tmdb->shouldReceive('getWatchProviders')
+            ->andReturn(['success' => false, 'status_code' => 34]);
+
+        (new EnrichTitleJob($title))->handle();
+
+        $this->assertNotNull($title->fresh()->enriched_at);
+        $this->assertDatabaseCount('title_providers', 0);
+    }
+
     public function test_syncs_the_keywords_tmdb_returns(): void
     {
         $title = Title::factory()->create(['tmdb_id' => 789]);
