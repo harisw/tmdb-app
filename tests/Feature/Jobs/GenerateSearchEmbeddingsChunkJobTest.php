@@ -11,6 +11,7 @@ use Database\Factories\TitleSearchEmbeddingFactory;
 use Illuminate\Database\Events\QueryExecuted;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\Client\Request;
+use Illuminate\Log\Events\MessageLogged;
 use Illuminate\Queue\Events\JobFailed;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Event;
@@ -86,12 +87,19 @@ class GenerateSearchEmbeddingsChunkJobTest extends TestCase
         Event::listen(JobFailed::class, function (JobFailed $event) use (&$failures): void {
             $failures[] = $event->exception;
         });
+        $costs = [];
+        Event::listen(MessageLogged::class, function (MessageLogged $event) use (&$costs): void {
+            if ($event->message === 'Job database cost') {
+                $costs[] = $event->context;
+            }
+        });
         $title = Title::factory()->create();
 
         GenerateSearchEmbeddingsChunkJob::dispatchSync([$title->id]);
 
         $this->assertCount(1, $failures);
         $this->assertSame(0, TitleSearchEmbedding::count());
+        $this->assertSame(['failed'], array_column($costs, 'outcome'));
     }
 
     public function test_does_nothing_for_unknown_titles(): void
