@@ -104,7 +104,7 @@ class RunJob extends Command
         $titleType = TitleType::from($this->choice('Which type of title?',
             TitleType::values()
         ));
-        $limit = (int) $this->ask('How many new titles to insert?');
+        $limit = $this->askCount('How many new titles to insert?');
         Log::info('Running run Job', [
             'timeWindow' => $timeWindow->value,
             'titleType' => $titleType->value,
@@ -121,7 +121,7 @@ class RunJob extends Command
         $titleType = TitleType::from($this->choice('Which type of title?',
             TitleType::values()
         ));
-        $limit = (int) $this->ask('How many new titles to insert?');
+        $limit = $this->askCount('How many new titles to insert?');
         Log::info('Running run Job', [
             'job' => $jobClass,
             'titleType' => $titleType->value,
@@ -132,43 +132,43 @@ class RunJob extends Command
 
     private function runEnrichTitlesProvider(): void
     {
-        $limit = (int) $this->ask('Limit titles?');
+        $limit = $this->askCount('Limit titles?');
         EnrichTitleProvidersBatchJob::dispatch($limit);
     }
 
     private function runEnrichTitleKeywords(): void
     {
-        $limit = (int) $this->ask('Limit titles?', '500');
+        $limit = $this->askCount('Limit titles?', '500');
         EnrichTitleKeywordBatchJob::dispatch($limit);
     }
 
     private function runEnrichTitleProvidersLink(): void
     {
-        $limit = (int) $this->ask('Limit titles?', '100');
+        $limit = $this->askCount('Limit titles?', '100');
         EnrichTitleProvidersLinkBatchJob::dispatch($limit);
     }
 
     private function runTitleBatchInsert(): void
     {
-        $batchSize = (int) $this->ask('Size of batch?', '10000');
+        $batchSize = $this->askCount('Size of batch?', '10000');
         TitlesBatchInsertJob::dispatch($batchSize);
     }
 
     private function runEnrichTitleCredits(): void
     {
-        $limit = (int) $this->ask('Limit titles?', '10');
+        $limit = $this->askCount('Limit titles?', '10');
         EnrichTitleCreditsBatchJob::dispatch($limit);
     }
 
     private function runEnrichTitleEmbeddings(): void
     {
-        $limit = (int) $this->ask('Limit titles?', '10');
+        $limit = $this->askCount('Limit titles?', '10');
         EnrichTitleEmbeddingsBatchJob::dispatch($limit);
     }
 
     private function runEnrichSearchEmbeddings(): void
     {
-        $limit = (int) $this->ask('Limit titles?', '1000');
+        $limit = $this->askCount('Limit titles?', '1000');
         EnrichSearchEmbeddingsBatchJob::dispatch($limit);
     }
 
@@ -177,14 +177,25 @@ class RunJob extends Command
         $titleType = TitleType::from($this->choice('Which type of title?',
             TitleType::values()
         ));
-        $maxRows = (int) $this->ask('Maximum titles to update?', '30000');
+        $maxRows = $this->askCount('Maximum titles to update?', '30000');
         SyncTitlePopularityJob::dispatch($titleType, maxRows: $maxRows);
     }
 
     private function runMaterializeSimilarities(): void
     {
-        $limit = (int) $this->ask('Limit titles?', '1000');
+        $limit = $this->askCount('Limit titles?', '1000');
         $includeFresh = $this->confirm('Include titles materialized within the last week? (No = only stale or missing)', false);
         MaterializeTitleSimilaritiesBatchJob::dispatch($limit, $includeFresh);
+    }
+
+    private function askCount(string $question, ?string $default = null): int
+    {
+        $answer = trim((string) $this->ask($question, $default));
+
+        if (! ctype_digit($answer)) {
+            $this->fail("{$question} needs a whole number of zero or more, got \"{$answer}\".");
+        }
+
+        return (int) $answer;
     }
 }

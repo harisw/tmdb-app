@@ -46,7 +46,7 @@ class MeasureDatabaseCost
 
         try {
             $result = $next($job);
-            $outcome = 'succeeded';
+            $outcome = isset($job->job) && $job->job->hasFailed() ? 'failed' : 'succeeded';
 
             return $result;
         } finally {

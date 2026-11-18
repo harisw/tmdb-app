@@ -81,6 +81,31 @@ class RunJobTest extends TestCase
         Queue::assertPushed(EnrichTitleKeywordBatchJob::class, fn (EnrichTitleKeywordBatchJob $job) => $job == new EnrichTitleKeywordBatchJob(200));
     }
 
+    public function test_rejects_a_negative_keyword_backfill_limit(): void
+    {
+        Queue::fake();
+
+        $this->artisan('run:job')
+            ->expectsChoice('Which job class do you want to run?', EnrichTitleKeywordBatchJob::class, $this->jobChoices())
+            ->expectsQuestion('Limit titles?', '-1')
+            ->assertFailed();
+
+        Queue::assertNothingPushed();
+    }
+
+    public function test_rejects_a_popularity_cap_that_is_not_a_whole_number(): void
+    {
+        Queue::fake();
+
+        $this->artisan('run:job')
+            ->expectsChoice('Which job class do you want to run?', SyncTitlePopularityJob::class, $this->jobChoices())
+            ->expectsChoice('Which type of title?', 'movie', ['movie', 'tv'])
+            ->expectsQuestion('Maximum titles to update?', 'lots')
+            ->assertFailed();
+
+        Queue::assertNothingPushed();
+    }
+
     /**
      * @return array<int, string>
      */

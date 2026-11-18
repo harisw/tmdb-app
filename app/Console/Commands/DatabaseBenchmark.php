@@ -93,6 +93,10 @@ class DatabaseBenchmark extends Command
 
         $report = end($this->reports) ?: throw new RuntimeException("{$scenario} logged no database cost. Check that LOG_LEVEL is info or lower.");
 
+        if ($report['outcome'] !== 'succeeded') {
+            throw new RuntimeException("{$scenario} failed, so its measurements are not comparable to the baseline.");
+        }
+
         return $this->summarize($report);
     }
 

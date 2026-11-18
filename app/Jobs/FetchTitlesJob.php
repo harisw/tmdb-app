@@ -93,6 +93,9 @@ abstract class FetchTitlesJob implements ShouldQueue
             }
             try {
                 $titleDetail = $tmdbService->getTitle($this->titleType, $tmdbId);
+                if ($titleDetail === null) {
+                    continue;
+                }
                 $newTitle = $this->createNewTitle($titleDetail, $titleService);
                 if ($newTitle) {
                     $this->titleIdDict->put($tmdbId, $newTitle->id);

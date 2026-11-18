@@ -293,7 +293,12 @@ jobs:
 
                   for _ in $(seq 120); do
                       sleep 5
-                      status=$(aws ssm get-command-invocation --command-id "$command_id" --instance-id "$INSTANCE_ID" --query Status --output text 2>/dev/null || echo Pending)
+                      if ! status=$(aws ssm get-command-invocation --command-id "$command_id" --instance-id "$INSTANCE_ID" --query Status --output text 2>&1); then
+                          case "$status" in
+                              *InvocationDoesNotExist*) continue ;;
+                              *) echo "$status" >&2; exit 1 ;;
+                          esac
+                      fi
                       case "$status" in Pending | InProgress | Delayed) ;; *) break ;; esac
                   done
 
