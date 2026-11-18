@@ -9,10 +9,8 @@ const props = defineProps({
 
 <template>
     <div class="flex flex-wrap gap-1.5">
-        <Link v-for="genre in genres" :key="genre.id" :href="genre.url" @click.stop>
-            <span :class="badge({ tone: 'genre' })">
-                {{ genre.name }}
-            </span>
+        <Link v-for="genre in genres" :key="genre.id" :href="genre.url" :class="badge({ tone: 'genre' })" @click.stop>
+            {{ genre.name }}
         </Link>
     </div>
 </template>
