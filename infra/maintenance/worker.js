@@ -3,6 +3,7 @@ const PAGE_HTML = __PAGE_HTML__;
 const EXPECTED_DOWN_TIMEOUT_MS = 5000;
 const BOOT_GRACE_MINUTES = 15;
 const ABANDONABLE_METHODS = new Set(['GET', 'HEAD']);
+const UNABANDONABLE_PATHS = new Set(['/auth/google/callback']);
 const MINUTES_PER_DAY = 1440;
 const MINUTES_PER_WEEK = 7 * MINUTES_PER_DAY;
 
@@ -74,7 +75,8 @@ export default {
     const { expectsUp, openAt } = scheduleState(env.SCHEDULE, Date.now());
     const fallback = () =>
       expectsUp ? maintenancePage(request, env, 'unexpected', null) : maintenancePage(request, env, 'scheduled', openAt);
-    const canAbandon = !expectsUp && ABANDONABLE_METHODS.has(request.method);
+    const canAbandon =
+      !expectsUp && ABANDONABLE_METHODS.has(request.method) && !UNABANDONABLE_PATHS.has(new URL(request.url).pathname);
 
     try {
       const response = canAbandon ? await fetchWithHeaderTimeout(request, EXPECTED_DOWN_TIMEOUT_MS) : await fetch(request);
