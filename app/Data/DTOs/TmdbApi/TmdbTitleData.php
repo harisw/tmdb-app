@@ -64,6 +64,14 @@ class TmdbTitleData extends Data
     }
 
     /**
+     * Normalises TMDB's date into a single nullable `release_date`.
+     *
+     * Movies send `release_date`, TV sends `first_air_date`, and unreleased titles
+     * send either as an empty string rather than null. `??` would let that `''`
+     * through and Postgres rejects it for a date column (SQLSTATE 22007), so the
+     * title would be skipped on every fetch. Blank values are therefore trimmed
+     * and treated as missing: fall back to `first_air_date`, then store null.
+     *
      * @param  array<string, mixed>  $properties
      * @return array<string, mixed>
      */

@@ -58,4 +58,27 @@ class TmdbTitleDataTest extends TestCase
 
         $this->assertNull($data->release_date);
     }
+
+    public function test_stores_a_blank_release_date_as_null(): void
+    {
+        $data = TmdbTitleData::from($this->payload([
+            'type' => TitleType::MOVIE,
+            'title' => 'Untitled Sequel',
+            'release_date' => ' ',
+        ]));
+
+        $this->assertNull($data->release_date);
+    }
+
+    public function test_falls_back_to_the_first_air_date_when_the_release_date_is_blank(): void
+    {
+        $data = TmdbTitleData::from($this->payload([
+            'type' => TitleType::TV,
+            'name' => 'Breaking Bad',
+            'release_date' => '',
+            'first_air_date' => '2008-01-20',
+        ]));
+
+        $this->assertSame('2008-01-20', $data->release_date);
+    }
 }
