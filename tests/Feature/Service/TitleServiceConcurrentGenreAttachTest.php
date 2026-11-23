@@ -11,7 +11,7 @@ use App\Services\TitleService;
 use Illuminate\Database\Events\QueryExecuted;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Exceptions;
+use Illuminate\Support\Facades\Log;
 use Tests\TestCase;
 
 class TitleServiceConcurrentGenreAttachTest extends TestCase
@@ -20,8 +20,7 @@ class TitleServiceConcurrentGenreAttachTest extends TestCase
 
     public function test_insert_row_tolerates_genre_attached_by_concurrent_worker(): void
     {
-        // Surface anything the service reports instead of silently swallowing it.
-        Exceptions::fake()->throwOnReport();
+        Log::spy();
 
         $language = Language::factory()->create();
         $genre = Genre::factory()->create(['name' => 'Drama', 'slug' => 'drama']);
@@ -43,20 +42,16 @@ class TitleServiceConcurrentGenreAttachTest extends TestCase
 
         $service = new TitleService;
 
-        // Simulate another Horizon worker attaching the same genre right after
-        // this worker read the currently attached pivots for the title.
         $injected = false;
         DB::listen(function (QueryExecuted $query) use (&$injected, $genre) {
-            if ($injected) {
+            if ($injected || ! str_starts_with($query->sql, 'insert into "titles"')) {
                 return;
             }
-            if (str_starts_with($query->sql, 'select') && str_contains($query->sql, '"genre_title"')) {
-                $injected = true;
-                DB::table('genre_title')->insert([
-                    'genre_id' => $genre->id,
-                    'title_id' => $query->bindings[0],
-                ]);
-            }
+            $injected = true;
+            DB::table('genre_title')->insert([
+                'genre_id' => $genre->id,
+                'title_id' => DB::table('titles')->where('slug', 'race-condition')->value('id'),
+            ]);
         });
 
         $title = $service->insertRow($row);
@@ -67,5 +62,6 @@ class TitleServiceConcurrentGenreAttachTest extends TestCase
             ->where('title_id', $title->id)
             ->where('genre_id', $genre->id)
             ->count());
+        Log::shouldNotHaveReceived('error');
     }
 }

@@ -76,9 +76,9 @@ class TitleService
                     ['slug' => $row->slug],
                     $row->except('genres', 'production_companies', 'keywords', 'belongs_to_collection', 'is_adult')->toArray()
                 );
-                $this->attachMissing($title->genres(), $genres);
-                $this->attachMissing($title->companies(), $companies);
-                $this->attachMissing($title->keywords(), $keywords);
+                $this->attachIgnoringDuplicates($title->genres(), $genres);
+                $this->attachIgnoringDuplicates($title->companies(), $companies);
+                $this->attachIgnoringDuplicates($title->keywords(), $keywords);
 
                 $this->titleDict->put($title->slug, $title->id);
                 $this->insertedRowCount++;
@@ -86,8 +86,11 @@ class TitleService
                 return $title;
             });
         } catch (\Exception $e) {
-            \Log::error('Row: '.json_encode($row, JSON_PRETTY_PRINT));
-            report($e);
+            \Log::error('Title insert failed', [
+                'tmdb_id' => $row->tmdb_id,
+                'slug' => $row->slug,
+                'exception' => $e,
+            ]);
             $this->reloadRelationCache();
         }
 
@@ -121,18 +124,16 @@ class TitleService
         return array_values(array_unique($ids));
     }
 
-    private function attachMissing(BelongsToMany $relation, array $ids): void
+    /**
+     * @template TRelated of Genre|ProductionCompany|Keyword
+     *
+     * @param  BelongsToMany<TRelated, Title>  $relation
+     * @param  list<int>  $ids
+     */
+    private function attachIgnoringDuplicates(BelongsToMany $relation, array $ids): void
     {
-        $attached = $relation->newPivotQuery()->pluck($relation->getRelatedPivotKeyName())->all();
-        $ids = array_values(array_diff($ids, $attached));
-        if ($ids === []) {
-            return;
-        }
-
-        $parentKey = $relation->getParent()->getAttribute($relation->getParentKeyName());
-
         $relation->newPivotStatement()->insertOrIgnore(array_map(fn (int $id): array => [
-            $relation->getForeignPivotKeyName() => $parentKey,
+            $relation->getForeignPivotKeyName() => $relation->getParent()->getKey(),
             $relation->getRelatedPivotKeyName() => $id,
         ], $ids));
     }
