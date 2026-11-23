@@ -6,7 +6,9 @@ use App\Models\Genre;
 use App\Models\Language;
 use App\Models\Title;
 use App\Services\TitleService;
+use Illuminate\Database\QueryException;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Log;
 use Tests\TestCase;
 
 class TitleServiceTest extends TestCase
@@ -175,5 +177,19 @@ class TitleServiceTest extends TestCase
         //        $this->assertSame(1, $count);
         $this->assertDatabaseHas('titles', ['slug' => 'another-good-title']);
         $this->assertDatabaseMissing('titles', ['slug' => 'good-title']);
+    }
+
+    public function test_failed_row_is_logged_once_with_its_exception(): void
+    {
+        Log::spy();
+
+        $data = [array_values($this->makeRow(['id' => '77', 'name' => 'Broken Title', 'language_id' => '99999']))];
+
+        TitleService::insertBulk($data, $this->headers);
+
+        Log::shouldHaveReceived('error')->once()->withArgs(fn (string $message, array $context): bool => $message === 'Title insert failed'
+            && $context['tmdb_id'] === 77
+            && $context['slug'] === 'broken-title'
+            && $context['exception'] instanceof QueryException);
     }
 }

@@ -12,6 +12,7 @@ use App\Models\Keyword;
 use App\Models\ProductionCompany;
 use App\Models\Title;
 use DB;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Support\Collection;
 use Spatie\LaravelData\DataCollection;
 
@@ -75,9 +76,9 @@ class TitleService
                     ['slug' => $row->slug],
                     $row->except('genres', 'production_companies', 'keywords', 'belongs_to_collection', 'is_adult')->toArray()
                 );
-                $title->genres()->syncWithoutDetaching($genres);
-                $title->companies()->syncWithoutDetaching($companies);
-                $title->keywords()->syncWithoutDetaching($keywords);
+                $this->attachIgnoringDuplicates($title->genres(), $genres);
+                $this->attachIgnoringDuplicates($title->companies(), $companies);
+                $this->attachIgnoringDuplicates($title->keywords(), $keywords);
 
                 $this->titleDict->put($title->slug, $title->id);
                 $this->insertedRowCount++;
@@ -85,8 +86,11 @@ class TitleService
                 return $title;
             });
         } catch (\Exception $e) {
-            \Log::error('Row: '.json_encode($row, JSON_PRETTY_PRINT));
-            report($e);
+            \Log::error('Title insert failed', [
+                'tmdb_id' => $row->tmdb_id,
+                'slug' => $row->slug,
+                'exception' => $e,
+            ]);
             $this->reloadRelationCache();
         }
 
@@ -118,6 +122,20 @@ class TitleService
         }
 
         return array_values(array_unique($ids));
+    }
+
+    /**
+     * @template TRelated of Genre|ProductionCompany|Keyword
+     *
+     * @param  BelongsToMany<TRelated, Title>  $relation
+     * @param  list<int>  $ids
+     */
+    private function attachIgnoringDuplicates(BelongsToMany $relation, array $ids): void
+    {
+        $relation->newPivotStatement()->insertOrIgnore(array_map(fn (int $id): array => [
+            $relation->getForeignPivotKeyName() => $relation->getParent()->getKey(),
+            $relation->getRelatedPivotKeyName() => $id,
+        ], $ids));
     }
 
     private function loadCaches(): void
