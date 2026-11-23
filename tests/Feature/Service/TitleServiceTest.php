@@ -121,23 +121,74 @@ class TitleServiceTest extends TestCase
         $this->assertDatabaseHas('production_companies', ['slug' => 'warner-bros']);
     }
 
-    public function test_insert_bulk_skips_duplicate_slug(): void
+    public function test_insert_bulk_skips_rows_repeating_a_tmdb_id(): void
     {
         $rows = [
             $this->makeRow(['id' => '1', 'name' => 'The Matrix']),
-            $this->makeRow(['id' => '2', 'name' => 'The Matrix']), // same slug
+            $this->makeRow(['id' => '1', 'name' => 'The Matrix Renamed']),
         ];
         $data = array_map(fn ($r) => array_values($r), $rows);
 
         $count = TitleService::insertBulk($data, $this->headers);
 
         $this->assertSame(1, $count);
-        $this->assertSame(1, Title::where('slug', 'the-matrix')->count());
+        $this->assertSame(1, Title::count());
+    }
+
+    public function test_insert_matches_a_title_inserted_since_the_cache_loaded_by_tmdb_id(): void
+    {
+        $service = new TitleService;
+        $existing = Title::factory()->create([
+            'slug' => 'old-name',
+            'tmdb_id' => 12345,
+            'type' => 'movie',
+            'language_id' => $this->language->id,
+        ]);
+
+        $service->insert([array_values($this->makeRow(['name' => 'New Name']))], $this->headers);
+
+        $this->assertSame(1, Title::count());
+        $this->assertSame('old-name', $existing->fresh()->slug);
+        $this->assertCount(2, $existing->genres);
+    }
+
+    public function test_insert_bulk_gives_same_named_titles_distinct_slugs(): void
+    {
+        $rows = [
+            $this->makeRow(['id' => '1', 'name' => 'Dune', 'release_date' => '1984-12-14']),
+            $this->makeRow(['id' => '2', 'name' => 'Dune', 'release_date' => '2021-09-15']),
+            $this->makeRow(['id' => '3', 'name' => 'Dune', 'release_date' => '2021-10-22']),
+            $this->makeRow(['id' => '3', 'name' => 'Dune', 'type' => 'tv']),
+        ];
+        $data = array_map(fn ($r) => array_values($r), $rows);
+
+        $count = TitleService::insertBulk($data, $this->headers);
+
+        $this->assertSame(4, $count);
+        $this->assertSame(
+            ['dune' => 1, 'dune-2021' => 2, 'dune-movie-3' => 3, 'dune-1999' => 3],
+            Title::orderBy('id')->get()->mapWithKeys(fn (Title $title): array => [$title->slug => $title->tmdb_id])->all(),
+        );
+        $this->assertSame(['movie', 'movie', 'movie', 'tv'], Title::orderBy('id')->pluck('type')->map->value->all());
+    }
+
+    public function test_insert_bulk_slugs_untransliterable_names_by_type_and_tmdb_id(): void
+    {
+        $data = [array_values($this->makeRow(['id' => '1720717', 'name' => '洺河往事']))];
+
+        TitleService::insertBulk($data, $this->headers);
+
+        $this->assertDatabaseHas('titles', ['tmdb_id' => 1720717, 'slug' => 'movie-1720717']);
     }
 
     public function test_insert_bulk_skips_title_that_already_exists_in_database(): void
     {
-        Title::factory()->create(['slug' => 'the-matrix', 'language_id' => $this->language->id]);
+        Title::factory()->create([
+            'slug' => 'the-matrix',
+            'tmdb_id' => 12345,
+            'type' => 'movie',
+            'language_id' => $this->language->id,
+        ]);
 
         $data = [array_values($this->makeRow())];
 
