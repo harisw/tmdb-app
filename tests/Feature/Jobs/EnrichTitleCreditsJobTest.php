@@ -8,6 +8,10 @@ use App\Models\Title;
 use App\Services\TmdbApiService;
 use App\Services\TmdbCredits\TmdbCreditService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\Client\ConnectionException;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Sleep;
 use RuntimeException;
 use Tests\TestCase;
 
@@ -81,6 +85,23 @@ class EnrichTitleCreditsJobTest extends TestCase
             $this->runJob($title);
         } finally {
             $this->assertNull($title->fresh()->credits_filled_at);
+        }
+    }
+
+    public function test_leaves_the_title_unstamped_and_writes_no_credits_when_the_connection_keeps_dropping(): void
+    {
+        Sleep::fake();
+        Http::fake(['tmdb.test/*' => Http::failedConnection()]);
+        $this->app->instance(TmdbApiService::class, new TmdbApiService(apiKey: 'test-key', baseUrl: 'https://tmdb.test'));
+        $title = Title::factory()->create(['tmdb_id' => 550, 'credits_filled_at' => null]);
+
+        $this->expectException(ConnectionException::class);
+
+        try {
+            $this->runJob($title);
+        } finally {
+            $this->assertNull($title->fresh()->credits_filled_at);
+            $this->assertSame(0, DB::table('title_person')->where('title_id', $title->id)->count());
         }
     }
 }

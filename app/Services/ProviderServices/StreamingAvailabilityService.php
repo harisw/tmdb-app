@@ -9,10 +9,12 @@ use App\Domain\Enums\StreamType;
 use App\Models\Country;
 use App\Models\Title;
 use Arr;
+use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Http\Client\PendingRequest;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
+use Throwable;
 
 class StreamingAvailabilityService
 {
@@ -28,7 +30,8 @@ class StreamingAvailabilityService
                 'accept' => 'application/json',
                 'X-API-Key' => $apiKey,
             ])
-            ->timeout(30);
+            ->timeout(10)
+            ->retry([500, 2000], when: fn (Throwable $e): bool => $e instanceof ConnectionException, throw: false);
     }
 
     /**

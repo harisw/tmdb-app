@@ -11,7 +11,10 @@ use App\Models\Title;
 use App\Services\ProviderServices\ProviderCatalog;
 use App\Services\ProviderServices\StreamingAvailabilityService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\Client\ConnectionException;
+use Illuminate\Http\Client\RequestException;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Sleep;
 use Tests\TestCase;
 
 class StreamingAvailabilityServiceTest extends TestCase
@@ -154,5 +157,47 @@ class StreamingAvailabilityServiceTest extends TestCase
 
         $this->assertCount(0, $this->service()->getTopShows($country, 'unsupported'));
         Http::assertNothingSent();
+    }
+
+    public function test_throws_on_a_server_error_without_retrying(): void
+    {
+        Sleep::fake();
+        $country = Country::factory()->create(['iso2' => 'US']);
+        Http::fake(['movie-night.test/*' => Http::response(['message' => 'Internal error'], 503)]);
+
+        $this->expectException(RequestException::class);
+
+        try {
+            $this->service()->getTopShows($country, 'netflix');
+        } finally {
+            Http::assertSentCount(1);
+        }
+    }
+
+    public function test_retries_a_dropped_connection_and_returns_the_shows(): void
+    {
+        Sleep::fake();
+        $country = Country::factory()->create(['iso2' => 'US']);
+        Http::fake(['movie-night.test/*' => Http::sequence()
+            ->pushFailedConnection()
+            ->push([])]);
+
+        $this->assertCount(0, $this->service()->getTopShows($country, 'netflix'));
+        Http::assertSentCount(2);
+    }
+
+    public function test_throws_the_connection_error_once_retries_run_out(): void
+    {
+        Sleep::fake();
+        $country = Country::factory()->create(['iso2' => 'US']);
+        Http::fake(['movie-night.test/*' => Http::failedConnection()]);
+
+        $this->expectException(ConnectionException::class);
+
+        try {
+            $this->service()->getTopShows($country, 'netflix');
+        } finally {
+            Http::assertSentCount(3);
+        }
     }
 }

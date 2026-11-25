@@ -4,8 +4,10 @@ namespace App\Services;
 
 use App\Domain\Enums\TitleType;
 use App\Utils\Enum\TimeWindow;
+use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Http\Client\PendingRequest;
 use Illuminate\Support\Facades\Http;
+use Throwable;
 
 class TmdbApiService
 {
@@ -20,7 +22,8 @@ class TmdbApiService
         $this->client = Http::withToken($apiKey)
             ->baseUrl($baseUrl)
             ->withHeader('accept', 'application/json')
-            ->timeout(30);
+            ->timeout(10)
+            ->retry([500, 2000], when: fn (Throwable $e): bool => $e instanceof ConnectionException, throw: false);
     }
 
     /**
