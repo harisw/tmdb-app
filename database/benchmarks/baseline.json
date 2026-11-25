@@ -1,25 +1,25 @@
 {
-    "postgres": "17.11 (Debian 17.11-1.pgdg12+2)",
+    "postgres": "17.12 (Debian 17.12-1.pgdg12+1)",
     "scenarios": {
         "popularity_sync": {
             "queries": 2,
             "rows_written": 500,
             "hot_updates": 0,
-            "wal_bytes": 9033576,
-            "wal_bytes_per_row": 18067.2,
-            "duration_ms": 1558.0,
-            "db_time_ms": 1479.4,
-            "db_time_ms_per_row": 2.959
+            "wal_bytes": 9118672,
+            "wal_bytes_per_row": 18237.3,
+            "duration_ms": 1037.4,
+            "db_time_ms": 1010.1,
+            "db_time_ms_per_row": 2.02
         },
         "search_embeddings_chunk": {
-            "queries": 5,
+            "queries": 6,
             "rows_written": 100,
             "hot_updates": 0,
-            "wal_bytes": 6778456,
-            "wal_bytes_per_row": 67784.6,
-            "duration_ms": 425.7,
-            "db_time_ms": 342.4,
-            "db_time_ms_per_row": 3.424
+            "wal_bytes": 6711032,
+            "wal_bytes_per_row": 67110.3,
+            "duration_ms": 289.9,
+            "db_time_ms": 231.9,
+            "db_time_ms_per_row": 2.319
         }
     }
 }
