@@ -11,7 +11,10 @@ use App\Models\Title;
 use App\Services\ProviderServices\ProviderCatalog;
 use App\Services\ProviderServices\WatchmodeService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\Client\ConnectionException;
+use Illuminate\Http\Client\RequestException;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Sleep;
 use PHPUnit\Framework\Attributes\DataProvider;
 use Tests\TestCase;
 
@@ -148,5 +151,58 @@ class WatchmodeServiceTest extends TestCase
 
         $this->assertCount(0, $result);
         Http::assertNothingSent();
+    }
+
+    public function test_returns_nothing_when_watchmode_has_no_such_title(): void
+    {
+        $title = Title::factory()->create(['tmdb_id' => 1550569]);
+        Http::fake(['watchmode.test/*' => Http::response(['success' => false, 'statusCode' => 404], 404)]);
+
+        $this->assertCount(0, $this->service()->getProviders($title));
+    }
+
+    public function test_throws_on_a_server_error_without_retrying(): void
+    {
+        Sleep::fake();
+        $title = Title::factory()->create(['tmdb_id' => 1550569]);
+        Http::fake(['watchmode.test/*' => Http::response(['success' => false, 'statusCode' => 500], 500)]);
+
+        $this->expectException(RequestException::class);
+
+        try {
+            $this->service()->getProviders($title);
+        } finally {
+            Http::assertSentCount(1);
+        }
+    }
+
+    public function test_retries_a_dropped_connection_and_returns_the_providers(): void
+    {
+        Sleep::fake();
+        $country = Country::factory()->create(['iso2' => 'US']);
+        $provider = Provider::factory()->withAlias(ProviderSource::WATCHMODE, 'AppleTV')->create();
+        CountryProvider::factory()->create(['country_id' => $country->id, 'provider_id' => $provider->id]);
+        $title = Title::factory()->create(['tmdb_id' => 1550569]);
+        Http::fake(['watchmode.test/*' => Http::sequence()
+            ->pushFailedConnection()
+            ->push([$this->makeSource()])]);
+
+        $this->assertCount(1, $this->service()->getProviders($title));
+        Http::assertSentCount(2);
+    }
+
+    public function test_throws_the_connection_error_once_retries_run_out(): void
+    {
+        Sleep::fake();
+        $title = Title::factory()->create(['tmdb_id' => 1550569]);
+        Http::fake(['watchmode.test/*' => Http::failedConnection()]);
+
+        $this->expectException(ConnectionException::class);
+
+        try {
+            $this->service()->getProviders($title);
+        } finally {
+            Http::assertSentCount(3);
+        }
     }
 }

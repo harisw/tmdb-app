@@ -6,9 +6,11 @@ use App\Data\DTOs\TitleProviderData;
 use App\Domain\Enums\ProviderSource;
 use App\Domain\Enums\StreamQuality;
 use App\Models\Title;
+use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Http\Client\PendingRequest;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Http;
+use Throwable;
 
 class WatchmodeService
 {
@@ -24,7 +26,8 @@ class WatchmodeService
                 'accept' => 'application/json',
                 'X-API-Key' => $apiKey,
             ])
-            ->timeout(30);
+            ->timeout(10)
+            ->retry([500, 2000], when: fn (Throwable $e): bool => $e instanceof ConnectionException, throw: false);
     }
 
     /**
@@ -85,6 +88,12 @@ class WatchmodeService
      */
     private function get(string $url): ?array
     {
-        return $this->client->get($url)->json();
+        $response = $this->client->get($url);
+
+        if ($response->notFound()) {
+            return null;
+        }
+
+        return $response->throw()->json();
     }
 }
