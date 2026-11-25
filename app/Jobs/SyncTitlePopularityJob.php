@@ -6,6 +6,7 @@ use App\Domain\Enums\TitleType;
 use App\Jobs\Middleware\MeasureDatabaseCost;
 use App\Models\Title;
 use App\Services\TmdbApiService;
+use Carbon\CarbonInterface;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
 use Illuminate\Support\Facades\DB;
@@ -19,16 +20,20 @@ class SyncTitlePopularityJob implements ShouldQueue
 
     private const MIN_CHANGE = 0.5;
 
-    public int $timeout = 900;
+    private const STATEMENT_TIMEOUT_SECONDS = 60;
 
-    public int $tries = 3;
+    private const DEADLINE_MARGIN_SECONDS = 10;
+
+    public int $timeout = 300;
+
+    public int $tries = 2;
 
     public int $backoff = 900;
 
     public function __construct(
         private readonly TitleType $titleType,
         private readonly int $batchSize = 1000,
-        private readonly int $maxRows = 30_000,
+        private readonly int $maxRows = 10_000,
     ) {}
 
     /**
@@ -41,11 +46,13 @@ class SyncTitlePopularityJob implements ShouldQueue
 
     public function handle(TmdbApiService $tmdb): void
     {
+        $deadline = now()->addSeconds($this->timeout - self::DEADLINE_MARGIN_SECONDS);
+
         $path = tempnam(sys_get_temp_dir(), 'tmdb-export-') ?: throw new RuntimeException('Cannot create a temporary file for the TMDB export');
 
         try {
             $tmdb->downloadDailyExport($this->titleType, $path);
-            $this->writeLargest($this->changesLargestFirst($path));
+            $this->writeLargest($this->changesLargestFirst($path), $deadline);
         } finally {
             File::delete($path);
         }
@@ -101,7 +108,7 @@ class SyncTitlePopularityJob implements ShouldQueue
     /**
      * @param  array<int, float>  $changes
      */
-    private function writeLargest(array $changes): void
+    private function writeLargest(array $changes, CarbonInterface $deadline): void
     {
         $largest = array_slice($changes, 0, $this->maxRows, true);
 
@@ -110,15 +117,20 @@ class SyncTitlePopularityJob implements ShouldQueue
         }
 
         foreach (array_chunk($largest, $this->batchSize, true) as $batch) {
-            $this->write($batch);
+            $this->write($batch, $deadline);
         }
     }
 
     /**
      * @param  array<int, float>  $popularityByTmdbId
      */
-    private function write(array $popularityByTmdbId): void
+    private function write(array $popularityByTmdbId, CarbonInterface $deadline): void
     {
+        $remainingSeconds = (int) now()->diffInSeconds($deadline);
+        if ($remainingSeconds <= 0) {
+            throw new RuntimeException('No job time left to write title popularity');
+        }
+
         $rows = implode(',', array_fill(0, count($popularityByTmdbId), '(CAST(? AS bigint), CAST(? AS double precision))'));
         $bindings = [];
 
@@ -126,11 +138,16 @@ class SyncTitlePopularityJob implements ShouldQueue
             array_push($bindings, $tmdbId, $popularity);
         }
 
-        DB::update(
-            "UPDATE titles SET popularity = changes.popularity
+        DB::transaction(function () use ($rows, $bindings, $remainingSeconds): void {
+            DB::select("SELECT set_config('statement_timeout', ?, true)", [
+                (min(self::STATEMENT_TIMEOUT_SECONDS, $remainingSeconds) * 1000).'ms',
+            ]);
+            DB::update(
+                "UPDATE titles SET popularity = changes.popularity
             FROM (VALUES {$rows}) AS changes(tmdb_id, popularity)
             WHERE titles.tmdb_id = changes.tmdb_id AND titles.type = ?",
-            [...$bindings, $this->titleType->value],
-        );
+                [...$bindings, $this->titleType->value],
+            );
+        });
     }
 }
