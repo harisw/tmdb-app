@@ -83,7 +83,7 @@ class GenerateSearchEmbeddingsChunkJob implements ShouldQueue
             TitleSearchEmbedding::upsert(
                 $titles->map(fn (Title $title, int $i) => [
                     'title_id' => $title->id,
-                    'embedding' => TitleSearchEmbedding::toVectorLiteral($vectors[$i]),
+                    'embedding' => OpenAIEmbeddingService::vectorArrayToLiteral($vectors[$i]),
                     'document_version' => SearchDocumentBuilder::VERSION,
                 ])->all(),
                 ['title_id'],

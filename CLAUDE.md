@@ -122,7 +122,7 @@ ADMIN_USERNAME=              # seeded admin account
 
 ```bash
 docker-compose -f docker-compose.local.yml up   # app + nginx :8000 + pgvector postgres
-docker-compose up                               # postgres only
+docker-compose up                               # postgres + redis + mailpit (SMTP :1025, inbox UI :8025)
 docker-compose -f docker-compose.prod.yml up    # app + horizon + redis, ECR images
 ```
 

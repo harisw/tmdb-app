@@ -1,13 +1,29 @@
 <script setup>
+import { watch } from 'vue'
 import { useForm } from '@inertiajs/vue3'
 import { field } from '../../variants/field.js'
 import { button } from '../../variants/button.js'
+import { useGeoLocation } from '../../Composables/useGeoLocation.js'
+import CountrySelect from '../../Components/CountrySelect.vue'
 
 const form = useForm({
     email: '',
     password: '',
     password_confirmation: '',
+    country: '',
 })
+
+const { country } = useGeoLocation()
+
+watch(
+    country,
+    (value) => {
+        if (value && !form.country) {
+            form.country = value
+        }
+    },
+    { immediate: true }
+)
 
 const submit = () => {
     form.post('/register', {
@@ -58,6 +74,12 @@ const submit = () => {
                         autocomplete="new-password"
                         :class="field({ class: 'px-3 py-2' })"
                     />
+                </div>
+
+                <div>
+                    <label class="mb-1 block text-sm text-white/60">Default country</label>
+                    <CountrySelect v-model="form.country" />
+                    <p v-if="form.errors.country" class="mt-1 text-xs text-red-400">{{ form.errors.country }}</p>
                 </div>
 
                 <button

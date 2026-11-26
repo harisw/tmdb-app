@@ -6,12 +6,20 @@ use App\Data\DTOs\GoogleUserData;
 use App\Data\DTOs\RegisterUserData;
 use App\Models\Country;
 use App\Models\User;
+use App\Models\UserTaste;
+use App\Models\UserTitleState;
+use App\Services\KnowledgeGraph\OpenAIEmbeddingService;
 use App\Utils\Helpers\GenerateUsername;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
 
 class UserService
 {
+    private const TASTE_SOURCE_LIMIT = 200;
+
+    private const MIN_TASTE_WEIGHT = 2.0;
+
     public function __construct(private GenerateUsername $usernameGenerator) {}
 
     public function create(RegisterUserData $data): User
@@ -64,6 +72,68 @@ class UserService
     public function findByEmail(string $email): ?User
     {
         return User::where('email', $email)->first();
+    }
+
+    public function computeUserTaste(User $user): UserTaste
+    {
+        $states = $user->titleStates()
+            ->join('titles', 'titles.id', '=', 'user_title_states.title_id')
+            ->whereNotNull('titles.embedding')
+            ->latest('user_title_states.updated_at')
+            ->limit(self::TASTE_SOURCE_LIMIT)
+            ->get(['user_title_states.*', 'titles.embedding']);
+
+        ['sum' => $sum, 'totalWeight' => $totalWeight] = $this->weightedEmbeddingSum($states);
+
+        $taste = UserTaste::firstOrNew(['user_id' => $user->id]);
+        $taste->fill([
+            'embedding_model' => OpenAIEmbeddingService::TITLE_EMBEDDING_MODEL,
+            'taste' => $totalWeight < self::MIN_TASTE_WEIGHT ? null : OpenAIEmbeddingService::vectorArrayToLiteral(
+                array_map(fn (float $value) => $value / $totalWeight, $sum)
+            ),
+        ])->touch();
+
+        return $taste;
+    }
+
+    /**
+     * @param  Collection<int, UserTitleState>  $states
+     * @return array{sum: list<float>, totalWeight: float}
+     */
+    private function weightedEmbeddingSum(Collection $states): array
+    {
+        $sum = [];
+        $totalWeight = 0.0;
+
+        foreach ($states as $state) {
+            $weight = $this->tasteWeight($state);
+
+            if ($weight <= 0) {
+                continue;
+            }
+
+            /** @var list<float> $vector */
+            $vector = json_decode($state->getAttribute('embedding'), true);
+
+            foreach ($vector as $i => $value) {
+                $sum[$i] = ($sum[$i] ?? 0.0) + $value * $weight;
+            }
+
+            $totalWeight += $weight;
+        }
+
+        return ['sum' => $sum, 'totalWeight' => $totalWeight];
+    }
+
+    private function tasteWeight(UserTitleState $state): float
+    {
+        return match (true) {
+            $state->liked => 1.0,
+            $state->rate !== null && $state->rate >= 6 => $state->rate / 10,
+            $state->watched && $state->rate === null => 0.5,
+            $state->to_watch => 0.3,
+            default => 0.0,
+        };
     }
 
     /**

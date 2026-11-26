@@ -7,7 +7,7 @@ use Log;
 
 class OpenAIEmbeddingService
 {
-    private const MODEL = 'text-embedding-3-small';
+    public const TITLE_EMBEDDING_MODEL = 'text-embedding-3-small';
 
     private const MAX_BATCH = 100;
 
@@ -29,7 +29,7 @@ class OpenAIEmbeddingService
             ->withToken(config('services.openai.key'))
             ->timeout(60)
             ->post('https://api.openai.com/v1/embeddings', array_filter([
-                'model' => self::MODEL,
+                'model' => self::TITLE_EMBEDDING_MODEL,
                 'input' => $texts,
                 'encoding_format' => 'float',
                 'dimensions' => $dimensions,
@@ -65,5 +65,13 @@ class OpenAIEmbeddingService
         }
 
         return array_merge(...$results);
+    }
+
+    /**
+     * @param  array<int, float>  $vector
+     */
+    public static function vectorArrayToLiteral(array $vector): string
+    {
+        return '['.implode(',', $vector).']';
     }
 }

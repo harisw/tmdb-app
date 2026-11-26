@@ -229,7 +229,7 @@ class HybridSearchService
         return Cache::remember(
             'search-embedding:'.TitleSearchEmbedding::DIMENSIONS.':'.sha1($text),
             now()->addWeek(),
-            fn () => TitleSearchEmbedding::toVectorLiteral(
+            fn () => OpenAIEmbeddingService::vectorArrayToLiteral(
                 $this->embeddingService->embedOne($text, TitleSearchEmbedding::DIMENSIONS)
             ),
         );

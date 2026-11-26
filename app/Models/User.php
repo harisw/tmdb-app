@@ -7,9 +7,12 @@ use App\Models\Scopes\AvoidedKeywordScope;
 use Database\Factories\UserFactory;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Casts\Attribute;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\DatabaseNotification;
 use Illuminate\Notifications\DatabaseNotificationCollection;
@@ -55,6 +58,21 @@ use Spatie\SchemalessAttributes\Casts\SchemalessAttributes;
  * @method static \Illuminate\Database\Eloquent\Builder<static>|User whereGoogleId($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|User whereGoogleToken($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|User whereUsername($value)
+ *
+ * @property bool $is_admin
+ * @property-read Collection<int, Keyword> $avoidedKeywords
+ * @property-read int|null $avoided_keywords_count
+ * @property-read UserTitleState|null $pivot
+ * @property-read Collection<int, Title> $likedTitles
+ * @property-read int|null $liked_titles_count
+ * @property-read Collection<int, Title> $titles
+ * @property-read int|null $titles_count
+ * @property-read Collection<int, Title> $toWatchTitles
+ * @property-read int|null $to_watch_titles_count
+ * @property-read Collection<int, Title> $watchedTitles
+ * @property-read int|null $watched_titles_count
+ *
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|User whereIsAdmin($value)
  *
  * @mixin \Eloquent
  */
@@ -181,5 +199,21 @@ class User extends Authenticatable implements MustVerifyEmail
     public function toWatchTitles(): BelongsToMany
     {
         return $this->titles()->wherePivot('to_watch', true);
+    }
+
+    /**
+     * @return HasMany<UserTitleState, $this>
+     */
+    public function titleStates(): HasMany
+    {
+        return $this->hasMany(UserTitleState::class);
+    }
+
+    /**
+     * @return HasOne<UserTaste, $this>
+     */
+    public function taste(): HasOne
+    {
+        return $this->hasOne(UserTaste::class);
     }
 }

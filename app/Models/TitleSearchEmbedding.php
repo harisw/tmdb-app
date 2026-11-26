@@ -35,12 +35,4 @@ class TitleSearchEmbedding extends Model
     {
         return $this->belongsTo(Title::class);
     }
-
-    /**
-     * @param  array<int, float>  $vector
-     */
-    public static function toVectorLiteral(array $vector): string
-    {
-        return '['.implode(',', $vector).']';
-    }
 }

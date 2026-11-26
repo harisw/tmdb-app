@@ -69,6 +69,13 @@ class TitleInteractionServiceTest extends TestCase
         ]);
     }
 
+    public function test_record_leaves_the_taste_to_the_scheduled_refresh(): void
+    {
+        $this->service->record($this->dto(TitleEventType::LIKE));
+
+        $this->assertDatabaseCount('user_tastes', 0);
+    }
+
     public function test_record_creates_the_event_and_returns_the_synced_state(): void
     {
         $state = $this->service->record($this->dto(TitleEventType::TO_WATCH_ADDED));

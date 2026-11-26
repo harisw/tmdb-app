@@ -31,6 +31,11 @@ use Illuminate\Support\Carbon;
  * @method static Builder<static>|UserTitleState whereUserId($value)
  * @method static Builder<static>|UserTitleState whereWatched($value)
  *
+ * @property int $id
+ *
+ * @method static Builder<static>|UserTitleState whereId($value)
+ * @method static Builder<static>|UserTitleState whereLiked($value)
+ *
  * @mixin \Eloquent
  */
 class UserTitleState extends Pivot

@@ -4,6 +4,7 @@ namespace Database\Factories;
 
 use App\Models\Title;
 use App\Models\TitleSearchEmbedding;
+use App\Services\KnowledgeGraph\OpenAIEmbeddingService;
 use App\Services\Search\SearchDocumentBuilder;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
@@ -19,14 +20,14 @@ class TitleSearchEmbeddingFactory extends Factory
     {
         return [
             'title_id' => Title::factory(),
-            'embedding' => TitleSearchEmbedding::toVectorLiteral(self::unitVector(fake()->numberBetween(0, TitleSearchEmbedding::DIMENSIONS - 1))),
+            'embedding' => OpenAIEmbeddingService::vectorArrayToLiteral(self::unitVector(fake()->numberBetween(0, TitleSearchEmbedding::DIMENSIONS - 1))),
             'document_version' => SearchDocumentBuilder::VERSION,
         ];
     }
 
     public function pointingAt(int $dimension): static
     {
-        return $this->state(['embedding' => TitleSearchEmbedding::toVectorLiteral(self::unitVector($dimension))]);
+        return $this->state(['embedding' => OpenAIEmbeddingService::vectorArrayToLiteral(self::unitVector($dimension))]);
     }
 
     /**

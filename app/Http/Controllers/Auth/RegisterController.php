@@ -49,7 +49,7 @@ class RegisterController extends Controller
     {
         $request->fulfill();
 
-        return redirect('/')->with('message', 'Your email has been verified successfully!');
+        return redirect()->route('onboarding')->with('message', 'Your email has been verified successfully!');
     }
 
     public function resendVerification(Request $request): RedirectResponse

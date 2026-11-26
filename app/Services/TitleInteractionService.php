@@ -15,7 +15,9 @@ class TitleInteractionService
      */
     public function record(UserTitleEventData $data): UserTitleState
     {
-        return $this->createOrUpdateState($this->createEvent($data));
+        $state = $this->createOrUpdateState($this->createEvent($data));
+
+        return $state;
     }
 
     public function createEvent(UserTitleEventData $data): TitleInteractionEvent
