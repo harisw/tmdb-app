@@ -102,11 +102,11 @@ class UserServiceTest extends TestCase
         $this->interact(Title::factory()->embedded()->create(), ['liked' => true]);
         $this->interact(Title::factory()->embedded()->create(), ['to_watch' => true]);
 
-        $this->assertNull($this->service->computeUserTaste($this->user));
-        $this->assertDatabaseCount('user_tastes', 0);
+        $this->assertNull($this->service->computeUserTaste($this->user)->taste);
+        $this->assertDatabaseHas('user_tastes', ['user_id' => $this->user->id, 'taste' => null]);
     }
 
-    public function test_it_removes_the_taste_once_the_signal_drops_below_the_minimum(): void
+    public function test_it_clears_the_taste_once_the_signal_drops_below_the_minimum(): void
     {
         $kept = Title::factory()->embedded()->create();
         $unliked = Title::factory()->embedded()->create();
@@ -116,13 +116,25 @@ class UserServiceTest extends TestCase
 
         UserTitleState::where('user_id', $this->user->id)->where('title_id', $unliked->id)->update(['liked' => false]);
 
-        $this->assertNull($this->service->computeUserTaste($this->user));
-        $this->assertDatabaseMissing('user_tastes', ['user_id' => $this->user->id]);
+        $this->assertNull($this->service->computeUserTaste($this->user)->taste);
+        $this->assertDatabaseHas('user_tastes', ['user_id' => $this->user->id, 'taste' => null]);
+        $this->assertDatabaseCount('user_tastes', 1);
     }
 
-    public function test_it_stores_nothing_for_a_user_without_interactions(): void
+    public function test_it_records_the_computation_for_a_user_without_interactions(): void
     {
-        $this->assertNull($this->service->computeUserTaste($this->user));
-        $this->assertDatabaseCount('user_tastes', 0);
+        $this->assertNull($this->service->computeUserTaste($this->user)->taste);
+        $this->assertDatabaseHas('user_tastes', ['user_id' => $this->user->id, 'taste' => null]);
+    }
+
+    public function test_it_stamps_the_computation_even_when_the_taste_is_unchanged(): void
+    {
+        $this->interact(Title::factory()->embedded()->create(), ['liked' => true]);
+        $this->interact(Title::factory()->embedded()->create(), ['liked' => true]);
+        $first = $this->service->computeUserTaste($this->user)->updated_at;
+
+        $this->travel(5)->minutes();
+
+        $this->assertTrue($this->service->computeUserTaste($this->user)->updated_at->gt($first));
     }
 }

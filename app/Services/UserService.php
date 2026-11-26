@@ -74,7 +74,7 @@ class UserService
         return User::where('email', $email)->first();
     }
 
-    public function computeUserTaste(User $user): ?UserTaste
+    public function computeUserTaste(User $user): UserTaste
     {
         $states = $user->titleStates()
             ->join('titles', 'titles.id', '=', 'user_title_states.title_id')
@@ -85,18 +85,15 @@ class UserService
 
         ['sum' => $sum, 'totalWeight' => $totalWeight] = $this->weightedEmbeddingSum($states);
 
-        if ($totalWeight < self::MIN_TASTE_WEIGHT) {
-            UserTaste::whereKey($user->id)->delete();
-
-            return null;
-        }
-
-        return UserTaste::updateOrCreate(['user_id' => $user->id], [
+        $taste = UserTaste::firstOrNew(['user_id' => $user->id]);
+        $taste->fill([
             'embedding_model' => OpenAIEmbeddingService::TITLE_EMBEDDING_MODEL,
-            'taste' => OpenAIEmbeddingService::vectorArrayToLiteral(
+            'taste' => $totalWeight < self::MIN_TASTE_WEIGHT ? null : OpenAIEmbeddingService::vectorArrayToLiteral(
                 array_map(fn (float $value) => $value / $totalWeight, $sum)
             ),
-        ]);
+        ])->touch();
+
+        return $taste;
     }
 
     /**

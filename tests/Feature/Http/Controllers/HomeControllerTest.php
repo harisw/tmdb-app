@@ -91,6 +91,16 @@ class HomeControllerTest extends TestCase
             ->assertInertia(fn ($page) => $page->where('personalised', false));
     }
 
+    public function test_index_is_not_personalised_while_the_taste_lacks_signal(): void
+    {
+        $user = User::factory()->create();
+        app(UserService::class)->computeUserTaste($user);
+
+        $this->actingAs($user)
+            ->get('/')
+            ->assertInertia(fn ($page) => $page->where('personalised', false));
+    }
+
     public function test_index_ranks_unseen_titles_by_closeness_to_the_users_taste(): void
     {
         $user = User::factory()->create();

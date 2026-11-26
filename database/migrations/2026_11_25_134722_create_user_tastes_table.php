@@ -18,7 +18,7 @@ return new class extends Migration
             $table->timestamps();
         });
 
-        DB::statement('ALTER TABLE user_tastes ADD COLUMN taste vector(1536) NOT NULL');
+        DB::statement('ALTER TABLE user_tastes ADD COLUMN taste vector(1536)');
     }
 
     /**

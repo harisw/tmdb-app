@@ -20,12 +20,13 @@ class HomeController extends Controller
         ])['seed'] ?? 0;
 
         $taste = $request->user()?->taste;
+        $personalised = $taste?->taste !== null;
 
         return Inertia::render('Home', [
-            'titles' => TitleResource::collection($taste
+            'titles' => TitleResource::collection($personalised
                 ? $recommendations->recommendedTitles($taste, self::PAGINATE_SIZE)
                 : Title::with(Title::detailRelations())->sorted(TitleSort::POPULAR)->paginate(self::PAGINATE_SIZE)),
-            'personalised' => $taste !== null,
+            'personalised' => $personalised,
             'constellation' => Inertia::defer(fn () => $constellations->build((int) $seedIndex)),
         ]);
     }

@@ -28,7 +28,7 @@ class OnboardingController extends Controller
         ]);
     }
 
-    public function store(OnboardingRequest $request, TitleInteractionService $interactions, UserService $users): RedirectResponse
+    public function store(OnboardingRequest $request, TitleInteractionService $interactions, UserService $userService): RedirectResponse
     {
         $user = $request->user();
 
@@ -40,7 +40,7 @@ class OnboardingController extends Controller
             ])->setUser($user));
         }
 
-        $users->computeUserTaste($user);
+        $userService->computeUserTaste($user);
 
         return redirect('/');
     }

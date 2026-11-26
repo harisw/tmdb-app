@@ -9,7 +9,7 @@ use Illuminate\Support\Carbon;
 /**
  * @property int $user_id
  * @property string $embedding_model
- * @property string $taste
+ * @property string|null $taste
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
  * @property-read User $user

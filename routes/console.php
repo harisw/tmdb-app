@@ -11,6 +11,7 @@ use App\Jobs\FetchUpcomingTitlesJob;
 use App\Jobs\ImportTmdbProvidersJob;
 use App\Jobs\MaterializeTitleSimilaritiesBatchJob;
 use App\Jobs\SyncTitlePopularityJob;
+use App\Jobs\User\RefreshStaleTastesJob;
 use App\Utils\Enum\FeatureFlag;
 use App\Utils\Enum\TimeWindow;
 use Laravel\Pennant\Feature;
@@ -78,3 +79,5 @@ Schedule::job(new EnrichTitleProvidersBatchJob)
     ->at('18:30');
 
 Schedule::job(new EnrichSearchEmbeddingsBatchJob(200))->everyThreeHours()->withoutOverlapping();
+
+Schedule::job(new RefreshStaleTastesJob(10))->everyThirtyMinutes()->withoutOverlapping();
