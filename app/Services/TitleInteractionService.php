@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Data\DTOs\UserTitleEventData;
 use App\Domain\Enums\TitleEventType;
+use App\Jobs\User\ComputeUserTasteJob;
 use App\Models\TitleInteractionEvent;
 use App\Models\UserTitleState;
 
@@ -15,7 +16,11 @@ class TitleInteractionService
      */
     public function record(UserTitleEventData $data): UserTitleState
     {
-        return $this->createOrUpdateState($this->createEvent($data));
+        $state = $this->createOrUpdateState($this->createEvent($data));
+
+        ComputeUserTasteJob::dispatch($state->user_id);
+
+        return $state;
     }
 
     public function createEvent(UserTitleEventData $data): TitleInteractionEvent

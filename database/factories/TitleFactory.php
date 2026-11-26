@@ -5,6 +5,7 @@ namespace Database\Factories;
 use App\Domain\Enums\TitleType;
 use App\Models\Language;
 use App\Models\Title;
+use App\Services\KnowledgeGraph\OpenAIEmbeddingService;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
@@ -12,6 +13,8 @@ use Illuminate\Database\Eloquent\Factories\Factory;
  */
 class TitleFactory extends Factory
 {
+    private const EMBEDDING_DIMENSIONS = 1536;
+
     /**
      * Define the model's default state.
      *
@@ -35,5 +38,15 @@ class TitleFactory extends Factory
             'tagline' => fake()->sentence(),
             'language_id' => Language::factory(),
         ];
+    }
+
+    /**
+     * @param  array<int, float>  $weights  dimension => value, every other dimension is 0
+     */
+    public function embedded(array $weights = [0 => 1.0]): static
+    {
+        $vector = array_replace(array_fill(0, self::EMBEDDING_DIMENSIONS, 0.0), $weights);
+
+        return $this->state(['embedding' => OpenAIEmbeddingService::vectorArrayToLiteral($vector)]);
     }
 }

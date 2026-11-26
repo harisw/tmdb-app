@@ -4,12 +4,14 @@ namespace Tests\Feature\Service;
 
 use App\Data\DTOs\UserTitleEventData;
 use App\Domain\Enums\TitleEventType;
+use App\Jobs\User\ComputeUserTasteJob;
 use App\Models\Title;
 use App\Models\TitleInteractionEvent;
 use App\Models\User;
 use App\Models\UserTitleState;
 use App\Services\TitleInteractionService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Queue;
 use PHPUnit\Framework\Attributes\DataProvider;
 use Tests\TestCase;
 
@@ -67,6 +69,15 @@ class TitleInteractionServiceTest extends TestCase
             'title_id' => $this->title->id,
             'event_type' => TitleEventType::LIKE->value,
         ]);
+    }
+
+    public function test_record_queues_a_taste_recompute_for_the_user(): void
+    {
+        Queue::fake();
+
+        $this->service->record($this->dto(TitleEventType::LIKE));
+
+        Queue::assertPushed(ComputeUserTasteJob::class, fn (ComputeUserTasteJob $job) => $job->userId === $this->user->id);
     }
 
     public function test_record_creates_the_event_and_returns_the_synced_state(): void

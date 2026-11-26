@@ -3,6 +3,9 @@
 namespace Tests\Feature\Http\Controllers;
 
 use App\Models\Title;
+use App\Models\User;
+use App\Models\UserTitleState;
+use App\Services\UserService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Bus;
 use Tests\TestCase;
@@ -78,6 +81,36 @@ class HomeControllerTest extends TestCase
                 ->where('titles.data.0.id', $hit->id)
                 ->where('titles.data.1.id', $middling->id)
                 ->where('titles.data.2.id', $niche->id)
+            );
+    }
+
+    public function test_index_is_not_personalised_without_a_taste(): void
+    {
+        $this->actingAs(User::factory()->create())
+            ->get('/')
+            ->assertInertia(fn ($page) => $page->where('personalised', false));
+    }
+
+    public function test_index_ranks_unseen_titles_by_closeness_to_the_users_taste(): void
+    {
+        $user = User::factory()->create();
+        $liked = Title::factory()->embedded([0 => 1.0])->create();
+        $far = Title::factory()->embedded([1 => 1.0])->create(['popularity' => 900]);
+        $near = Title::factory()->embedded([0 => 0.9, 1 => 0.1])->create(['popularity' => 1]);
+        Title::factory()->create(['popularity' => 1000]);
+        $alsoLiked = Title::factory()->embedded([0 => 1.0])->create();
+        foreach ([$liked, $alsoLiked] as $title) {
+            UserTitleState::factory()->create(['user_id' => $user->id, 'title_id' => $title->id, 'liked' => true]);
+        }
+        app(UserService::class)->computeUserTaste($user);
+
+        $this->actingAs($user)
+            ->get('/')
+            ->assertInertia(fn ($page) => $page
+                ->where('personalised', true)
+                ->has('titles.data', 2)
+                ->where('titles.data.0.id', $near->id)
+                ->where('titles.data.1.id', $far->id)
             );
     }
 }

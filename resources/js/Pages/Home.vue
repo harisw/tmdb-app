@@ -49,6 +49,13 @@
                             </span>
                         </div>
                     </div>
+
+                    <p v-if="canOnboard" class="mt-8 text-base text-white/80">
+                        Tell us a few titles you've loved and this page starts from your taste.
+                        <Link href="/onboarding" class="font-semibold text-white underline-offset-4 hover:underline">
+                            Pick your favourites
+                        </Link>
+                    </p>
                 </div>
 
                 <template v-if="hasConstellation">
@@ -71,7 +78,7 @@
                 </template>
             </section>
 
-            <TitleGrid title="Popular now" heading-tag="h2">
+            <TitleGrid :title="personalised ? 'Picked for you' : 'Popular now'" heading-tag="h2">
                 <TitleCard v-for="item in items" :key="item.id" :on-click="openModal" :item="item" />
             </TitleGrid>
 
@@ -89,7 +96,7 @@
 </template>
 
 <script setup>
-import { Head, router } from '@inertiajs/vue3'
+import { Head, Link, router, usePage } from '@inertiajs/vue3'
 import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 import AppLayout from '../Layouts/AppLayout.vue'
 import TitleModal from '../Components/Modals/TitleModal.vue'
@@ -105,6 +112,7 @@ import TitleGrid from '../Components/TitleGrid.vue'
 const props = defineProps({
     titles: { type: Object },
     constellation: { type: Object, default: undefined },
+    personalised: { type: Boolean, default: false },
 })
 
 const { items, loading, sentinel, hasMore } = useInfiniteScroll({ titles: () => props.titles })
@@ -119,6 +127,8 @@ const busyId = ref(null)
 let openRequestId = 0
 
 const hasConstellation = computed(() => props.constellation !== null)
+const page = usePage()
+const canOnboard = computed(() => Boolean(page.props.auth.user) && !props.personalised)
 
 function shuffle() {
     router.reload({

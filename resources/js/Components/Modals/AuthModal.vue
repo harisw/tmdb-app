@@ -317,6 +317,9 @@ const resendVerification = () => {
                         <div>
                             <label class="block text-sm text-gray-400 mb-1">Default Country</label>
                             <CountrySelect v-model="registerForm.country" />
+                            <p v-if="registerForm.errors.country" class="text-red-400 text-xs mt-1">
+                                {{ registerForm.errors.country }}
+                            </p>
                         </div>
 
                         <button

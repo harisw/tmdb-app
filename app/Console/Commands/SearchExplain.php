@@ -195,7 +195,7 @@ class SearchExplain extends Command
         $lineSimilarities = collect($this->embeddingService->embedBatch($documentLines->all(), TitleSearchEmbedding::DIMENSIONS))
             ->map(fn (array $lineVector) => (float) DB::scalar(
                 'SELECT 1 - (?::halfvec <=> ?::halfvec)',
-                [$queryVector, TitleSearchEmbedding::toVectorLiteral($lineVector)],
+                [$queryVector, OpenAIEmbeddingService::vectorArrayToLiteral($lineVector)],
             ));
         $closestLine = $lineSimilarities->sortDesc()->keys()->first();
 

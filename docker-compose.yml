@@ -25,6 +25,15 @@ services:
             - redis_data:/data
         networks:
             - laravel-network
+    mailpit:
+        image: axllent/mailpit:v1.34
+        container_name: mailpit
+        restart: always
+        ports:
+            - '1025:1025'
+            - '8025:8025'
+        networks:
+            - laravel-network
 
 networks:
     laravel-network:

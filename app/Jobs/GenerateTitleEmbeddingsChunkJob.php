@@ -49,7 +49,7 @@ class GenerateTitleEmbeddingsChunkJob implements ShouldQueue
         foreach ($titles as $i => $title) {
             // pgvector expects the vector as a string: '[0.1,0.2,...]'
             $title->updateQuietly([
-                'embedding' => '['.implode(',', $vectors[$i]).']',
+                'embedding' => OpenAIEmbeddingService::vectorArrayToLiteral($vectors[$i]),
             ]);
         }
     }
