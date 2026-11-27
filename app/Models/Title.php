@@ -9,6 +9,7 @@ use App\Helpers\DateTimeHelper;
 use App\Models\Scopes\AvoidedKeywordScope;
 use App\Models\Scopes\TitleTypeScope;
 use Database\Factories\TitleFactory;
+use Illuminate\Contracts\Support\Arrayable;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Collection;
@@ -210,6 +211,24 @@ class Title extends Model
         };
 
         return $ordered->orderBy('titles.id');
+    }
+
+    /**
+     * @param  Builder<Title>  $query
+     * @param  Builder<Title>  $row
+     * @param  Arrayable<int, int>|Builder<Genre>  $genreIds
+     * @return Builder<Title>
+     */
+    public function scopePerGenre(Builder $query, Builder $row, Arrayable|Builder $genreIds): Builder
+    {
+        return $query->withoutGlobalScopes()
+            ->from('genres')
+            ->joinLateral($row
+                ->select('titles.*', 'genre_title.genre_id')
+                ->join('genre_title', 'genre_title.title_id', '=', 'titles.id')
+                ->whereColumn('genre_title.genre_id', 'genres.id'), 'titles')
+            ->whereIn('genres.id', $genreIds)
+            ->select('titles.*');
     }
 
     /**

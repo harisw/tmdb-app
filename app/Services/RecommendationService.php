@@ -8,7 +8,6 @@ use App\Models\Scopes\TitleTypeScope;
 use App\Models\Title;
 use App\Models\UserTaste;
 use App\Models\UserTitleState;
-use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Pagination\Paginator;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
@@ -24,18 +23,17 @@ class RecommendationService
      */
     public function onboardingTitles(int $round = 0): Collection
     {
-        return Genre::query()
-            ->where('count', '>', 0)
-            ->with(['titles' => /** @param BelongsToMany<Title, Genre> $titles */ fn (BelongsToMany $titles) => $titles
-                ->withoutGlobalScope(TitleTypeScope::class)
-                ->whereNotNull('titles.embedding')
-                ->sorted(TitleSort::POPULAR)
-                ->limit(self::ONBOARDING_TITLES_PER_GENRE)
-                ->offset($round * self::ONBOARDING_TITLES_PER_GENRE),
-            ])
-            ->orderByDesc('count')
+        $row = Title::query()
+            ->withoutGlobalScope(TitleTypeScope::class)
+            ->whereNotNull('titles.embedding')
+            ->sorted(TitleSort::POPULAR)
+            ->limit(self::ONBOARDING_TITLES_PER_GENRE)
+            ->offset($round * self::ONBOARDING_TITLES_PER_GENRE);
+
+        return Title::perGenre($row, Genre::where('count', '>', 0)->select('id'))
+            ->orderByDesc('genres.count')
+            ->sorted(TitleSort::POPULAR)
             ->get()
-            ->flatMap->titles
             ->unique('id')
             ->values();
     }

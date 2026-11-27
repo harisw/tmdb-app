@@ -2,6 +2,7 @@
 
 namespace Tests\Feature\Http\Controllers;
 
+use App\Domain\Enums\TitleType;
 use App\Models\Genre;
 use App\Models\Keyword;
 use App\Models\Title;
@@ -79,6 +80,34 @@ class GenreControllerTest extends TestCase
         $this->get('/genre/all')->assertInertia(fn ($page) => $page
             ->where('allGenres.0.titles.0.id', $loud->id)
             ->where('allGenres.0.titles.1.id', $quiet->id)
+        );
+    }
+
+    public function test_index_rows_honour_the_title_type_toggle(): void
+    {
+        $genre = Genre::factory()->create(['count' => 2]);
+        $movie = Title::factory()->create(['type' => TitleType::MOVIE]);
+        $show = Title::factory()->create(['type' => TitleType::TV]);
+        $genre->titles()->attach([$movie->id, $show->id]);
+
+        $this->get('/genre/all?title_type='.TitleType::TV->value)->assertInertia(fn ($page) => $page
+            ->has('allGenres.0.titles', 1)
+            ->where('allGenres.0.titles.0.id', $show->id)
+        );
+    }
+
+    public function test_index_lists_a_title_in_every_genre_it_belongs_to(): void
+    {
+        $drama = Genre::factory()->create(['count' => 2]);
+        $comedy = Genre::factory()->create(['count' => 1]);
+        $shared = Title::factory()->create();
+        $drama->titles()->attach([$shared->id, Title::factory()->create()->id]);
+        $comedy->titles()->attach($shared->id);
+
+        $this->get('/genre/all')->assertInertia(fn ($page) => $page
+            ->has('allGenres.0.titles', 2)
+            ->has('allGenres.1.titles', 1)
+            ->where('allGenres.1.titles.0.id', $shared->id)
         );
     }
 
