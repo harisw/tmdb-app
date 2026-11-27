@@ -49,11 +49,14 @@ class OnboardingControllerTest extends TestCase
             ->assertOk()
             ->assertInertia(fn ($page) => $page
                 ->component('Onboarding')
-                ->has('titles.data', 1)
-                ->where('titles.data.0.id', $shared->id)
+                ->missing('titles')
                 ->where('round', 0)
                 ->where('minPicks', OnboardingRequest::MIN_PICKS)
                 ->where('maxPicks', OnboardingRequest::MAX_PICKS)
+                ->loadDeferredProps(fn ($reload) => $reload
+                    ->has('titles.data', 1)
+                    ->where('titles.data.0.id', $shared->id)
+                )
             );
     }
 
@@ -66,8 +69,10 @@ class OnboardingControllerTest extends TestCase
         $this->actingAs($this->user)
             ->get(route('onboarding', ['title_type' => TitleType::MOVIE->value]))
             ->assertInertia(fn ($page) => $page
-                ->has('titles.data', 1)
-                ->where('titles.data.0.id', $series->id)
+                ->loadDeferredProps(fn ($reload) => $reload
+                    ->has('titles.data', 1)
+                    ->where('titles.data.0.id', $series->id)
+                )
             );
     }
 
@@ -86,9 +91,11 @@ class OnboardingControllerTest extends TestCase
             ->get(route('onboarding', ['round' => 1]))
             ->assertInertia(fn ($page) => $page
                 ->where('round', 1)
-                ->has('titles.data', 2)
-                ->where('titles.data.0.id', $dramaSecond->id)
-                ->where('titles.data.1.id', $comedySecond->id)
+                ->loadDeferredProps(fn ($reload) => $reload
+                    ->has('titles.data', 2)
+                    ->where('titles.data.0.id', $dramaSecond->id)
+                    ->where('titles.data.1.id', $comedySecond->id)
+                )
             );
     }
 
@@ -103,7 +110,7 @@ class OnboardingControllerTest extends TestCase
                 ->get(route('onboarding', ['round' => $round]))
                 ->assertInertia(fn ($page) => $page
                     ->where('round', 0)
-                    ->where('titles.data.0.id', $title->id)
+                    ->loadDeferredProps(fn ($reload) => $reload->where('titles.data.0.id', $title->id))
                 );
         }
     }

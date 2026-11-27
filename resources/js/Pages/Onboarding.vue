@@ -7,14 +7,17 @@ import PosterCloud from '../Components/PosterCloud.vue'
 import { button } from '../variants/button.js'
 
 const props = defineProps({
-    titles: { type: Object, required: true },
+    titles: { type: Object, default: undefined },
     round: { type: Number, required: true },
     minPicks: { type: Number, required: true },
     maxPicks: { type: Number, required: true },
 })
 
+const SKELETON_POSTERS = 18
+
 const picks = ref([])
 const shuffling = ref(false)
+const loading = computed(() => props.titles === undefined)
 const form = useForm({ title_ids: [] })
 
 const remaining = computed(() => Math.max(props.minPicks - picks.value.length, 0))
@@ -82,11 +85,15 @@ function submit() {
                     <div class="flex items-center gap-2">
                         <button
                             type="button"
-                            :disabled="shuffling"
+                            :disabled="loading || shuffling"
                             :class="button({ intent: 'soft', size: 'md', class: 'gap-2' })"
                             @click="showOthers"
                         >
-                            <Shuffle class="size-4" aria-hidden="true" />
+                            <Shuffle
+                                class="size-4"
+                                :class="{ 'animate-spin motion-reduce:animate-none': shuffling }"
+                                aria-hidden="true"
+                            />
                             Show me others
                         </button>
                         <Link href="/" :class="button({ intent: 'ghost', size: 'md', class: 'text-white/75' })">
@@ -106,28 +113,53 @@ function submit() {
             <p v-if="error" role="alert" class="mt-6 text-sm text-glow-red">{{ error }}</p>
 
             <div
-                v-if="titles.data.length"
-                class="mt-8 xl:mt-6 xl:flex xl:min-h-0 xl:flex-1 xl:items-center xl:[container-type:size]"
+                v-if="loading"
+                role="status"
+                aria-label="Loading titles"
+                class="mt-8 xl:mt-6 xl:flex xl:min-h-0 xl:flex-1 xl:items-center"
             >
-                <PosterCloud
-                    :titles="titles.data"
-                    :picks="picks"
-                    :max-picks="maxPicks"
-                    :ready="ready"
-                    @toggle="toggle"
-                />
-            </div>
-            <div v-if="titles.data.length" class="mt-8 flex justify-center xl:hidden">
-                <button
-                    type="button"
-                    :disabled="shuffling"
-                    :class="button({ intent: 'soft', size: 'md', class: 'gap-2' })"
-                    @click="showOthers"
+                <ul
+                    class="grid w-full grid-cols-3 gap-x-3 gap-y-5 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 xl:mx-auto xl:max-w-5xl xl:grid-cols-9"
+                    aria-hidden="true"
                 >
-                    <Shuffle class="size-4" aria-hidden="true" />
-                    Show me others
-                </button>
+                    <li
+                        v-for="index in SKELETON_POSTERS"
+                        :key="index"
+                        class="aspect-[2/3] animate-pulse rounded-md bg-white/[0.06] motion-reduce:animate-none"
+                        :style="{ animationDelay: `${(index % 6) * 120}ms` }"
+                    ></li>
+                </ul>
             </div>
+            <template v-else-if="titles.data.length">
+                <div
+                    class="mt-8 transition-opacity duration-300 motion-reduce:transition-none xl:mt-6 xl:flex xl:min-h-0 xl:flex-1 xl:items-center xl:[container-type:size]"
+                    :class="{ 'pointer-events-none opacity-40': shuffling }"
+                    :aria-busy="shuffling"
+                >
+                    <PosterCloud
+                        :titles="titles.data"
+                        :picks="picks"
+                        :max-picks="maxPicks"
+                        :ready="ready"
+                        @toggle="toggle"
+                    />
+                </div>
+                <div class="mt-8 flex justify-center xl:hidden">
+                    <button
+                        type="button"
+                        :disabled="shuffling"
+                        :class="button({ intent: 'soft', size: 'md', class: 'gap-2' })"
+                        @click="showOthers"
+                    >
+                        <Shuffle
+                            class="size-4"
+                            :class="{ 'animate-spin motion-reduce:animate-none': shuffling }"
+                            aria-hidden="true"
+                        />
+                        Show me others
+                    </button>
+                </div>
+            </template>
             <p v-else class="py-16 text-center text-base text-white/70">
                 There's nothing to pick from yet. Check back once the catalogue has filled in.
             </p>
