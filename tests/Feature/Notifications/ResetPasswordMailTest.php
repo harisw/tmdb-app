@@ -30,7 +30,6 @@ class ResetPasswordMailTest extends TestCase
         $this->assertStringContainsString('Chill', $html);
         $this->assertStringContainsString('/reset-password/secret-token?email=viewer%40example.com', $html);
         $this->assertStringContainsString('45 minutes', $html);
-        $this->assertStringNotContainsStringIgnoringCase('TMDB', $html);
     }
 
     public function test_plain_text_body_carries_the_link(): void

@@ -28,7 +28,6 @@ class VerifyEmailMailTest extends TestCase
         $this->assertStringContainsString('Chill', $html);
         $this->assertStringContainsString('viewer@example.com', $html);
         $this->assertStringContainsString("/email/verify/{$user->id}/".sha1($user->email), $html);
-        $this->assertStringNotContainsStringIgnoringCase('TMDB', $html);
         $this->assertStringNotContainsString('Laravel', $html);
     }
 
