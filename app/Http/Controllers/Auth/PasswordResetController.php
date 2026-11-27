@@ -14,17 +14,21 @@ use Illuminate\Support\Facades\Password;
 use Illuminate\Support\Str;
 use Inertia\Inertia;
 use Inertia\Response;
+use UnexpectedValueException;
 
 class PasswordResetController extends Controller
 {
     public function store(SendPasswordResetLinkRequest $request): RedirectResponse
     {
-        return match (Password::sendResetLink($request->only('email'))) {
+        $status = Password::sendResetLink($request->only('email'));
+
+        return match ($status) {
             Password::ResetLinkSent => back(),
             Password::InvalidUser => back()->withErrors(['email' => 'No Chill account uses this email.']),
             Password::ResetThrottled => back()->withErrors([
                 'email' => 'We just sent a link to this email. Give it a minute before asking again.',
             ]),
+            default => throw new UnexpectedValueException("Unexpected password reset link status [{$status}]."),
         };
     }
 

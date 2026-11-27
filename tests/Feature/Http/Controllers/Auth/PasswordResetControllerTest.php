@@ -52,6 +52,16 @@ class PasswordResetControllerTest extends TestCase
         Notification::assertSentToTimes($user, ResetPassword::class, 1);
     }
 
+    public function test_an_unexpected_broker_status_fails_loudly(): void
+    {
+        Password::shouldReceive('sendResetLink')->once()->andReturn('passwords.unexpected');
+
+        $this->withoutExceptionHandling();
+        $this->expectException(\UnexpectedValueException::class);
+
+        $this->post(route('password.email'), ['email' => 'viewer@example.com']);
+    }
+
     public function test_link_requests_are_throttled_after_six_a_minute(): void
     {
         foreach (range(1, 6) as $attempt) {
