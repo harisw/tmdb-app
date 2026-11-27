@@ -25,7 +25,7 @@ class HomeController extends Controller
         return Inertia::render('Home', [
             'titles' => TitleResource::collection($personalised
                 ? $recommendations->recommendedTitles($taste, self::PAGINATE_SIZE)
-                : Title::with(Title::detailRelations())->sorted(TitleSort::POPULAR)->paginate(self::PAGINATE_SIZE)),
+                : Title::with(Title::detailRelations())->sorted(TitleSort::POPULAR)->cursorPaginate(self::PAGINATE_SIZE)),
             'personalised' => $personalised,
             'constellation' => Inertia::defer(fn () => $constellations->build((int) $seedIndex)),
         ]);

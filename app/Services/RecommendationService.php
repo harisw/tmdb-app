@@ -9,7 +9,7 @@ use App\Models\Title;
 use App\Models\UserTaste;
 use App\Models\UserTitleState;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
-use Illuminate\Pagination\LengthAwarePaginator;
+use Illuminate\Pagination\Paginator;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 
@@ -41,18 +41,18 @@ class RecommendationService
     }
 
     /**
-     * @return LengthAwarePaginator<int, Title>
+     * @return Paginator<int, Title>
      */
-    public function recommendedTitles(UserTaste $taste, int $perPage): LengthAwarePaginator
+    public function recommendedTitles(UserTaste $taste, int $perPage): Paginator
     {
-        return DB::transaction(function () use ($taste, $perPage): LengthAwarePaginator {
+        return DB::transaction(function () use ($taste, $perPage): Paginator {
             DB::statement("SET LOCAL hnsw.iterative_scan = 'strict_order'");
 
             return Title::with(Title::detailRelations())
                 ->whereNotNull('titles.embedding')
                 ->whereNotIn('titles.id', UserTitleState::select('title_id')->where('user_id', $taste->user_id))
                 ->orderByRaw('titles.embedding <=> ?::vector', [$taste->taste])
-                ->paginate($perPage);
+                ->simplePaginate($perPage);
         });
     }
 }

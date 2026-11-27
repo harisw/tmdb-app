@@ -194,7 +194,7 @@ class Title extends Model
      */
     public function scopeListing(Builder $query): Builder
     {
-        return $query->with(self::detailRelations())->latest();
+        return $query->with(self::detailRelations())->latest('titles.created_at')->orderByDesc('titles.id');
     }
 
     /**
@@ -205,7 +205,7 @@ class Title extends Model
     {
         $ordered = match ($sort) {
             TitleSort::POPULAR => $query->orderByDesc('titles.popularity'),
-            TitleSort::NEWEST => $query->orderByRaw('titles.release_date desc nulls last'),
+            TitleSort::NEWEST => $query->whereNotNull('titles.release_date')->orderByDesc('titles.release_date'),
             TitleSort::RECENTLY_ADDED => $query->orderByDesc('titles.created_at'),
         };
 

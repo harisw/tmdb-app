@@ -25,7 +25,7 @@ class KeywordController extends Controller
             'selected' => $key,
             'titles' => $key
                 ? TitleResource::collection(
-                    $key->titles()->listing()->paginate(self::PAGINATE_SIZE)
+                    $key->titles()->listing()->cursorPaginate(self::PAGINATE_SIZE)
                 )
                 : collect(),
         ]);
@@ -36,7 +36,7 @@ class KeywordController extends Controller
         return Inertia::render('TitleByKeyword', [
             'keyword' => $keyword,
             'titles' => TitleResource::collection(
-                $keyword->titles()->listing()->paginate(self::PAGINATE_SIZE)
+                $keyword->titles()->listing()->cursorPaginate(self::PAGINATE_SIZE)
             ),
         ]);
     }

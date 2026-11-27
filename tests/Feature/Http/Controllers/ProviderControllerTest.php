@@ -78,15 +78,13 @@ class ProviderControllerTest extends TestCase
 
     public function test_index_features_only_the_biggest_providers(): void
     {
-        foreach (range(1, 8) as $size) {
-            $this->providerWithTitles($size);
-        }
+        $providers = collect(range(1, 8))->mapWithKeys(fn (int $size) => [$size => $this->providerWithTitles($size)]);
 
         $this->get('/provider/all')->assertInertia(fn ($page) => $page
             ->has('allProviders', 8)
             ->has('featuredProviders', 6)
-            ->where('featuredProviders.0.count', 8)
-            ->where('featuredProviders.5.count', 3)
+            ->where('featuredProviders.0.id', $providers[8]->id)
+            ->where('featuredProviders.5.id', $providers[3]->id)
         );
     }
 
@@ -116,7 +114,8 @@ class ProviderControllerTest extends TestCase
                 ->component('TitleByProvider')
                 ->where('provider.id', $provider->id)
                 ->has('titles.data', 1)
-                ->where('titles.meta.total', 1)
+                ->missing('titles.meta.total')
+                ->where('titles.links.next', null)
             );
     }
 

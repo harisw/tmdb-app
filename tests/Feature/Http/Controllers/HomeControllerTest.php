@@ -8,6 +8,7 @@ use App\Models\UserTitleState;
 use App\Services\UserService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Bus;
+use Illuminate\Support\Facades\DB;
 use Tests\TestCase;
 
 class HomeControllerTest extends TestCase
@@ -57,17 +58,35 @@ class HomeControllerTest extends TestCase
     public function test_index_renders_home_with_paginated_titles(): void
     {
         Title::factory(35)->create();
+        DB::enableQueryLog();
 
         $this->get('/')
             ->assertOk()
             ->assertInertia(fn ($page) => $page
                 ->component('Home')
                 ->has('titles.data', 30)
-                ->where('titles.meta.current_page', 1)
                 ->where('titles.meta.per_page', 30)
-                ->where('titles.meta.total', 35)
-                ->whereNot('titles.links.next', null)
+                ->missing('titles.meta.total')
+                ->whereNot('titles.meta.next_cursor', null)
             );
+
+        $this->assertNoCountQueryRan();
+    }
+
+    public function test_index_cursor_pages_through_tied_popularity_without_skips_or_repeats(): void
+    {
+        $titles = Title::factory(35)->create(['popularity' => 50]);
+
+        $first = $this->get('/')->inertiaProps('titles');
+        $second = $this->get($first['links']['next'])->inertiaProps('titles');
+
+        $this->assertCount(30, $first['data']);
+        $this->assertCount(5, $second['data']);
+        $this->assertNull($second['links']['next']);
+        $this->assertEqualsCanonicalizing(
+            $titles->pluck('id')->all(),
+            collect([...$first['data'], ...$second['data']])->pluck('id')->all()
+        );
     }
 
     public function test_index_lists_most_popular_titles_first(): void
@@ -113,6 +132,7 @@ class HomeControllerTest extends TestCase
             UserTitleState::factory()->create(['user_id' => $user->id, 'title_id' => $title->id, 'liked' => true]);
         }
         app(UserService::class)->computeUserTaste($user);
+        DB::enableQueryLog();
 
         $this->actingAs($user)
             ->get('/')
@@ -121,6 +141,19 @@ class HomeControllerTest extends TestCase
                 ->has('titles.data', 2)
                 ->where('titles.data.0.id', $near->id)
                 ->where('titles.data.1.id', $far->id)
+                ->missing('titles.meta.total')
+                ->where('titles.links.next', null)
             );
+
+        $this->assertNoCountQueryRan();
+    }
+
+    private function assertNoCountQueryRan(): void
+    {
+        $countQueries = collect(DB::getQueryLog())
+            ->pluck('query')
+            ->filter(fn (string $sql): bool => str_contains($sql, 'count(*) as "aggregate"'));
+
+        $this->assertEmpty($countQueries, 'Home ran a pagination count: '.$countQueries->implode(' | '));
     }
 }

@@ -48,7 +48,7 @@ class GenreController extends Controller
                 $genre->titles()
                     ->with(Title::cardRelations())
                     ->sorted($sort)
-                    ->paginate(self::PAGINATE_SIZE)
+                    ->cursorPaginate(self::PAGINATE_SIZE)
             ),
             'sort' => $sort->value,
             'sorts' => TitleSort::options(),

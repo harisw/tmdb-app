@@ -13,7 +13,7 @@
                 class="mt-5 2xl:mt-7"
                 :items="languages"
                 item-key="code"
-                count-key="titles_count"
+                count-key="count"
                 :active="selectedLang?.code"
                 @select="itemOnClick"
             />

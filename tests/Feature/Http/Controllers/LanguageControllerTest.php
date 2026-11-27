@@ -21,18 +21,22 @@ class LanguageControllerTest extends TestCase
 
     public function test_languages_page_lists_languages_with_titles_and_filters_by_lang_param(): void
     {
-        $en = Language::factory()->create(['code' => 'en']);
-        $fr = Language::factory()->create(['code' => 'fr']);
+        $en = Language::factory()->create(['code' => 'en', 'count' => 2]);
+        $fr = Language::factory()->create(['code' => 'fr', 'count' => 1]);
         Title::factory(2)->create(['language_id' => $en->id]);
         Title::factory()->create(['language_id' => $fr->id]);
-        Language::factory(2)->create(); // no titles -> excluded from the list
+        Language::factory(2)->create();
 
         $this->get('/languages?lang=en')
             ->assertOk()
             ->assertInertia(fn ($page) => $page
                 ->component('TitleByLanguage')
                 ->has('languages', 2)
+                ->where('languages.0.code', 'en')
+                ->where('languages.0.count', 2)
+                ->where('languages.1.code', 'fr')
                 ->has('titles.data', 2)
+                ->missing('titles.meta.total')
             );
     }
 

@@ -55,7 +55,7 @@ class UserController extends Controller
                     ->titles()
                     ->wherePivot($type->value, true)
                     ->listing()
-                    ->paginate(self::PAGINATE_SIZE)
+                    ->cursorPaginate(self::PAGINATE_SIZE)
             ),
         ]);
     }
