@@ -16,8 +16,11 @@ use App\Utils\Enum\FeatureFlag;
 use Gate;
 use GuzzleHttp\Utils;
 use Http;
+use Illuminate\Auth\Notifications\ResetPassword;
+use Illuminate\Auth\Notifications\VerifyEmail;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Database\Events\QueryExecuted;
+use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Queue\Events\JobProcessing;
 use Illuminate\Support\Facades\Context;
 use Illuminate\Support\Facades\Event;
@@ -80,6 +83,25 @@ class AppServiceProvider extends ServiceProvider
             'name' => $user->name,
             'email' => $user->email,
         ]);
+
+        VerifyEmail::toMailUsing(fn (object $notifiable, string $url): MailMessage => (new MailMessage)
+            ->subject('Confirm your email for Chill')
+            ->view(['html' => 'mail.verify-email', 'text' => 'mail.verify-email-text'], [
+                'url' => $url,
+                'email' => $notifiable->getEmailForVerification(),
+                'expiresInMinutes' => config('auth.verification.expire', 30),
+            ]));
+
+        ResetPassword::toMailUsing(fn (object $notifiable, string $token): MailMessage => (new MailMessage)
+            ->subject('Reset your Chill password')
+            ->view(['html' => 'mail.reset-password', 'text' => 'mail.reset-password-text'], [
+                'url' => rtrim(config('app.url'), '/').route('password.reset', [
+                    'token' => $token,
+                    'email' => $notifiable->getEmailForPasswordReset(),
+                ], absolute: false),
+                'email' => $notifiable->getEmailForPasswordReset(),
+                'expiresInMinutes' => config('auth.passwords.users.expire'),
+            ]));
 
         Gate::define('admin', fn ($user) => (bool) $user->is_admin);
         Gate::define('viewPulse', fn ($user) => Gate::forUser($user)->allows('admin'));

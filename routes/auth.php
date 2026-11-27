@@ -3,6 +3,7 @@
 // Email verification
 use App\Http\Controllers\Auth\GoogleAuthController;
 use App\Http\Controllers\Auth\LoginController;
+use App\Http\Controllers\Auth\PasswordResetController;
 use App\Http\Controllers\Auth\RegisterController;
 use App\Http\Controllers\AvoidedKeywordController;
 use App\Http\Controllers\OnboardingController;
@@ -13,6 +14,14 @@ Route::get('/register', [RegisterController::class, 'create'])->name('register')
 Route::post('/register', [RegisterController::class, 'store'])->middleware('throttle:6,1');
 Route::get('/login', [LoginController::class, 'create'])->name('login');
 Route::post('/login', [LoginController::class, 'store']);
+
+Route::middleware('guest')->group(function () {
+    Route::post('/forgot-password', [PasswordResetController::class, 'store'])
+        ->middleware('throttle:6,1')->name('password.email');
+    Route::get('/reset-password/{token}', [PasswordResetController::class, 'edit'])->name('password.reset');
+    Route::post('/reset-password', [PasswordResetController::class, 'update'])
+        ->middleware('throttle:6,1')->name('password.update');
+});
 
 Route::get('/email/verify', [RegisterController::class, 'verifyNotice'])
     ->middleware('auth')->name('verification.notice');
