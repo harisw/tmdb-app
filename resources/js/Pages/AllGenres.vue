@@ -25,14 +25,7 @@ const { openModal, closeModal, selectedItem, showModal } = useModal()
                 {{ allGenres.length }} genres, most titles first. Each row shows its most popular titles.
             </p>
 
-            <ChipRail
-                class="mt-5 2xl:mt-7"
-                :items="allGenres"
-                item-key="slug"
-                count-key="count"
-                href-key="url"
-                swipe-on-phone
-            />
+            <ChipRail class="mt-5 2xl:mt-7" :items="allGenres" item-key="slug" href-key="url" swipe-on-phone />
 
             <section v-for="genre in allGenres" :key="genre.id" class="mt-15" :aria-label="genre.name">
                 <Carousel>
