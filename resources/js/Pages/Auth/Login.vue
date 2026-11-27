@@ -1,7 +1,12 @@
 <script setup>
-import { useForm } from '@inertiajs/vue3'
+import { ref } from 'vue'
+import { useForm, usePage } from '@inertiajs/vue3'
 import { field } from '../../variants/field.js'
 import { button } from '../../variants/button.js'
+import ForgotPasswordForm from '../../Components/ForgotPasswordForm.vue'
+
+const page = usePage()
+const forgotPassword = ref(false)
 
 const form = useForm({
     email: '',
@@ -19,9 +24,19 @@ const submit = () => {
 <template>
     <div class="min-h-screen flex items-center justify-center bg-licorice text-white px-4 py-12">
         <div class="w-full max-w-sm space-y-8">
-            <h1 class="text-center text-2xl font-bold">Sign in to your account</h1>
+            <h1 v-if="!forgotPassword" class="text-center text-2xl font-bold">Sign in to your account</h1>
 
-            <form class="space-y-5" @submit.prevent="submit">
+            <p
+                v-if="page.props.flash?.message && !forgotPassword"
+                role="status"
+                class="rounded-field bg-tea-green/10 px-3 py-2 text-sm text-tea-green"
+            >
+                {{ page.props.flash.message }}
+            </p>
+
+            <ForgotPasswordForm v-if="forgotPassword" :initial-email="form.email" @back="forgotPassword = false" />
+
+            <form v-else class="space-y-5" @submit.prevent="submit">
                 <div>
                     <label for="email" class="mb-1 block text-sm text-white/60">Email</label>
                     <input
@@ -36,7 +51,16 @@ const submit = () => {
                 </div>
 
                 <div>
-                    <label for="password" class="mb-1 block text-sm text-white/60">Password</label>
+                    <div class="mb-1 flex items-baseline justify-between">
+                        <label for="password" class="text-sm text-white/60">Password</label>
+                        <button
+                            type="button"
+                            class="text-sm text-white/60 hover:text-white"
+                            @click="forgotPassword = true"
+                        >
+                            Forgot password?
+                        </button>
+                    </div>
                     <input
                         id="password"
                         v-model="form.password"

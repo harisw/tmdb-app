@@ -18,6 +18,8 @@ use Laravel\Pennant\Feature;
 
 Schedule::command('pulse:check')->everyMinute()->withoutOverlapping();
 
+Schedule::command('auth:clear-resets')->everyFifteenMinutes();
+
 Schedule::command('db:seed --class=CountsSeeder --force')
     ->everySixHours()->withoutOverlapping();
 

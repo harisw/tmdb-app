@@ -4,6 +4,7 @@ import { useForm, usePage } from '@inertiajs/vue3'
 import { useGeoLocation } from '../../Composables/useGeoLocation.js'
 import BaseModal from './BaseModal.vue'
 import CountrySelect from '../CountrySelect.vue'
+import ForgotPasswordForm from '../ForgotPasswordForm.vue'
 
 const props = defineProps({
     show: { type: Boolean, required: true },
@@ -175,8 +176,15 @@ const resendVerification = () => {
 
                 <!-- Forms screen -->
                 <div v-else key="forms">
+                    <ForgotPasswordForm
+                        v-if="activeTab === 'forgot'"
+                        class="px-6 py-6"
+                        :initial-email="loginForm.email"
+                        @back="activeTab = 'login'"
+                    />
+
                     <!-- Header tabs -->
-                    <div class="flex items-center px-6 pt-6 pb-4">
+                    <div v-else class="flex items-center px-6 pt-6 pb-4">
                         <div class="flex gap-1 bg-white/5 rounded-lg p-1">
                             <button
                                 class="px-4 py-1.5 text-sm font-medium rounded-md transition-colors cursor-pointer"
@@ -216,7 +224,16 @@ const resendVerification = () => {
                         </div>
 
                         <div>
-                            <label class="block text-sm text-gray-400 mb-1">Password</label>
+                            <div class="mb-1 flex items-baseline justify-between">
+                                <label class="text-sm text-gray-400">Password</label>
+                                <button
+                                    type="button"
+                                    class="text-xs text-gray-400 transition-colors hover:text-white cursor-pointer"
+                                    @click="activeTab = 'forgot'"
+                                >
+                                    Forgot password?
+                                </button>
+                            </div>
                             <input
                                 v-model="loginForm.password"
                                 type="password"
@@ -274,7 +291,7 @@ const resendVerification = () => {
                     </form>
 
                     <!-- Register form -->
-                    <form v-else class="px-6 pb-6 space-y-4" @submit.prevent="submitRegister">
+                    <form v-if="activeTab === 'register'" class="px-6 pb-6 space-y-4" @submit.prevent="submitRegister">
                         <div>
                             <label class="block text-sm text-gray-400 mb-1">Email</label>
                             <input
