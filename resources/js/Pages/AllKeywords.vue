@@ -11,6 +11,7 @@
                 class="mt-5 2xl:mt-7"
                 :items="tagItems"
                 item-key="slug"
+                count-key="count"
                 :active="selectedTag?.slug"
                 @select="itemOnClick"
             >

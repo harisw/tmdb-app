@@ -48,7 +48,7 @@ class ProviderController extends Controller
         return Inertia::render('TitleByProvider', [
             'provider' => $provider,
             'titles' => TitleResource::collection(
-                $this->titlesOf($provider)->sorted($sort)->paginate(self::PAGINATE_SIZE)
+                $this->titlesOf($provider)->sorted($sort)->cursorPaginate(self::PAGINATE_SIZE)
             ),
             'sort' => $sort->value,
             'sorts' => TitleSort::options(),

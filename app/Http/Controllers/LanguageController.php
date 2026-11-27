@@ -16,14 +16,13 @@ class LanguageController extends Controller
         $language = $lang ? Language::whereCode($lang)->first() : null;
 
         return Inertia::render('TitleByLanguage', [
-            'languages' => Language::whereHas('titles')
-                ->withCount('titles')
-                ->orderByDesc('titles_count')
+            'languages' => Language::where('count', '>', 0)
+                ->orderByDesc('count')
                 ->get(),
             'selected' => $language,
             'titles' => $language
                 ? TitleResource::collection(
-                    $language->titles()->listing()->paginate(self::PAGINATE_SIZE)
+                    $language->titles()->listing()->cursorPaginate(self::PAGINATE_SIZE)
                 )
                 : collect(),
         ]);

@@ -18,11 +18,15 @@ export default function useInfiniteScroll(source, options = {}) {
     const observer = ref(null)
     const sentinel = ref(null)
 
+    const nextParams = (res) => {
+        const next = res?.links?.next
+        return next ? Object.fromEntries(new URL(next, window.location.origin).searchParams) : null
+    }
+
     const items = ref(resource?.data || [])
-    const page = ref(1)
-    const hasMore = ref(!!resource?.links?.next)
+    const next = ref(nextParams(resource))
+    const hasMore = ref(next.value !== null)
     const query = ref({})
-    // const nextPageUrl = ref(resource.next_page_url);
     const loading = ref(false)
 
     // The reset watcher below reacts to the prop changing. But *our own*
@@ -40,7 +44,7 @@ export default function useInfiniteScroll(source, options = {}) {
         observer.value = new IntersectionObserver((entries) => {
             const entry = entries[0]
             if (entry.isIntersecting && items.value.length > 0 && hasMore.value && !loading.value) {
-                loadMore()
+                fetchItems()
             }
         })
     }
@@ -49,15 +53,7 @@ export default function useInfiniteScroll(source, options = {}) {
         if (loading.value || (!hasMore.value && !reset)) return
         loading.value = true
 
-        if (reset) {
-            page.value = 1
-        }
-
-        let params = { page: page.value }
-
-        if (query.value) {
-            params = { ...params, ...query.value }
-        }
+        const params = reset ? { ...query.value } : { ...query.value, ...next.value }
 
         // This navigation replaces the prop; tell the watcher the resulting
         // change is ours so it doesn't reset the list we're about to update.
@@ -73,59 +69,12 @@ export default function useInfiniteScroll(source, options = {}) {
                 if (!res || !data) return
                 if (reset) items.value = data
                 else items.value.push(...data)
-                hasMore.value = !!res.links?.next
+                next.value = nextParams(res)
+                hasMore.value = next.value !== null
             },
             onFinish: () => (loading.value = false),
         })
     }
-
-    async function loadMore() {
-        page.value++
-        await fetchItems()
-    }
-
-    // const loadMore = () => {
-    //     if (!nextPageUrl.value || loading.value) return;
-    //
-    //     loading.value = true;
-    //     router.get(
-    //         nextPageUrl.value,
-    //         {},
-    //         {
-    //             preserveScroll: true,
-    //             preserveState: true,
-    //             replace: true,
-    //             onSuccess: (page) => {
-    //                 const newResource = page.props[propKey];
-    //                 items.value.push(...newResource.data);
-    //                 nextPageUrl.value = newResource.next_page_url;
-    //                 loading.value = false;
-    //             },
-    //             onFinish: () => {
-    //                 loading.value = false;
-    //             },
-    //         }
-    //     );
-    // };
-    //
-    // // const handleScroll = () => {
-    // //     if (loading.value || !nextPageUrl.value) return;
-    // //
-    // //     const scrollPos = window.innerHeight + window.scrollY;
-    // //     const bottomPos = document.body.offsetHeight - threshold;
-    // //
-    // //     if (scrollPos >= bottomPos) {
-    // //         loadMore();
-    // //     }
-    // // };
-    // //
-    // // onMounted(() => {
-    // //     window.addEventListener("scroll", handleScroll);
-    // // });
-    // //
-    // // onUnmounted(() => {
-    // //     window.removeEventListener("scroll", handleScroll);
-    // // });
 
     onMounted(setupObserver)
     onUnmounted(() => observer.value?.disconnect())
@@ -143,8 +92,8 @@ export default function useInfiniteScroll(source, options = {}) {
             return
         }
         items.value = res?.data || []
-        page.value = 1
-        hasMore.value = !!res?.links?.next
+        next.value = nextParams(res)
+        hasMore.value = next.value !== null
     })
 
     return {

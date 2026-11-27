@@ -1,5 +1,5 @@
 <script setup>
-import { computed, ref, watch } from 'vue'
+import { ref, watch } from 'vue'
 import TitleModal from './Modals/TitleModal.vue'
 import TitleCard from './TitleCard.vue'
 import TitleGrid from './TitleGrid.vue'
@@ -26,16 +26,11 @@ const sortOption = tv({
     },
 })
 
-const numberFormat = new Intl.NumberFormat()
-
 const { items, loading, sentinel, fetchItems, hasMore, query } = useInfiniteScroll({ titles: () => props.titles })
 const { openModal, closeModal, selectedItem, showModal } = useModal()
 
 const activeSort = ref(props.sort)
 query.value = { sort: activeSort.value }
-
-const total = computed(() => props.titles.meta?.total ?? items.value.length)
-const totalLabel = computed(() => `${numberFormat.format(total.value)} ${total.value === 1 ? 'title' : 'titles'}`)
 
 watch(activeSort, (sort) => {
     query.value = { sort }
@@ -47,8 +42,7 @@ watch(activeSort, (sort) => {
     <div>
         <TitleGrid :title="title" :title-logo="logo">
             <template #meta>
-                <div class="mt-3 flex flex-wrap items-center justify-between gap-3">
-                    <p class="text-sm 2xl:text-base tabular-nums text-white/60">{{ totalLabel }}</p>
+                <div class="mt-3 flex flex-wrap items-center justify-end gap-3">
                     <div
                         role="group"
                         aria-label="Sort titles"

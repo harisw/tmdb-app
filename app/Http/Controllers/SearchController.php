@@ -62,7 +62,7 @@ class SearchController extends Controller
 
             $results = TitleResource::collection(
                 $this->applyFilters($titleIds, $params['lang'] ?? null, $params['gen'] ?? null,
-                    $params['tag'] ?? null)->paginate(self::PAGINATE_SIZE)
+                    $params['tag'] ?? null)->simplePaginate(self::PAGINATE_SIZE)
             );
         }
 

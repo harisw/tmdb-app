@@ -2,6 +2,7 @@
 
 namespace Tests\Feature\Http\Controllers;
 
+use App\Domain\Enums\TitleType;
 use App\Models\Genre;
 use App\Models\Keyword;
 use App\Models\Title;
@@ -82,6 +83,34 @@ class GenreControllerTest extends TestCase
         );
     }
 
+    public function test_index_rows_honour_the_title_type_toggle(): void
+    {
+        $genre = Genre::factory()->create(['count' => 2]);
+        $movie = Title::factory()->create(['type' => TitleType::MOVIE]);
+        $show = Title::factory()->create(['type' => TitleType::TV]);
+        $genre->titles()->attach([$movie->id, $show->id]);
+
+        $this->get('/genre/all?title_type='.TitleType::TV->value)->assertInertia(fn ($page) => $page
+            ->has('allGenres.0.titles', 1)
+            ->where('allGenres.0.titles.0.id', $show->id)
+        );
+    }
+
+    public function test_index_lists_a_title_in_every_genre_it_belongs_to(): void
+    {
+        $drama = Genre::factory()->create(['count' => 2]);
+        $comedy = Genre::factory()->create(['count' => 1]);
+        $shared = Title::factory()->create();
+        $drama->titles()->attach([$shared->id, Title::factory()->create()->id]);
+        $comedy->titles()->attach($shared->id);
+
+        $this->get('/genre/all')->assertInertia(fn ($page) => $page
+            ->has('allGenres.0.titles', 2)
+            ->has('allGenres.1.titles', 1)
+            ->where('allGenres.1.titles.0.id', $shared->id)
+        );
+    }
+
     public function test_rows_and_grid_leave_keywords_for_the_modal_to_fetch(): void
     {
         $genre = $this->genreWithTitles(1, ['slug' => 'drama']);
@@ -109,7 +138,8 @@ class GenreControllerTest extends TestCase
                 ->component('TitleByGenre')
                 ->where('genre.id', $drama->id)
                 ->has('titles.data', 2)
-                ->where('titles.meta.total', 2)
+                ->missing('titles.meta.total')
+                ->where('titles.links.next', null)
             );
     }
 
@@ -127,7 +157,7 @@ class GenreControllerTest extends TestCase
         );
     }
 
-    public function test_show_sorts_by_newest_release_with_undated_titles_last(): void
+    public function test_show_sorts_by_newest_release_leaving_out_undated_titles(): void
     {
         $genre = Genre::factory()->create(['slug' => 'drama']);
         $undated = Title::factory()->create(['release_date' => null]);
@@ -137,9 +167,27 @@ class GenreControllerTest extends TestCase
 
         $this->get('/genre/drama?sort=newest')->assertInertia(fn ($page) => $page
             ->where('sort', 'newest')
+            ->has('titles.data', 2)
             ->where('titles.data.0.id', $newer->id)
             ->where('titles.data.1.id', $older->id)
-            ->where('titles.data.2.id', $undated->id)
+        );
+    }
+
+    public function test_show_cursor_pages_through_tied_release_dates_without_skips_or_repeats(): void
+    {
+        $genre = Genre::factory()->create(['slug' => 'drama']);
+        $titles = Title::factory(35)->create(['release_date' => '2020-01-01']);
+        $genre->titles()->attach($titles->pluck('id'));
+
+        $first = $this->get('/genre/drama?sort=newest')->inertiaProps('titles');
+        $second = $this->get($first['links']['next'].'&sort=newest')->inertiaProps('titles');
+
+        $this->assertCount(30, $first['data']);
+        $this->assertCount(5, $second['data']);
+        $this->assertNull($second['links']['next']);
+        $this->assertEqualsCanonicalizing(
+            $titles->pluck('id')->all(),
+            collect([...$first['data'], ...$second['data']])->pluck('id')->all()
         );
     }
 

@@ -7,7 +7,7 @@ const props = defineProps({
     itemKey: { type: String, required: true },
     // Field holding the title count. The count is dropped when it is 0 or
     // missing rather than rendering "0", which reads as a broken page.
-    countKey: { type: String, default: 'count' },
+    countKey: { type: String, default: null },
     active: { type: [String, Number], default: null },
     hrefKey: { type: String, default: null },
     swipeOnPhone: { type: Boolean, default: false },
@@ -53,7 +53,7 @@ const formatCount = (count) => numberFormat.format(count)
                 >
                     <span class="text-sm 2xl:text-lg leading-none">{{ item.name }}</span>
                     <span
-                        v-if="item[countKey]"
+                        v-if="countKey && item[countKey]"
                         class="text-xs 2xl:text-sm tabular-nums text-white/55 transition-colors motion-reduce:transition-none group-hover:text-white/80"
                     >
                         {{ formatCount(item[countKey]) }}

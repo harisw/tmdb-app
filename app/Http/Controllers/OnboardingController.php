@@ -21,7 +21,7 @@ class OnboardingController extends Controller
         $round = max(0, $request->integer('round')) % RecommendationService::ONBOARDING_ROUNDS;
 
         return Inertia::render('Onboarding', [
-            'titles' => TitleResource::collection($recommendations->onboardingTitles($round)),
+            'titles' => Inertia::defer(fn () => TitleResource::collection($recommendations->onboardingTitles($round))),
             'round' => $round,
             'minPicks' => OnboardingRequest::MIN_PICKS,
             'maxPicks' => OnboardingRequest::MAX_PICKS,
